@@ -15,6 +15,8 @@ Pentagon Pizza Index + geopolitical prediction-market intel on a 3D globe, in a 
 - **Linked intel** - headlines that mention a country link to that country's busiest market
 - **✈ Military aircraft** - live positions of military aircraft broadcasting ADS-B ([adsb.lol](https://adsb.lol), free community data, with adsb.fi as backup; needs the Cloudflare `/api` proxy; many military flights don't broadcast, so it's a partial picture)
 - **Layer toggles** - switch markets, connections, trades, pizza shops and aircraft on/off (remembered per browser)
+- **🌗 Globe view** - night lights, daylight (Blue Marble), or **live sun**: the real day/night line for right now, updated every minute
+- **Kalshi** - geopolitical series found by tag (Iran, International, International elections), whale trades in Flow, 7-day price chart per market (needs the Cloudflare proxy)
 - **News coverage gauge** - share of world news about military conflict over 7 days ([GDELT](https://www.gdeltproject.org/))
 - **Signal types** - headlines classified as Nuclear / Aerial / Naval / Cyber / Ground / Military / Diplomacy / Economy, with filters
 - **☢ Doomsday Clock** - current setting from the Bulletin of the Atomic Scientists (85 seconds to midnight, Jan 2026)

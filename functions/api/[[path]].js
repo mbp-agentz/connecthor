@@ -10,7 +10,8 @@ const ROUTES = {
   gamma: { up: ['https://gamma-api.polymarket.com'], ttl: 60 },
   data: { up: ['https://data-api.polymarket.com'], ttl: 10 },
   clob: { up: ['https://clob.polymarket.com'], ttl: 300 },
-  kalshi: { up: ['https://api.elections.kalshi.com/trade-api/v2'], ttl: 120 },
+  // series lists are big (~0.5 MB) and change slowly; candles are hourly; trades are near-live
+  kalshi: { up: ['https://api.elections.kalshi.com/trade-api/v2'], ttl: p => /candlesticks/.test(p) ? 600 : /^\/series/.test(p) ? 3600 : /^\/markets\/trades/.test(p) ? 30 : 120 },
   manifold: { up: ['https://api.manifold.markets/v0'], ttl: 120 },
   predictit: { up: ['https://www.predictit.org/api/marketdata'], ttl: 120 },
   // adsb.fi serves the same readsb format, so it stands in when adsb.lol is down
@@ -43,7 +44,7 @@ export async function onRequest(ctx) {
   if (!r) return json({ error: 'unknown route' }, 404);
   // pathname is already percent-encoded; the upstream host is fixed, so the path can't escape it
   const path = rest.length ? '/' + rest.join('/') : '';
-  return cached(ctx, r.ttl, () => forward(r.up, path + url.search));
+  return cached(ctx, typeof r.ttl === 'function' ? r.ttl(path) : r.ttl, () => forward(r.up, path + url.search));
 }
 
 // Serve from the edge cache, or build the response and store it for ttl seconds.
@@ -65,7 +66,7 @@ async function cached(ctx, ttl, build) {
 }
 
 async function forward(bases, tail) {
-  let last = 'no upstream';
+  let last = 'no upstream', status = 502;
   for (const base of bases) {
     try {
       // 10 s per upstream: shorter than the page's own timeouts, so the page gets a clean 502
@@ -76,11 +77,12 @@ async function forward(bases, tail) {
       // 200 was sent, and the truncated JSON would then sit in the cache
       if (res.ok && /json/.test(type)) return new Response(await res.text(), { headers: { 'content-type': type } });
       last = `${new URL(base).hostname} HTTP ${res.status}${res.ok ? ' (not JSON)' : ''}`;
+      if (res.status === 429) status = 429; // let the page (and logs) see rate limiting as such
     } catch (e) {
       last = `${new URL(base).hostname} ${e.name}`;
     }
   }
-  return json({ error: 'upstream failed: ' + last }, 502);
+  return json({ error: 'upstream failed: ' + last }, status);
 }
 
 // ---- news: fetch the RSS feeds and merge them into one list ----
