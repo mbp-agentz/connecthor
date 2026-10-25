@@ -1,0 +1,3 @@
+# local Cloudflare dev (wrangler pages dev)
+.wrangler/
+node_modules/

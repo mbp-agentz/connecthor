@@ -13,8 +13,10 @@ Pentagon Pizza Index + geopolitical prediction-market intel on a 3D globe, in a 
 - **Flow tab** - real Polymarket trades with a whale filter; whale trades arc across the globe
 - **Hotspots tab** - countries ranked by escalation odds × money at stake, with the top market for each; top hotspots are labelled on the globe
 - **Linked intel** - headlines that mention a country link to that country's busiest market
-- **✈ Military aircraft** - live positions of military aircraft broadcasting ADS-B ([adsb.lol](https://adsb.lol), free community data; many military flights don't broadcast, so it's a partial picture)
+- **✈ Military aircraft** - live positions of military aircraft broadcasting ADS-B ([adsb.lol](https://adsb.lol), free community data, with adsb.fi as backup; needs the Cloudflare `/api` proxy; many military flights don't broadcast, so it's a partial picture)
 - **Layer toggles** - switch markets, connections, trades, pizza shops and aircraft on/off (remembered per browser)
+- **🌗 Globe view** - night lights, daylight (Blue Marble), or **live sun**: the real day/night line for right now, updated every minute
+- **Kalshi** - geopolitical series found by tag (Iran, International, International elections), whale trades in Flow, 7-day price chart per market (needs the Cloudflare proxy)
 - **News coverage gauge** - share of world news about military conflict over 7 days ([GDELT](https://www.gdeltproject.org/))
 - **Signal types** - headlines classified as Nuclear / Aerial / Naval / Cyber / Ground / Military / Diplomacy / Economy, with filters
 - **☢ Doomsday Clock** - current setting from the Bulletin of the Atomic Scientists (85 seconds to midnight, Jan 2026)
@@ -33,48 +35,23 @@ To use real data, run your own collector and set `PIZZA_DATA_URL` in `index.html
 
 `id` must match an entry in `SHOPS`; `typical` is 24 hourly values (0-100, ET).
 
-## 🚀 Deploy to GitHub Pages
+## 🚀 Deploy
 
-### Quick Setup (2 minutes)
+### Cloudflare Pages (recommended: full data)
+Browsers can't read Kalshi, the military-aircraft feed or the news RSS feeds directly (no CORS headers, bot challenges). On Cloudflare Pages, `functions/api/[[path]].js` serves them as `/api/*`: an allow-listed proxy with edge caching that also merges the RSS feeds into `/api/news`.
 
-1. **Create a new repository** on GitHub
-   - Go to [github.com/new](https://github.com/new)
-   - Name it `polyglobe` (or any name)
-   - Make it **Public**
-   - Click "Create repository"
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → pick `connecthor`.
+2. Framework preset **None**, build command empty, build output directory `/`.
+3. **Save and Deploy.** Every push to `main` redeploys; other branches get preview URLs.
 
-2. **Upload the files**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/polyglobe.git
-   cd polyglobe
-   # Copy index.html to this folder
-   git add .
-   git commit -m "Initial Polyglobe deployment"
-   git push origin main
-   ```
+Local test: `npx wrangler pages dev .` → http://localhost:8788
 
-3. **Enable GitHub Pages**
-   - Go to your repo → **Settings** → **Pages**
-   - Under "Source", select **main** branch
-   - Click **Save**
-   - Wait 1-2 minutes for deployment
-
-4. **Access your site**
-   ```
-   https://YOUR_USERNAME.github.io/polyglobe/
-   ```
-
-### Alternative: GitHub UI Upload
-
-1. Create repo on GitHub
-2. Click "Add file" → "Upload files"
-3. Drag `index.html` into the upload area
-4. Click "Commit changes"
-5. Enable Pages in Settings
+### GitHub Pages (static only)
+Settings → Pages → deploy from `main`. Works without a server, but with less data: no Kalshi or aircraft, and news falls back to GDELT headlines. The page detects which host it's on.
 
 ## 📊 Polymarket connections
 
-All public and keyless; every REST call tries a direct request first, then falls back to CORS proxies.
+All public and keyless. On Cloudflare Pages every REST call goes through `/api` first (cached, CORS added), then direct; on GitHub Pages calls go direct.
 
 | Connection | Endpoint | Used for |
 |---|---|---|
@@ -89,7 +66,7 @@ All public and keyless; every REST call tries a direct request first, then falls
 |---|---|---|
 | Kalshi | `api.elections.kalshi.com/trade-api/v2/events` | US-regulated, real money; politics/world/economics events only |
 | Manifold | `api.manifold.markets/v0/search-markets` | Play money (Ṁ) — shown but excluded from the NEH index and $ totals |
-| PredictIt | `www.predictit.org/api/marketdata/all/` | US politics, prices only (no volume) |
+| PredictIt | `www.predictit.org/api/marketdata/all/` | US politics, prices only (no volume). Returned 403 to every client tested in Oct 2026, so usually absent |
 
 The market detail panel lists **the same question on other venues** with the odds gap, e.g. Polymarket 40% vs Kalshi 34% (−6). The Markets tab filters by venue.
 

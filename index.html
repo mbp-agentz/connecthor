@@ -12,10 +12,13 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta property="og:image" content="https://mbp-agentz.github.io/connecthor/icon-512.png">
+  <meta property="og:image" content="https://mbp-agentz.github.io/connecthor/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:url" content="https://mbp-agentz.github.io/connecthor/">
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://mbp-agentz.github.io/connecthor/og-image.png">
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/react-globe.gl@2.27.2"></script>
@@ -228,65 +231,48 @@ const{useState,useEffect,useRef,useMemo}=React;
 const Globe=window.Globe;
 
 // ============ NEWS ============
-// RSS via rss2json. NewsAPI's free plan blocks browser requests outside localhost, and
-// its key can't live in a public page; it comes back server-side with the /api proxy.
-const RSS_FEEDS=[
-{url:'https://feeds.bbci.co.uk/news/world/rss.xml',name:'BBC'},
-{url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',name:'NYT'},
-{url:'https://www.aljazeera.com/xml/rss/all.xml',name:'Al Jazeera'},
-{url:'https://feeds.npr.org/1001/rss.xml',name:'NPR'},
-{url:'https://www.theguardian.com/world/rss',name:'Guardian'},
-];
-
-// rss2json returns pubDate as "YYYY-MM-DD HH:MM:SS" in UTC. new Date() reads that as
-// local time (Chrome/Firefox) or Invalid Date (Safari), so normalise to ISO UTC first.
-function parseDate(s) {
-  if (!s) return new Date(NaN);
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) s = s.replace(' ', 'T') + 'Z';
-  return new Date(s);
-}
-
+// Headlines come from /api/news (BBC, NYT, Al Jazeera, NPR and Guardian RSS, fetched and merged
+// server-side by functions/api). rss2json now answers browsers with a Cloudflare challenge and
+// the feeds themselves send no CORS headers, so a static host can't read them. Without the
+// proxy (GitHub Pages, file://) the fallback is GDELT's article list, which does allow CORS.
 const isRecent = (d, ms) => { const age = Date.now() - d.getTime(); return age >= 0 && age < ms; };
+// GDELT stamps look like 20261022T183000Z
+const gdeltDate = s => { const m = String(s).match(/^(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?/); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0))) : new Date(NaN); };
 
-async function fetchFeed(feed) {
-  const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed.url), {
-    signal: AbortSignal.timeout(6000)
-  });
-  if (!r.ok) throw new Error(feed.name + ' HTTP ' + r.status);
-  const d = await r.json();
-  if (d.status !== 'ok' || !d.items) throw new Error(feed.name + ': ' + (d.message || 'bad response'));
-  return d.items.slice(0, 5).map(item => {
-    const time = parseDate(item.pubDate);
-    return {
-      id: 'rss-' + (item.guid || item.link),
-      title: item.title?.replace(/<[^>]+>/g, '').trim() || '',
-      source: feed.name,
-      url: item.link,
-      time,
-      isBreaking: isRecent(time, 3600000), // 1 hour
-    };
-  });
-}
-
-// Fetch all feeds in parallel so one slow/dead feed doesn't stall the rest
-async function fetchRSSFeeds() {
-  const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed));
-  const all = [];
-  results.forEach(r => r.status === 'fulfilled' ? all.push(...r.value) : console.log('RSS error:', r.reason?.message));
+function tidyNews(source, items) {
   const seen = new Set();
   return {
-    source: 'rss',
-    items: all
-      .filter(n => n.title && n.title.length > 10 && !seen.has(n.id) && seen.add(n.id))
+    source,
+    items: items
+      .filter(n => n.title && n.title.length > 10 && !seen.has(n.title.toLowerCase()) && seen.add(n.title.toLowerCase()))
       .sort((a, b) => (b.time.getTime() || 0) - (a.time.getTime() || 0))
       .slice(0, 25)
   };
 }
 
+async function fetchProxyNews() {
+  const d = await getJSON('/api/news', 10000);
+  return tidyNews('rss', (d.items || []).map(n => {
+    const time = new Date(n.time);
+    return { id: 'rss-' + (n.guid || n.url), title: n.title, source: n.source, url: n.url, time, isBreaking: isRecent(time, 3600000) };
+  }));
+}
+
+const GDELT_NEWS_Q = '(military OR missile OR airstrike OR troops OR ceasefire OR sanctions OR nuclear OR invasion OR drone) sourcelang:english';
+async function fetchGdeltNews() {
+  const d = await getJSON(`${GDELT}?query=${encodeURIComponent(GDELT_NEWS_Q)}&mode=artlist&maxrecords=50&sort=datedesc&timespan=6h&format=json`, 25000);
+  return tidyNews('gdelt', (d.articles || []).map(a => {
+    const time = gdeltDate(a.seendate);
+    return { id: 'gd-' + a.url, title: (a.title || '').replace(/\s+([,.:;!?])/g, '$1').trim(), source: (a.domain || 'News').replace(/^www\./, ''), url: a.url, time, isBreaking: isRecent(time, 3600000) };
+  }));
+}
+
 async function fetchNews() {
-  const rss = await fetchRSSFeeds();
-  console.log('✓ RSS: Got', rss.items.length, 'articles');
-  return rss;
+  if (apiUp) {
+    try { const r = await fetchProxyNews(); if (r.items.length) return r; }
+    catch (e) { console.log('News proxy unavailable:', e.message); }
+  }
+  return fetchGdeltNews();
 }
 
 // ============ PIZZA INDEX ============
@@ -393,16 +379,32 @@ const MARKETS=[
 
 // ============ POLYMARKET ============
 // Public, keyless endpoints: Gamma (events/markets), Data API (trades), CLOB (price history)
-// and the CLOB market WebSocket (live prices). REST calls try direct first, then CORS proxies,
-// and remember whichever route worked.
+// and the CLOB market WebSocket (live prices).
 const GAMMA='https://gamma-api.polymarket.com',DATA_API='https://data-api.polymarket.com',CLOB='https://clob.polymarket.com';
 const CLOB_WS='wss://ws-subscriptions-clob.polymarket.com/ws/market';
-const PROXIES=['','https://corsproxy.io/?url=','https://api.allorigins.win/raw?url='];
-let workingProxy=0;
+const GDELT='https://api.gdeltproject.org/api/v2/doc/doc';
+// Our own /api proxy (functions/api, Cloudflare Pages only) adds CORS, a proper User-Agent and
+// edge caching. Hosts that allow CORS are still called direct first and use the proxy only as a
+// fallback: every proxied call counts against the Pages Functions quota (100k/day on the free
+// plan), and Polymarket trades alone poll every 15 s. Hosts without CORS go through the proxy
+// only. Public CORS proxies were dropped: corsproxy.io needs a key, allorigins times out.
+const API_ROUTES=[[GAMMA,'/api/gamma'],[DATA_API,'/api/data'],[CLOB,'/api/clob'],['https://api.elections.kalshi.com/trade-api/v2','/api/kalshi'],
+  ['https://api.manifold.markets/v0','/api/manifold'],['https://www.predictit.org/api/marketdata','/api/predictit'],['https://api.adsb.lol/v2','/api/adsb'],[GDELT,'/api/gdelt']];
+// These send no CORS headers (or block browsers outright), so without the proxy don't even try
+const API_ONLY=/elections\.kalshi\.com|predictit\.org|adsb\.lol/;
+let apiUp=/^https?:$/.test(location.protocol)&&!/github\.io$/.test(location.hostname);
+async function fetchJSON(url,timeout){const r=await fetch(url,{signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function viaProxy(path,timeout){
+  try{return await fetchJSON(path,timeout)}
+  // a static host answers /api with its 404 page: no proxy here, stop asking
+  catch(e){if(/HTTP 404|JSON/.test(e.message))apiUp=false;throw e}
+}
 async function getJSON(url,timeout=8000){
-  const order=[workingProxy,...PROXIES.keys()].filter((v,i,a)=>a.indexOf(v)===i);let err;
-  for(const i of order){try{const r=await fetch(PROXIES[i]?PROXIES[i]+encodeURIComponent(url):url,{signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();workingProxy=i;return d}catch(e){err=e}}
-  throw err;
+  if(url.startsWith('/api/')){if(!apiUp)throw new Error('no /api proxy on this host');return viaProxy(url,timeout)}
+  const route=API_ROUTES.find(([o])=>url.startsWith(o)),proxied=route&&route[1]+url.slice(route[0].length);
+  if(API_ONLY.test(url)){if(!apiUp||!route)throw new Error('needs the /api proxy (no CORS)');return viaProxy(proxied,timeout)}
+  try{return await fetchJSON(url,timeout)}
+  catch(e){if(apiUp&&route)return viaProxy(proxied,timeout);throw e}
 }
 // Gamma returns outcomes/outcomePrices/clobTokenIds as JSON-encoded strings
 const parseArr=v=>{if(Array.isArray(v))return v;try{const x=JSON.parse(v);return Array.isArray(x)?x:[]}catch(e){return typeof v==='string'?v.split(','):[]}};
@@ -412,7 +414,7 @@ const displayPrice=(bid,ask,last)=>bid>0&&ask>0&&ask-bid<=0.1?(bid+ask)/2:last;
 const WHALE_USD=5000;
 const POLY_FEEDS=['tag_slug=geopolitics','tag_slug=world','tag_slug=politics','tag_slug=middle-east','tag_slug=economy',''];
 
-const LOCS={trump:{lat:38.9,lng:-77,c:'USA'},'united states':{lat:38.9,lng:-77,c:'USA'},'u.s.':{lat:38.9,lng:-77,c:'USA'},fed:{lat:38.89,lng:-77.04,c:'USA'},ukraine:{lat:48.38,lng:31.17,c:'Ukraine'},crimea:{lat:45.3,lng:34.1,c:'Ukraine'},russia:{lat:55.76,lng:37.62,c:'Russia'},putin:{lat:55.76,lng:37.62,c:'Russia'},china:{lat:39.9,lng:116.4,c:'China'},xi:{lat:39.9,lng:116.4,c:'China'},taiwan:{lat:25.03,lng:121.57,c:'Taiwan'},iran:{lat:35.69,lng:51.39,c:'Iran'},israel:{lat:31.77,lng:35.22,c:'Israel'},gaza:{lat:31.5,lng:34.47,c:'Gaza'},hamas:{lat:31.5,lng:34.47,c:'Gaza'},lebanon:{lat:33.89,lng:35.5,c:'Lebanon'},syria:{lat:33.51,lng:36.29,c:'Syria'},yemen:{lat:15.37,lng:44.19,c:'Yemen'},venezuela:{lat:10.49,lng:-66.88,c:'Venezuela'},maduro:{lat:10.49,lng:-66.88,c:'Venezuela'},'north korea':{lat:39.03,lng:125.75,c:'North Korea'},'south korea':{lat:37.57,lng:126.98,c:'South Korea'},india:{lat:28.61,lng:77.21,c:'India'},pakistan:{lat:33.68,lng:73.05,c:'Pakistan'},greenland:{lat:64.18,lng:-51.72,c:'Greenland'},nato:{lat:50.88,lng:4.42,c:'NATO'},' eu ':{lat:50.85,lng:4.35,c:'EU'},france:{lat:48.86,lng:2.35,c:'France'},macron:{lat:48.86,lng:2.35,c:'France'},germany:{lat:52.52,lng:13.4,c:'Germany'},' uk ':{lat:51.51,lng:-0.13,c:'UK'},japan:{lat:35.68,lng:139.69,c:'Japan'},mexico:{lat:19.43,lng:-99.13,c:'Mexico'},canada:{lat:45.42,lng:-75.7,c:'Canada'},bitcoin:{lat:37.77,lng:-122.42,c:'USA'},kyiv:{lat:50.45,lng:30.52,c:'Ukraine'},zelensky:{lat:50.45,lng:30.52,c:'Ukraine'},moscow:{lat:55.76,lng:37.62,c:'Russia'},kremlin:{lat:55.76,lng:37.62,c:'Russia'},beijing:{lat:39.9,lng:116.4,c:'China'},tehran:{lat:35.69,lng:51.39,c:'Iran'},khamenei:{lat:35.69,lng:51.39,c:'Iran'},netanyahu:{lat:31.77,lng:35.22,c:'Israel'},hezbollah:{lat:33.89,lng:35.5,c:'Lebanon'},houthi:{lat:15.37,lng:44.19,c:'Yemen'},'kim jong':{lat:39.03,lng:125.75,c:'North Korea'},saudi:{lat:24.71,lng:46.68,c:'Saudi Arabia'},qatar:{lat:25.29,lng:51.53,c:'Qatar'},egypt:{lat:30.04,lng:31.24,c:'Egypt'},turkey:{lat:39.93,lng:32.86,c:'Turkey'},erdogan:{lat:39.93,lng:32.86,c:'Turkey'},modi:{lat:28.61,lng:77.21,c:'India'},starmer:{lat:51.51,lng:-0.13,c:'UK'},britain:{lat:51.51,lng:-0.13,c:'UK'},brazil:{lat:-15.79,lng:-47.88,c:'Brazil'},argentina:{lat:-34.6,lng:-58.38,c:'Argentina'},colombia:{lat:4.71,lng:-74.07,c:'Colombia'},cuba:{lat:23.11,lng:-82.37,c:'Cuba'},panama:{lat:8.98,lng:-79.52,c:'Panama'},poland:{lat:52.23,lng:21.01,c:'Poland'},hungary:{lat:47.5,lng:19.04,c:'Hungary'},serbia:{lat:44.79,lng:20.45,c:'Serbia'},sudan:{lat:15.5,lng:32.56,c:'Sudan'},congo:{lat:-4.32,lng:15.31,c:'DR Congo'},ethiopia:{lat:9.03,lng:38.74,c:'Ethiopia'},somalia:{lat:2.05,lng:45.32,c:'Somalia'},philippines:{lat:14.6,lng:120.98,c:'Philippines'},vietnam:{lat:21.03,lng:105.85,c:'Vietnam'},australia:{lat:-35.28,lng:149.13,c:'Australia'},'south africa':{lat:-25.75,lng:28.19,c:'South Africa'},nigeria:{lat:9.08,lng:7.4,c:'Nigeria'}};
+const LOCS={trump:{lat:38.9,lng:-77,c:'USA'},'united states':{lat:38.9,lng:-77,c:'USA'},'u.s.':{lat:38.9,lng:-77,c:'USA'},fed:{lat:38.89,lng:-77.04,c:'USA'},ukraine:{lat:48.38,lng:31.17,c:'Ukraine'},crimea:{lat:45.3,lng:34.1,c:'Ukraine'},russia:{lat:55.76,lng:37.62,c:'Russia'},putin:{lat:55.76,lng:37.62,c:'Russia'},china:{lat:39.9,lng:116.4,c:'China'},xi:{lat:39.9,lng:116.4,c:'China'},taiwan:{lat:25.03,lng:121.57,c:'Taiwan'},iran:{lat:35.69,lng:51.39,c:'Iran'},israel:{lat:31.77,lng:35.22,c:'Israel'},gaza:{lat:31.5,lng:34.47,c:'Gaza'},hamas:{lat:31.5,lng:34.47,c:'Gaza'},lebanon:{lat:33.89,lng:35.5,c:'Lebanon'},syria:{lat:33.51,lng:36.29,c:'Syria'},yemen:{lat:15.37,lng:44.19,c:'Yemen'},venezuela:{lat:10.49,lng:-66.88,c:'Venezuela'},maduro:{lat:10.49,lng:-66.88,c:'Venezuela'},'north korea':{lat:39.03,lng:125.75,c:'North Korea'},'south korea':{lat:37.57,lng:126.98,c:'South Korea'},india:{lat:28.61,lng:77.21,c:'India'},pakistan:{lat:33.68,lng:73.05,c:'Pakistan'},greenland:{lat:64.18,lng:-51.72,c:'Greenland'},nato:{lat:50.88,lng:4.42,c:'NATO'},' eu ':{lat:50.85,lng:4.35,c:'EU'},france:{lat:48.86,lng:2.35,c:'France'},macron:{lat:48.86,lng:2.35,c:'France'},germany:{lat:52.52,lng:13.4,c:'Germany'},' uk ':{lat:51.51,lng:-0.13,c:'UK'},japan:{lat:35.68,lng:139.69,c:'Japan'},mexico:{lat:19.43,lng:-99.13,c:'Mexico'},canada:{lat:45.42,lng:-75.7,c:'Canada'},bitcoin:{lat:37.77,lng:-122.42,c:'USA'},kyiv:{lat:50.45,lng:30.52,c:'Ukraine'},zelensky:{lat:50.45,lng:30.52,c:'Ukraine'},moscow:{lat:55.76,lng:37.62,c:'Russia'},kremlin:{lat:55.76,lng:37.62,c:'Russia'},beijing:{lat:39.9,lng:116.4,c:'China'},tehran:{lat:35.69,lng:51.39,c:'Iran'},khamenei:{lat:35.69,lng:51.39,c:'Iran'},netanyahu:{lat:31.77,lng:35.22,c:'Israel'},hezbollah:{lat:33.89,lng:35.5,c:'Lebanon'},houthi:{lat:15.37,lng:44.19,c:'Yemen'},hormuz:{lat:26.57,lng:56.25,c:'Iran'},pahlavi:{lat:35.69,lng:51.39,c:'Iran'},romania:{lat:44.43,lng:26.1,c:'Romania'},falkland:{lat:-51.7,lng:-57.85,c:'Falklands'},'kim jong':{lat:39.03,lng:125.75,c:'North Korea'},saudi:{lat:24.71,lng:46.68,c:'Saudi Arabia'},qatar:{lat:25.29,lng:51.53,c:'Qatar'},egypt:{lat:30.04,lng:31.24,c:'Egypt'},turkey:{lat:39.93,lng:32.86,c:'Turkey'},erdogan:{lat:39.93,lng:32.86,c:'Turkey'},modi:{lat:28.61,lng:77.21,c:'India'},starmer:{lat:51.51,lng:-0.13,c:'UK'},britain:{lat:51.51,lng:-0.13,c:'UK'},brazil:{lat:-15.79,lng:-47.88,c:'Brazil'},argentina:{lat:-34.6,lng:-58.38,c:'Argentina'},colombia:{lat:4.71,lng:-74.07,c:'Colombia'},cuba:{lat:23.11,lng:-82.37,c:'Cuba'},panama:{lat:8.98,lng:-79.52,c:'Panama'},poland:{lat:52.23,lng:21.01,c:'Poland'},hungary:{lat:47.5,lng:19.04,c:'Hungary'},serbia:{lat:44.79,lng:20.45,c:'Serbia'},sudan:{lat:15.5,lng:32.56,c:'Sudan'},congo:{lat:-4.32,lng:15.31,c:'DR Congo'},ethiopia:{lat:9.03,lng:38.74,c:'Ethiopia'},somalia:{lat:2.05,lng:45.32,c:'Somalia'},philippines:{lat:14.6,lng:120.98,c:'Philippines'},vietnam:{lat:21.03,lng:105.85,c:'Vietnam'},australia:{lat:-35.28,lng:149.13,c:'Australia'},'south africa':{lat:-25.75,lng:28.19,c:'South Africa'},nigeria:{lat:9.08,lng:7.4,c:'Nigeria'}};
 
 const CONFLICT_RE=/\b(war|invade|invasion|strike|attack|nuclear|military|ceasefire|missile|clash|troops|icbm|article 5|bomb)/i;
 // All places a question mentions, in the order they appear; the first is where the market sits
@@ -432,7 +434,9 @@ const fmtChg=c=>(c>0?'▲':c<0?'▼':'')+Math.abs(c*100).toFixed(1);
 const fmtCents=p=>(p*100).toFixed(p<0.01||p>0.99?1:0)+'¢';
 
 function parseEvent(e){
-  const ms=(e.markets||[]).filter(m=>m.active!==false&&!m.closed);
+  // Resolved markets can stay open for days while settlement runs; their 1/0 prices are stale
+  const now=Date.now(),decided=m=>{const p=num(parseArr(m.outcomePrices)[0]);const end=Date.parse(m.endDate||'');return p>=0.995||p<=0.005||(end<now&&(p>=0.97||p<=0.03))};
+  const ms=(e.markets||[]).filter(m=>m.active!==false&&!m.closed&&!decided(m));
   if(!ms.length)return null;
   // single-market events read best by the event title; multi-outcome events by their busiest market
   const m=ms.length===1?ms[0]:[...ms].sort((a,b)=>num(b.volumeNum??b.volume)-num(a.volumeNum??a.volume))[0];
@@ -447,7 +451,7 @@ function parseEvent(e){
 }
 
 async function fetchPoly(){
-  const res=await Promise.allSettled(POLY_FEEDS.map(q=>getJSON(`${GAMMA}/events?closed=false&active=true&limit=100&order=volume24hr&ascending=false${q?'&'+q:''}`)));
+  const res=await Promise.allSettled(POLY_FEEDS.map(q=>getJSON(`${GAMMA}/events?closed=false&active=true&limit=100&order=volume24hr&ascending=false${q?'&'+q:''}`,15000)));
   const byId=new Map();
   res.forEach(r=>{if(r.status==='fulfilled'&&Array.isArray(r.value))r.value.forEach(e=>{if(!byId.has(e.id)){const m=parseEvent(e);if(m)byId.set(e.id,m)}})});
   return[...byId.values()].sort((a,b)=>b.vol24-a.vol24||b.volume-a.volume);
@@ -513,30 +517,85 @@ const isUSD=m=>SOURCES[m.source]?.cur!=='MANA';
 const fmtMoney=(v,src)=>SOURCES[src]?.cur==='MANA'?'Ṁ'+fmtVol(v).slice(1):fmtVol(v);
 // Kalshi prices come as integer cents, newer responses also as "_dollars" strings
 const kPrice=(m,k)=>m[k+'_dollars']!=null?num(m[k+'_dollars']):num(m[k])/100;
+// Volumes moved to fixed-point strings (volume_fp, volume_24h_fp); older responses had integers
+const kVol=(m,k)=>num(m[k+'_fp']??m[k]);
 
 const KALSHI='https://api.elections.kalshi.com/trade-api/v2';
 const KALSHI_CATS=/politic|election|world|econom|geopolit/i;
+function parseKalshiEvent(e,seriesTitle=''){
+  const ms=(e.markets||[]).filter(m=>!m.status||m.status==='active'||m.status==='open');if(!ms.length)return null;
+  const m=ms.length===1?ms[0]:[...ms].sort((a,b)=>kVol(b,'volume')-kVol(a,'volume'))[0];
+  const sub=ms.length>1?(m.yes_sub_title||m.subtitle||''):'';
+  const question=(e.title||m.title||'')+(sub&&!(e.title||'').includes(sub)?' — '+sub:'');
+  const loc=getLoc(question+' '+(e.sub_title||'')+' '+seriesTitle);if(!loc)return null;
+  const q=kQuote(m);if(!(q.probability>0))return null;
+  return{id:'k-'+m.ticker,ticker:m.ticker,seriesTicker:e.series_ticker,conditionId:'k:'+m.ticker,source:'kalshi',question,eventTitle:e.title,...q,endDate:m.close_time,
+    url:'https://kalshi.com/markets/'+String(e.series_ticker||m.event_ticker||'').toLowerCase(),...loc,category:getCat(question)};
+}
+// Price/volume fields of one Kalshi market. Contracts pay $1, so contract counts ≈ dollars traded
+function kQuote(m){
+  const bid=kPrice(m,'yes_bid'),ask=kPrice(m,'yes_ask'),last=kPrice(m,'last_price'),prev=kPrice(m,'previous_price');
+  const p=displayPrice(bid,ask,last||(bid+ask)/2);
+  return{probability:p,bid,ask,change24:prev>0?p-prev:0,volume:kVol(m,'volume'),vol24:kVol(m,'volume_24h'),liquidity:kPrice(m,'liquidity')};
+}
+// Geopolitical series are found by tag: paging through every open event mostly returns sports,
+// crypto and weather. Discovery costs ~30 calls, so it runs every 30 min; in between, all tracked
+// prices refresh with one /markets?tickers= call (each proxied call counts against the quota).
+const KALSHI_TAGS=['Iran','International','International elections'];
+const KALSHI_REDISCOVER=1800000;
+let kalshiSeries=null,kalshiFound={at:0,markets:[]};
+async function kalshiGeoSeries(){
+  if(kalshiSeries)return kalshiSeries;
+  const res=await Promise.allSettled(KALSHI_TAGS.map(t=>getJSON(`${KALSHI}/series?tags=${encodeURIComponent(t)}&include_volume=true`,20000)));
+  const by=new Map();
+  // Lifetime volume favours long-resolved series (Next Pope, Nobel…), so keep only series that
+  // name a place the globe knows; those are far more likely to have open events
+  res.forEach(r=>{if(r.status==='fulfilled')(r.value.series||[]).forEach(x=>{if(num(x.volume_fp)>0&&!by.has(x.ticker)&&(getLoc(x.title||'')||(x.tags||[]).includes('Iran')))by.set(x.ticker,{ticker:x.ticker,title:x.title||'',vol:num(x.volume_fp)})})});
+  if(!by.size)throw(res.find(r=>r.status==='rejected')||{}).reason||new Error('no Kalshi series');
+  return kalshiSeries=[...by.values()].sort((a,b)=>b.vol-a.vol).slice(0,36);
+}
+async function discoverKalshi(){
+  const out=new Map(),add=(e,t)=>{const m=parseKalshiEvent(e,t);if(m&&!out.has(m.id))out.set(m.id,m)};
+  try{
+    // Small, spaced batches with one retry: bursts of 8 drew 429s from Kalshi
+    let todo=await kalshiGeoSeries();
+    for(let pass=0;pass<2&&todo.length;pass++){
+      const failed=[];
+      for(let i=0;i<todo.length;i+=4){
+        if(i||pass)await new Promise(r=>setTimeout(r,pass?1500:300));
+        const batch=todo.slice(i,i+4);
+        const res=await Promise.allSettled(batch.map(x=>getJSON(`${KALSHI}/events?status=open&with_nested_markets=true&series_ticker=${encodeURIComponent(x.ticker)}`,10000)));
+        res.forEach((r,j)=>r.status==='fulfilled'?(r.value.events||[]).forEach(e=>add(e,batch[j].title)):failed.push(batch[j]));
+      }
+      todo=failed;
+    }
+  }catch(e){console.log('Kalshi series discovery failed:',e.message)}
+  // fallback: the first page of all open events, filtered by category
+  if(out.size<5){const d=await getJSON(`${KALSHI}/events?status=open&with_nested_markets=true&limit=200`,10000);(d.events||[]).forEach(e=>{if(!e.category||KALSHI_CATS.test(e.category))add(e)})}
+  return[...out.values()];
+}
 async function fetchKalshi(){
-  const out=[];let cursor='';
-  for(let page=0;page<3;page++){
-    const d=await getJSON(`${KALSHI}/events?status=open&with_nested_markets=true&limit=200${cursor?'&cursor='+encodeURIComponent(cursor):''}`,10000);
-    (d.events||[]).forEach(e=>{
-      if(e.category&&!KALSHI_CATS.test(e.category))return;
-      const ms=(e.markets||[]).filter(m=>!m.status||m.status==='active'||m.status==='open');if(!ms.length)return;
-      const m=ms.length===1?ms[0]:[...ms].sort((a,b)=>num(b.volume)-num(a.volume))[0];
-      const sub=ms.length>1?(m.yes_sub_title||m.subtitle||''):'';
-      const question=(e.title||m.title||'')+(sub&&!(e.title||'').includes(sub)?' — '+sub:'');
-      const loc=getLoc(question+' '+(e.sub_title||''));if(!loc)return;
-      const bid=kPrice(m,'yes_bid'),ask=kPrice(m,'yes_ask'),last=kPrice(m,'last_price'),prev=kPrice(m,'previous_price');
-      const p=displayPrice(bid,ask,last||(bid+ask)/2);if(!(p>0))return;
-      // Kalshi contracts pay $1, so contract counts ≈ dollars traded
-      out.push({id:'k-'+m.ticker,source:'kalshi',question,eventTitle:e.title,probability:p,bid,ask,change24:prev>0?p-prev:0,
-        volume:num(m.volume),vol24:num(m.volume_24h),liquidity:kPrice(m,'liquidity'),endDate:m.close_time,
-        url:'https://kalshi.com/markets/'+String(e.series_ticker||m.event_ticker||'').toLowerCase(),...loc,category:getCat(question)});
-    });
-    cursor=d.cursor;if(!cursor)break;
-  }
-  return out;
+  if(Date.now()-kalshiFound.at>KALSHI_REDISCOVER||!kalshiFound.markets.length){kalshiFound={at:Date.now(),markets:await discoverKalshi()};return kalshiFound.markets}
+  const ms=kalshiFound.markets;
+  const d=await getJSON(`${KALSHI}/markets?tickers=${ms.map(m=>m.ticker).join(',')}&limit=1000`,10000);
+  const by=new Map((d.markets||[]).map(x=>[x.ticker,x]));
+  // a market that closed since discovery drops out
+  return kalshiFound.markets=ms.filter(m=>{const x=by.get(m.ticker);return x&&(!x.status||x.status==='active'||x.status==='open')}).map(m=>({...m,...kQuote(by.get(m.ticker))}));
+}
+// Latest fills on one Kalshi market; the taker buys Yes or No at that side's price
+async function fetchKalshiTrades(m){
+  const d=await getJSON(`${KALSHI}/markets/trades?ticker=${encodeURIComponent(m.ticker)}&limit=50`,10000);
+  return(d.trades||[]).map(t=>{const yes=t.taker_outcome_side!=='no',price=num(yes?t.yes_price_dollars:t.no_price_dollars);
+    // shown like Polymarket fills: buying No at 76¢ is selling Yes at 24¢
+    return{id:'k:'+t.trade_id,conditionId:m.conditionId,title:m.question,outcome:'Yes',side:yes?'BUY':'SELL',price:yes?price:1-price,usd:num(t.count_fp)*price,time:new Date(t.created_time),who:'Kalshi',url:m.url}}).filter(t=>t.usd>=100); // same floor as the Polymarket feed
+}
+// 7 days of hourly candles; hour-aligned bounds so every viewer hits the same cached URL
+async function fetchKalshiHistory(m){
+  const end=Math.floor(Date.now()/3600000)*3600,start=end-7*86400;
+  const d=await getJSON(`${KALSHI}/series/${encodeURIComponent(m.seriesTicker)}/markets/${encodeURIComponent(m.ticker)}/candlesticks?start_ts=${start}&end_ts=${end}&period_interval=60`,10000);
+  let last=null;
+  return(d.candlesticks||[]).map(c=>{const close=c.price?.close_dollars,b=c.yes_bid?.close_dollars,a=c.yes_ask?.close_dollars;
+    const p=close!=null?num(close):b!=null&&a!=null?(num(b)+num(a))/2:last;last=p;return{t:num(c.end_period_ts)*1000,p}}).filter(x=>x.p!=null&&x.t>0);
 }
 
 const MANIFOLD='https://api.manifold.markets/v0';
@@ -580,7 +639,8 @@ function similarMarkets(m,all){
 // ============ OSINT LAYERS ============
 // Military aircraft broadcasting ADS-B, from the community aggregator adsb.lol (free, no key)
 async function fetchMilAir(){
-  const d=await getJSON('https://api.adsb.lol/v2/mil',10000);
+  // ~200 KB, and the proxy may try adsb.lol then adsb.fi (10 s each)
+  const d=await getJSON('https://api.adsb.lol/v2/mil',25000);
   const ac=Array.isArray(d.ac)?d.ac:Array.isArray(d.aircraft)?d.aircraft:[];
   return ac.filter(a=>isFinite(a.lat)&&isFinite(a.lon)&&a.alt_baro!=='ground').map(a=>({id:'air-'+a.hex,isAir:true,lat:+a.lat,lng:+a.lon,
     callsign:String(a.flight||a.r||a.hex||'').trim(),type:a.t||a.desc||'',reg:a.r||'',alt:typeof a.alt_baro==='number'?a.alt_baro:null,speed:a.gs!=null?Math.round(a.gs):null,track:a.track,squawk:a.squawk||''}));
@@ -588,10 +648,62 @@ async function fetchMilAir(){
 // Share of world news coverage about military conflict, last 7 days (GDELT DOC 2.0)
 const GDELT_Q='(airstrike OR missile OR "military strike" OR invasion OR "armed conflict" OR shelling)';
 async function fetchCoverage(){
-  const d=await getJSON(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(GDELT_Q)}&mode=timelinevol&timespan=7d&timelinesmooth=3&format=json`,12000);
+  const d=await getJSON(`${GDELT}?query=${encodeURIComponent(GDELT_Q)}&mode=timelinevol&timespan=7d&timelinesmooth=3&format=json`,25000);
   const pts=(d.timeline?.[0]?.data||[]).map(x=>{const m=String(x.date).match(/^(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?/);return m?{t:Date.UTC(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)),v:num(x.value)}:null}).filter(Boolean);
   return pts.length>2?pts:null;
 }
+// ============ DAY / NIGHT ============
+// Pinned textures (three-globe example images): city lights for night, Blue Marble for day
+const TEX='https://unpkg.com/three-globe@2.45.6/example/img/';
+const NIGHT_TEX=TEX+'earth-night.jpg',DAY_TEX=TEX+'earth-blue-marble.jpg';
+const GLOBE_VIEWS={night:'🌙 Night',day:'☀️ Day',live:'🌗 Live sun'};
+// Where the sun is overhead right now (low-precision solar ephemeris, good to well under a degree)
+function subsolar(t=Date.now()){
+  const d=t/86400000-10957.5,rad=Math.PI/180; // days since J2000.0
+  const g=(357.529+0.98560028*d)*rad,L=(280.459+0.98564736*d+1.915*Math.sin(g)+0.02*Math.sin(2*g))*rad,e=(23.439-3.6e-7*d)*rad;
+  const dec=Math.asin(Math.sin(e)*Math.sin(L)),ra=Math.atan2(Math.cos(e)*Math.sin(L),Math.cos(L))/rad;
+  const gmst=280.46061837+360.98564736629*d;
+  return{lat:dec/rad,lng:((ra-gmst)%360+540)%360-180};
+}
+// Live mode patches the globe's own material instead of swapping in a ShaderMaterial: the UMD
+// bundle doesn't export three.js, and a second copy of three would split the renderer's state.
+// The day texture stays the material's map; the night texture is blended in by sun angle.
+// react-globe.gl 2.27's ref has no globeMaterial(), so find the textured sphere in the scene
+function globeMat(globe){
+  if(typeof globe.globeMaterial==='function')return globe.globeMaterial();
+  let m=null;globe.scene().traverse(o=>{if(!m&&o.isMesh&&o.material&&o.material.isMeshPhongMaterial&&o.geometry&&o.geometry.type==='SphereGeometry')m=o.material});
+  return m;
+}
+// Any failure here leaves the normal globe: the view switch must never take the page down
+function applyDayNight(globe,on){
+  let mat=null;try{mat=globeMat(globe)}catch(e){console.log('Day/night unavailable:',e.message)}
+  if(!on){if(mat&&mat.userData.dayNight){delete mat.onBeforeCompile;delete mat.customProgramCacheKey;delete mat.userData.dayNight;mat.needsUpdate=true}return()=>{}}
+  let off=false,timer=null,tick=null,tries=0;
+  const img=new Image();img.crossOrigin='anonymous';
+  const setup=()=>{
+    if(off)return;
+    try{if(!mat)mat=globeMat(globe)}catch(e){}
+    // wait for the globe mesh and its day texture (we clone that Texture to hold the night image)
+    if(!mat||!mat.map){if(++tries<60)timer=setTimeout(setup,300);return}
+    // clone() shares the image Source with the day map, so give the copy its own Source first
+    const night=mat.map.clone();if(mat.map.source)night.source=new mat.map.source.constructor(img);else night.image=img;night.needsUpdate=true;
+    const sun={value:{x:0,y:0,z:1}};
+    mat.userData.dayNight=true;
+    mat.onBeforeCompile=sh=>{
+      sh.uniforms.nightMap={value:night};sh.uniforms.sunDir=sun;
+      sh.vertexShader='varying vec3 vWorldN;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvWorldN=normalize(mat3(modelMatrix)*objectNormal);');
+      sh.fragmentShader='uniform sampler2D nightMap;\nuniform vec3 sunDir;\nvarying vec3 vWorldN;\n'+sh.fragmentShader.replace('#include <map_fragment>',
+        '#include <map_fragment>\nfloat dayK=smoothstep(-0.1,0.1,dot(normalize(vWorldN),sunDir));\ndiffuseColor.rgb=mix(texture2D(nightMap,vMapUv).rgb*1.5,diffuseColor.rgb,dayK);');
+    };
+    mat.customProgramCacheKey=()=>'connecthor-daynight';mat.needsUpdate=true;
+    // getCoords maps lat/lng into the globe's own frame, so no axis conventions to get wrong
+    tick=()=>{const p=subsolar(),c=globe.getCoords(p.lat,p.lng,0),l=Math.hypot(c.x,c.y,c.z)||1;sun.value={x:c.x/l,y:c.y/l,z:c.z/l}};
+    tick();timer=setInterval(tick,60000);
+  };
+  img.onload=setup;img.src=NIGHT_TEX;
+  return()=>{off=true;clearTimeout(timer);clearInterval(timer)};
+}
+
 // Bulletin of the Atomic Scientists, set 27 Jan 2026
 const DOOMSDAY={seconds:85,set:'Jan 2026',prev:89,url:'https://thebulletin.org/doomsday-clock/'};
 
@@ -627,7 +739,7 @@ const ARC_COLORS={Conflict:['rgba(249,115,22,0.8)','rgba(239,68,68,0.25)'],Trump
 function genArcs(ms,flows){
   const out=[],seen=new Set();
   ms.forEach(m=>(m.links||[]).forEach(l=>{const k=[m.country,l.country].sort().join('|');if(seen.has(k)||out.length>=40)return;seen.add(k);
-    out.push({startLat:m.lat,startLng:m.lng,endLat:l.lat,endLng:l.lng,color:ARC_COLORS[m.category]||['rgba(59,130,246,0.7)','rgba(139,92,246,0.15)'],stroke:0.5+Math.min(m.vol24/2e6,1),dashLength:0.4,dashGap:0.25,dashAnimateTime:7000+out.length*373%3000,initGap:hash(k),altitude:null})}));
+    out.push({startLat:m.lat,startLng:m.lng,endLat:l.lat,endLng:l.lng,color:ARC_COLORS[m.category]||['rgba(59,130,246,0.7)','rgba(139,92,246,0.15)'],stroke:0.5+Math.min((m.vol24||0)/2e6,1),dashLength:0.4,dashGap:0.25,dashAnimateTime:7000+out.length*373%3000,initGap:hash(k),altitude:null})}));
   genArcsDC(ms.filter(m=>m.country!=='USA'&&!(m.links||[]).some(l=>l.country==='USA'))).forEach(a=>out.push(a));
   return out.concat(flows||[]);
 }
@@ -855,6 +967,8 @@ const[coverage,setCoverage]=useState(null);
 const[sigFilter,setSigFilter]=useState('ALL');
 const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:true,air:true};
 const[layers,setLayers]=useState(()=>{try{return{...LAYER_DEFAULTS,...JSON.parse(localStorage.getItem('ct-layers')||'{}')}}catch(e){return LAYER_DEFAULTS}});
+const[globeView,setGlobeView]=useState(()=>{try{const v=localStorage.getItem('ct-view');return GLOBE_VIEWS[v]?v:'night'}catch(e){return'night'}});
+const cycleView=()=>setGlobeView(v=>{const ks=Object.keys(GLOBE_VIEWS),n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('ct-view',n)}catch(e){}return n});
 const toggleLayer=k=>setLayers(l=>{const n={...l,[k]:!l[k]};try{localStorage.setItem('ct-layers',JSON.stringify(n))}catch(e){}return n});
 const marketsRef=useRef(markets);marketsRef.current=markets;
 const pizzaRef=useRef(null);pizzaRef.current=pizza;
@@ -871,7 +985,7 @@ if(document.hidden&&newsRef.current)return;
 try{
 const result=await fetchNews();
 if(result&&result.items.length>0){setNews(result.items);setNewsSource(result.source);setNewsLastUpd(new Date())}
-}catch(e){console.log('News error:',e)}
+}catch(e){console.log('News error:',e);if(!newsRef.current)setNewsSource('off')}
 setNewsLoading(false);
 };
 loadNews();
@@ -887,7 +1001,7 @@ const res=await Promise.allSettled(keys.map(k=>FETCHERS[k]()));
 const st={},all=[];
 res.forEach((r,i)=>{const k=keys[i];if(r.status==='fulfilled'&&r.value.length){st[k]=r.value.length;all.push(...r.value)}else{st[k]=0;console.log(srcName(k)+' unavailable:',r.reason?.message||'no geo markets')}});
 setVenues(st);
-if(all.length>5){
+if(all.some(isUSD)){
 // keep live Polymarket prices from the stream when a refresh lands
 setMarkets(prev=>{const old=new Map(prev.map(m=>[m.id,m]));return all.map(m=>{const o=old.get(m.id);return o&&o.flashAt?{...m,probability:o.probability,flash:o.flash,flashAt:o.flashAt}:m})});
 setActivities(genActs(all));setDataSource('live');setLastUpd(new Date());setSelected(s=>s&&(all.find(m=>m.id===s.id)||s));
@@ -900,9 +1014,9 @@ return()=>clearInterval(i);
 
 // Military aircraft every 60s, GDELT coverage every 30 min
 useEffect(()=>{
-const loadAir=async()=>{if(document.hidden&&air)return;try{setAir(await fetchMilAir())}catch(e){setAir(a=>a||[]);console.log('Aircraft feed unavailable:',e.message)}};
+const loadAir=async()=>{if(document.hidden&&air)return;try{setAir(await fetchMilAir())}catch(e){console.log('Aircraft feed unavailable:',e.message)}}; // keep the last fix; never show a fake 0
 const loadCov=async()=>{try{const c=await fetchCoverage();if(c)setCoverage(c)}catch(e){console.log('GDELT unavailable:',e.message)}};
-loadAir();loadCov();const i=setInterval(loadAir,60000),j=setInterval(loadCov,1800000);return()=>{clearInterval(i);clearInterval(j)};
+loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,60000),j=setInterval(loadCov,1800000);return()=>{clearTimeout(k);clearInterval(i);clearInterval(j)};
 },[]);
 
 // Shareable links: #m=<market id>; Esc closes the detail panel
@@ -913,24 +1027,34 @@ useEffect(()=>{const k=e=>{if(e.key==='Escape')setSelected(null)};window.addEven
 
 // Real trades: poll the Data API, pulse the globe where they land, arc in the whales
 useEffect(()=>{
-const seen=new Set();let first=true;
-const load=async()=>{
-if(document.hidden&&!first)return;
-try{
-const ts=await fetchTrades();setTradesLive(true);
+const seen=new Set();let first=true,kFirst=true;
+// The first batch of each feed is history: list it, but only pulse trades that arrive later
+const ingest=(ts,pulse)=>{
 const fresh=ts.filter(t=>!seen.has(t.id));fresh.forEach(t=>seen.add(t.id));
 if(fresh.length)setTrades(prev=>[...fresh,...prev].sort((a,b)=>b.time-a.time).slice(0,150));
-if(!first){
+if(pulse){
 const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
 const hits=fresh.map(t=>({t,m:byCond.get(t.conditionId)})).filter(x=>x.m).slice(0,20);
 if(hits.length)setPulses(ps=>[...ps.filter(p=>p.until>now),...hits.map(({t,m})=>{const w=t.usd>=WHALE_USD;return{id:t.id,lat:m.lat,lng:m.lng,whale:w,side:t.side,until:now+(w?15000:8000),maxR:w?5:2.5,propagationSpeed:w?1.6:1,repeatPeriod:w?1600:2600,color:t.side==='SELL'?'#ef4444':'#22c55e'}})]);
 }
-first=false;
-}catch(e){setTradesLive(v=>v===null?false:v);console.log('Trades error:',e.message)}
 };
-load();const i=setInterval(load,15000);
+const load=async()=>{
+if(document.hidden&&!first)return;
+try{const ts=await fetchTrades();setTradesLive(true);ingest(ts,!first);first=false}
+catch(e){setTradesLive(v=>v===null?false:v);console.log('Trades error:',e.message)}
+};
+// Kalshi has no public firehose worth reading (mostly sports and 15-min crypto), so poll the
+// three busiest tracked markets every 2 min: proxied calls count against the Functions quota
+const loadK=async()=>{
+if(document.hidden&&!kFirst)return;
+const top=marketsRef.current.filter(m=>m.source==='kalshi'&&m.ticker).sort((a,b)=>(b.vol24||0)-(a.vol24||0)).slice(0,3);if(!top.length)return;
+const res=await Promise.allSettled(top.map(fetchKalshiTrades));
+ingest(res.flatMap(r=>r.status==='fulfilled'?r.value:[]),!kFirst);kFirst=false;
+};
+// until the first Kalshi batch lands (discovery takes a few seconds), retry every 20 s
+load();const i=setInterval(load,15000);const k0=setInterval(()=>{if(kFirst)loadK()},20000),k=setInterval(loadK,120000);
 const gc=setInterval(()=>setPulses(ps=>ps.length&&ps.some(p=>p.until<=Date.now())?ps.filter(p=>p.until>Date.now()):ps),2000);
-return()=>{clearInterval(i);clearInterval(gc)};
+return()=>{clearInterval(i);clearInterval(gc);clearInterval(k0);clearInterval(k)};
 },[]);
 
 // Live prices for the busiest 100 markets over the CLOB WebSocket
@@ -943,10 +1067,13 @@ setMarkets(ms=>ms.map(apply));setSelected(s=>s&&apply(s));
 });
 
 // Price history for the selected market
-useEffect(()=>{setHistory(null);if(!selected?.tokenYes)return;let off=false;fetchHistory(selected.tokenYes).then(h=>{if(!off)setHistory(h)}).catch(()=>{if(!off)setHistory([])});return()=>{off=true}},[selected?.tokenYes]);
+useEffect(()=>{setHistory(null);const s=selected;const job=s?.tokenYes?fetchHistory(s.tokenYes):s?.seriesTicker&&s.ticker?fetchKalshiHistory(s):null;if(!job)return;let off=false;job.then(h=>{if(!off)setHistory(h)}).catch(()=>{if(!off)setHistory([])});return()=>{off=true}},[selected?.tokenYes||selected?.ticker]);
 
 const lastTouch=useRef(0);
 useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;const i=setInterval(()=>{if(document.hidden||Date.now()-lastTouch.current<45000)return;const c=marketsRef.current.filter(m=>isUSD(m)&&m.volume>1e6);if(c.length>0){const m=c[Math.floor(Math.random()*c.length)];setHighlighted(m);off=setTimeout(()=>setHighlighted(null),8000)}},25000);return()=>{clearInterval(i);clearTimeout(off)}},[markets.length>0]);
+
+// Live sun: blend day/night textures along the real terminator
+useEffect(()=>{if(!globeEl.current||!HAS_WEBGL)return;try{return applyDayNight(globeEl.current,globeView==='live')}catch(e){console.log('Day/night unavailable:',e.message)}},[globeView,gsize.w>0]);
 
 // Size the globe to its grid cell, not the window
 useEffect(()=>{const el=globeWrap.current;if(!el)return;const ro=new ResizeObserver(([e])=>setGsize({w:Math.round(e.contentRect.width),h:Math.round(e.contentRect.height)}));ro.observe(el);return()=>ro.disconnect()},[]);
@@ -965,6 +1092,7 @@ const neh=useMemo(()=>nehIndex(markets),[markets]);
 const nehPrev=useMemo(()=>nehIndex(markets.map(m=>({...m,probability:Math.min(1,Math.max(0,m.probability-(m.change24||0)))}))).score,[markets]);
 const movers=useMemo(()=>[...markets].filter(m=>m.change24).sort((a,b)=>Math.abs(b.change24)-Math.abs(a.change24)).slice(0,5),[markets]);
 const whales=useMemo(()=>trades.filter(t=>t.usd>=WHALE_USD).slice(0,5),[trades]);
+const geoWhales=useMemo(()=>{const c=new Set(markets.map(m=>m.conditionId).filter(Boolean));return trades.filter(t=>t.usd>=WHALE_USD&&c.has(t.conditionId)).slice(0,2)},[trades,markets]);
 const whaleKey=pulses.filter(p=>p.whale).map(p=>p.id).join('|');
 const flowArcs=useMemo(()=>pulses.filter(p=>p.whale).map(p=>({startLat:PENTAGON.lat,startLng:PENTAGON.lng,endLat:p.lat,endLng:p.lng,color:p.side==='SELL'?['rgba(239,68,68,0.1)','rgba(239,68,68,0.95)']:['rgba(34,197,94,0.1)','rgba(34,197,94,0.95)'],stroke:1.4,dashLength:1,dashGap:0,dashAnimateTime:0,altitude:0.35})),[whaleKey]);
 const nl=nehLabel(neh.score);
@@ -986,10 +1114,10 @@ const pickPoint=d=>{if(d.isShop||d.isAir){if(d.isAir)window.open('https://globe.
 const tickerItems=useMemo(()=>{
 const head=[{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
 ...movers.slice(0,3).map(m=>({text:`${m.change24>0?'📈':'📉'} ${m.question} ${fmtProb(m.probability)} (${fmtChg(m.change24)} 24h)`,onClick:()=>setSelected(m)})),
-...whales.slice(0,2).map(t=>({text:`🐋 ${fmtVol(t.usd)} ${t.side} ${t.outcome} — ${t.title}`,href:t.url}))];
+...geoWhales.map(t=>({text:`🐋 ${fmtVol(t.usd)} ${t.side} ${t.outcome} — ${t.title}`,href:t.url}))];
 if(news.length===0){const r=[...head,{text:'Loading live news…'}];r.placeholder=true;return r}
 return[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.source+': '+n.title,href:n.url}))];
-},[news,dc,neh.score,movers,whales]);
+},[news,dc,neh.score,movers,geoWhales]);
 const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(markets),[markets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
@@ -1050,7 +1178,7 @@ return(
 </div>
 {(selected.bid>0||selected.liquidity>0||selected.endDate)&&<div className="shop-meta" style={{marginTop:8}}>{[selected.bid>0&&`Bid ${fmtCents(selected.bid)} · Ask ${fmtCents(selected.ask)}`,selected.liquidity>0&&`Liquidity ${fmtMoney(selected.liquidity,selected.source)}`].filter(Boolean).join(' · ')}{selected.endDate&&<>{(selected.bid>0||selected.liquidity>0)?' · ':''}{fmtLeft(selected.endDate)}</>}</div>}
 {selected.links?.length>0&&<div className="shop-meta" style={{marginTop:4}}>Connects {selected.country} ↔ {selected.links.map(l=>l.country).join(', ')}</div>}
-{selected.tokenYes&&<PriceChart data={history&&(history.length?[...history,{t:Date.now(),p:selected.probability}]:history)}/>}
+{(selected.tokenYes||selected.seriesTicker)&&<PriceChart data={history&&(history.length?[...history,{t:Date.now(),p:selected.probability}]:history)}/>}
 {similar.length>0&&<div style={{marginTop:12,borderTop:'1px solid var(--border)',paddingTop:8}}><div className="dc-kicker" style={{marginBottom:4}}>SAME QUESTION ELSEWHERE</div>{similar.map(({m})=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {srcName(m.source)} · {m.question}</span><span className="mono" style={{color:Math.abs(m.probability-selected.probability)>=0.05?'var(--yellow)':undefined}}>{fmtProb(m.probability)}{Math.abs(m.probability-selected.probability)>=0.01?' ('+(m.probability>selected.probability?'+':'−')+Math.round(Math.abs(m.probability-selected.probability)*100)+')':''}</span></div>)}</div>}
 {selected.url&&<a href={selected.url} target="_blank" rel="noopener noreferrer" className="detail-link">View on {srcName(selected.source)} →</a>}
 </div>)}
@@ -1058,9 +1186,10 @@ return(
 <div className="layers" role="group" aria-label="Globe layers">
 {[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null]].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
+{HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
 <Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} dcColor={DOUGHCON[dc].color}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
-{gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl="https://unpkg.com/three-globe/example/img/earth-night.jpg" bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png" backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
+{gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl={globeView==='night'?NIGHT_TEX:DAY_TEX} bumpImageUrl={TEX+'earth-topology.png'} backgroundImageUrl={TEX+'night-sky.png'}
 polygonsData={countries.features||[]} polygonCapColor={()=>'rgba(0,0,0,0)'} polygonSideColor={()=>'rgba(100,150,200,0.05)'} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={0.005}
 pointsData={globePoints} pointLat="lat" pointLng="lng"
 pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:d.isShop?0.01+(d.ratio||0)*0.02:Math.min(0.05+(isUSD(d)?d.volume:d.volume/100)/50000000,0.18)}
@@ -1084,7 +1213,7 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 <div className="scroll">
 {tab==='news'&&(<>
 <div style={{padding:'0 2px 8px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-<span className={`news-status ${newsSource==='rss'?'rss':''}`}>{newsSource==='rss'?'📡 RSS Feeds':'⏳ Connecting'}</span>
+<span className={`news-status ${newsSource==='gdelt'||newsSource==='off'?'rss':''}`}>{newsSource==='rss'?'📡 RSS Feeds':newsSource==='gdelt'?'🌐 GDELT':newsSource==='off'?'⚠ News offline · retrying':'⏳ Connecting'}</span>
 {newsLastUpd&&<span style={{fontSize:9,color:'var(--muted)'}}>Updated {fmtTime(newsLastUpd)}</span>}
 </div>
 <CoverageChart data={coverage}/>
@@ -1118,7 +1247,7 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 </>)}
 {tab==='activity'&&(tradesLive?(<>
 <div className="tabs"><button className={`tab ${!whaleOnly?'active':''}`} onClick={()=>setWhaleOnly(false)}>All ≥ $100</button><button className={`tab ${whaleOnly?'active':''}`} onClick={()=>setWhaleOnly(true)}>🐋 Whales ≥ {fmtVol(WHALE_USD)}</button></div>
-<div className="note" style={{paddingTop:0}}>Live fills from the Polymarket Data API · refreshes every 15s</div>
+<div className="note" style={{paddingTop:0}}>Live fills: Polymarket every 15 s, plus the three busiest Kalshi markets every 2 min</div>
 {trades.filter(t=>!whaleOnly||t.usd>=WHALE_USD).slice(0,60).map(t=>{const m=markets.find(x=>x.conditionId===t.conditionId);return(
 <div key={t.id} className={`act ${t.usd>=WHALE_USD?'whale':''}`} style={{cursor:m||t.url?'pointer':'default'}} onClick={()=>m?setSelected(m):t.url&&window.open(t.url,'_blank','noopener')}>
 <span>{t.usd>=WHALE_USD?'🐋':t.side==='BUY'?'📈':'📉'}</span>
