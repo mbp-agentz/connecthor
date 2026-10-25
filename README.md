@@ -28,7 +28,7 @@ Google Maps Popular Times has no public API and can't be read from a static page
 To use real data, run your own collector and set `PIZZA_DATA_URL` in `index.html` to a JSON endpoint returning:
 
 ```json
-{"updated":"2026-10-08T20:00:00Z","shops":[{"id":"dominos-pc","live":72,"typical":[0,0,0,0,0,0,0,0,0,0,10,25,45,40,30,28,35,55,70,72,60,45,30,15]}]}
+{"updated":"2026-10-08T20:00:00Z","shops":[{"id":"shop-1","live":72,"typical":[0,0,0,0,0,0,0,0,0,0,10,25,45,40,30,28,35,55,70,72,60,45,30,15]}]}
 ```
 
 `id` must match an entry in `SHOPS`; `typical` is 24 hourly values (0-100, ET).

@@ -31,6 +31,7 @@ A summary of the original build conversation (Oct 2026), so a new Claude session
    - Shareable `#m=<id>` links and Esc to close.
 9. **Launch review:** PizzINT credit, a footer, generic shop names and removing the NewsAPI key are still to do (see CLAUDE.md). A Cloudflare Pages + Functions move is recommended, so feeds go through a cached `/api` proxy that holds up under traffic.
 10. **Handoff:** CLAUDE.md and this file were written so the project can move to another repo/account and Claude session.
+11. **Move (2026-10-22):** the repo moved to `mbp-agentz/connecthor`; the site is now https://mbp-agentz.github.io/connecthor/. First work there: the pre-launch fixes (generic shop names, NewsAPI removed, footer with credit and disclaimer, share-card tags).
 
 ## Decisions and why
 | Decision | Why |

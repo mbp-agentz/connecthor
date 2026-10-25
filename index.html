@@ -12,7 +12,10 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta property="og:image" content="icon-512.png">
+  <meta property="og:image" content="https://mbp-agentz.github.io/connecthor/icon-512.png">
+  <meta property="og:url" content="https://mbp-agentz.github.io/connecthor/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/react-globe.gl@2.27.2"></script>
@@ -23,7 +26,7 @@
     body{font-family:Inter,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
     #root{height:100%}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-    .app{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:340px 1fr 320px;grid-template-areas:"h h h" "l g r" "t t t";height:100vh}
+    .app{display:grid;grid-template-rows:auto 1fr auto auto;grid-template-columns:340px 1fr 320px;grid-template-areas:"h h h" "l g r" "t t t" "f f f";height:100vh}
 
     /* header */
     .header{grid-area:h;background:linear-gradient(to bottom,var(--bg),rgba(10,15,26,0.95));border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:100}
@@ -152,6 +155,8 @@
 
     /* ticker */
     .ticker{grid-area:t;background:linear-gradient(90deg,rgba(220,38,38,0.15),rgba(239,68,68,0.1));border-top:1px solid rgba(239,68,68,0.3);padding:8px 0;overflow:hidden;display:flex;align-items:center}
+    .foot{grid-area:f;font-size:10px;color:var(--faint);padding:5px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:space-between}
+    .foot a{color:var(--muted)}
     .ticker-lbl{position:relative;z-index:2;box-shadow:12px 0 12px rgba(10,15,26,0.9);background:var(--red);color:white;padding:4px 12px;font-size:10px;font-weight:700;margin-right:16px;flex-shrink:0;display:flex;align-items:center;gap:6px}
     .ticker-lbl .livedot{width:6px;height:6px;background:white;border-radius:50%;animation:pulse 1s infinite}
     .ticker-scroll{display:flex;animation:scroll 120s linear infinite;white-space:nowrap;will-change:transform}
@@ -197,7 +202,7 @@
 
     @media(max-width:1100px){
       body{overflow:auto;height:auto}
-      .app{height:auto;grid-template-columns:1fr;grid-template-rows:auto auto 70vh auto auto;grid-template-areas:"h" "l" "g" "r" "t"}
+      .app{height:auto;grid-template-columns:1fr;grid-template-rows:auto auto 70vh auto auto auto;grid-template-areas:"h" "l" "g" "r" "t" "f"}
       .left,.right{border:none;border-bottom:1px solid var(--border);max-height:none}
       .scroll{overflow:visible}
       .header{flex-wrap:wrap}
@@ -222,13 +227,9 @@
 const{useState,useEffect,useRef,useMemo}=React;
 const Globe=window.Globe;
 
-// ============ NEWS API CONFIG ============
-// NewsAPI's free plan only allows browser (CORS) requests from localhost, so on
-// GitHub Pages it always fails. Only try it locally; deployed sites go straight to RSS.
-const NEWS_API_KEY = 'ff2b715299a74826b0da01866c40ef60';
-const NEWS_API_URL = 'https://newsapi.org/v2/top-headlines?category=general&language=en&pageSize=30';
-const IS_LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname);
-
+// ============ NEWS ============
+// RSS via rss2json. NewsAPI's free plan blocks browser requests outside localhost, and
+// its key can't live in a public page; it comes back server-side with the /api proxy.
 const RSS_FEEDS=[
 {url:'https://feeds.bbci.co.uk/news/world/rss.xml',name:'BBC'},
 {url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',name:'NYT'},
@@ -246,38 +247,6 @@ function parseDate(s) {
 }
 
 const isRecent = (d, ms) => { const age = Date.now() - d.getTime(); return age >= 0 && age < ms; };
-
-async function fetchNewsAPI() {
-  if (!IS_LOCAL) return null;
-  try {
-    const res = await fetch(NEWS_API_URL, {
-      headers: { 'X-Api-Key': NEWS_API_KEY },
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!res.ok) throw new Error('NewsAPI HTTP ' + res.status);
-    const data = await res.json();
-    if (data.status !== 'ok' || !data.articles) throw new Error('No articles');
-
-    return {
-      source: 'newsapi',
-      items: data.articles.slice(0, 25).map(a => {
-        const time = parseDate(a.publishedAt);
-        return {
-          id: 'na-' + a.url,
-          title: a.title?.split(' - ')[0] || '',
-          source: a.source?.name || 'News',
-          url: a.url,
-          time,
-          isBreaking: isRecent(time, 1800000), // 30 min
-          image: a.urlToImage,
-        };
-      }).filter(n => n.title && n.title.length > 10)
-    };
-  } catch (e) {
-    console.log('NewsAPI error:', e.message);
-    return null;
-  }
-}
 
 async function fetchFeed(feed) {
   const r = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed.url), {
@@ -314,13 +283,7 @@ async function fetchRSSFeeds() {
   };
 }
 
-// Main news fetcher - NewsAPI on localhost, RSS everywhere else (and as fallback)
 async function fetchNews() {
-  const newsApi = await fetchNewsAPI();
-  if (newsApi && newsApi.items.length > 0) {
-    console.log('✓ NewsAPI: Got', newsApi.items.length, 'articles');
-    return newsApi;
-  }
   const rss = await fetchRSSFeeds();
   console.log('✓ RSS: Got', rss.items.length, 'articles');
   return rss;
@@ -332,18 +295,19 @@ async function fetchNews() {
 // weekday curve, and the live value is that curve plus deterministic noise and rare
 // correlated surges (same result for every viewer at the same moment).
 // To plug in real data, set PIZZA_DATA_URL to a JSON endpoint returning
-//   {"updated":"<ISO time>","shops":[{"id":"dominos-pc","live":72,"typical":[24 hourly values 0-100]}]}
+//   {"updated":"<ISO time>","shops":[{"id":"shop-1","live":72,"typical":[24 hourly values 0-100]}]}
 const PIZZA_DATA_URL = null;
 const PENTAGON = {lat:38.8719,lng:-77.0563};
 
 // open/close in ET hours (close may exceed 24 = after midnight); peaks are 0-100 busyness
+// Generic names on purpose: the busyness is modeled, so it mustn't read as a claim about a real business.
 const SHOPS=[
-{id:'dominos-pc',name:"Domino's Pizza",area:'Pentagon City',dist:0.9,lat:38.8622,lng:-77.0593,open:10,close:25,lunch:55,dinner:80,late:45},
-{id:'district-pp',name:'District Pizza Palace',area:'Crystal City',dist:1.0,lat:38.8575,lng:-77.0505,open:11,close:27,lunch:40,dinner:65,late:70},
-{id:'papajohns-cc',name:"Papa John's",area:'Crystal City',dist:1.4,lat:38.8548,lng:-77.0497,open:10,close:25,lunch:45,dinner:75,late:40},
-{id:'extreme-pr',name:'Extreme Pizza',area:'Pentagon Row',dist:0.8,lat:38.8631,lng:-77.0611,open:11,close:22,lunch:70,dinner:60,late:10},
-{id:'wethepizza-pc',name:'We, The Pizza',area:'Pentagon City',dist:1.1,lat:38.8619,lng:-77.0577,open:11,close:23,lunch:60,dinner:70,late:20},
-{id:'pizzato-arl',name:'Pizzato Pizza',area:'Arlington',dist:1.6,lat:38.8794,lng:-77.0921,open:11,close:24,lunch:35,dinner:55,late:30},
+{id:'shop-1',name:'Delivery chain',area:'Pentagon City',dist:0.9,lat:38.8622,lng:-77.0593,open:10,close:25,lunch:55,dinner:80,late:45},
+{id:'shop-2',name:'Late-night pizzeria',area:'Crystal City',dist:1.0,lat:38.8575,lng:-77.0505,open:11,close:27,lunch:40,dinner:65,late:70},
+{id:'shop-3',name:'Delivery chain',area:'Crystal City',dist:1.4,lat:38.8548,lng:-77.0497,open:10,close:25,lunch:45,dinner:75,late:40},
+{id:'shop-4',name:'Pizza counter',area:'Pentagon Row',dist:0.8,lat:38.8631,lng:-77.0611,open:11,close:22,lunch:70,dinner:60,late:10},
+{id:'shop-5',name:'Slice shop',area:'Pentagon City',dist:1.1,lat:38.8619,lng:-77.0577,open:11,close:23,lunch:60,dinner:70,late:20},
+{id:'shop-6',name:'Neighborhood pizzeria',area:'Arlington',dist:1.6,lat:38.8794,lng:-77.0921,open:11,close:24,lunch:35,dinner:55,late:30},
 ];
 
 const DOUGHCON=[
@@ -1120,7 +1084,7 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 <div className="scroll">
 {tab==='news'&&(<>
 <div style={{padding:'0 2px 8px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-<span className={`news-status ${newsSource==='rss'?'rss':''}`}>{newsSource==='newsapi'?'⚡ NewsAPI':newsSource==='rss'?'📡 RSS Feeds':'⏳ Connecting'}</span>
+<span className={`news-status ${newsSource==='rss'?'rss':''}`}>{newsSource==='rss'?'📡 RSS Feeds':'⏳ Connecting'}</span>
 {newsLastUpd&&<span style={{fontSize:9,color:'var(--muted)'}}>Updated {fmtTime(newsLastUpd)}</span>}
 </div>
 <CoverageChart data={coverage}/>
@@ -1177,6 +1141,10 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 <span className="ticker-lbl"><span className="livedot"></span>BREAKING</span>
 <Ticker items={tickerItems}/>
 </div></Boundary>
+<footer className="foot">
+<span>Inspired by <a href="https://www.pizzint.watch/" target="_blank" rel="noopener">PizzINT</a> · Data: Polymarket, Kalshi, Manifold, PredictIt, adsb.lol, GDELT, BBC/NYT/Al Jazeera/NPR/Guardian RSS</span>
+<span>For fun, not financial advice. Pizza busyness is modeled, not real. Odds are market prices, not predictions. · <a href="https://github.com/mbp-agentz/connecthor" target="_blank" rel="noopener">Source</a></span>
+</footer>
 </div>
 );
 }
