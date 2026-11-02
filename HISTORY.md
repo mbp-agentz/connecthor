@@ -32,6 +32,9 @@ A summary of the original build conversation (Oct 2026), so a new Claude session
 9. **Launch review:** PizzINT credit, a footer, generic shop names and removing the NewsAPI key are still to do (see CLAUDE.md). A Cloudflare Pages + Functions move is recommended, so feeds go through a cached `/api` proxy that holds up under traffic.
 10. **Handoff:** CLAUDE.md and this file were written so the project can move to another repo/account and Claude session.
 11. **Move (2026-10-22):** the repo moved to `mbp-agentz/connecthor`; the site is now https://mbp-agentz.github.io/connecthor/. First work there: the pre-launch fixes (generic shop names, NewsAPI removed, footer with credit and disclaimer, share-card tags).
+12. **Cloudflare + more data (Oct 25–26):** the `/api` proxy, Kalshi, the night/day/live-sun globe; deployed to Cloudflare Pages (connecthor.pages.dev). Kalshi is rate-limited (429) from Cloudflare's shared IPs and needs an API key.
+13. **Map rework (Nov 2):** hotspot shading on conflict countries, glow-dot markers in a spiral layout that shrink with zoom, and a per-country market list (the owner found the 3D bars looked like a 2017 strategy game).
+14. **Real domain (Nov 3):** connecthor.org (GoDaddy registration, Cloudflare DNS + Pages); GitHub Pages forwards there.
 
 ## Decisions and why
 | Decision | Why |
