@@ -752,9 +752,20 @@ function hotspots(ms){
   const by=new Map();
   ms.filter(isUSD).forEach(m=>{const k=m.country;if(!k)return;const h=by.get(k)||{country:k,lat:m.cLat??m.lat,lng:m.cLng??m.lng,n:0,vol24:0,volume:0,tw:0,ts:0,top:null};
     h.n++;h.vol24+=m.vol24||0;h.volume+=m.volume||0;
-    if(m.category==='Conflict'||CONFLICT_RE.test(m.question)){const w=Math.sqrt(Math.max(m.volume,1e4));h.tw+=w;h.ts+=w*tensionOf(m)}
+    // topWar: the conflict market that drives the country's tension most (for the map shading)
+    if(m.category==='Conflict'||CONFLICT_RE.test(m.question)){const w=Math.sqrt(Math.max(m.volume,1e4)),sc=w*tensionOf(m);h.tw+=w;h.ts+=sc;if(!h.topWar||sc>h.warScore){h.topWar=m;h.warScore=sc}}
     if(!h.top||(m.vol24||m.volume/30)>(h.top.vol24||h.top.volume/30))h.top=m;by.set(k,h)});
   return[...by.values()].map(h=>({...h,tension:h.tw?h.ts/h.tw:null,heat:(h.tw?h.ts/h.tw:0.12)*Math.log10(10+h.vol24+h.volume/30)})).sort((a,b)=>b.heat-a.heat);
+}
+// Shading hotspot countries on the map. Our labels -> Natural Earth ADMIN names; NATO and EU
+// have no single shape, so they keep their markers only.
+const NE_NAME={USA:'United States of America',UK:'United Kingdom','DR Congo':'Democratic Republic of the Congo',Gaza:'Palestine',Falklands:'Falkland Islands',Serbia:'Republic of Serbia'};
+const neName=c=>NE_NAME[c]||c;
+// Amber (simmering) to red (escalation odds high). Opacity needs both money and tension: heavy
+// volume alone (the US, at 12% escalation odds) shouldn't read as a hotspot
+function heatFill(h,k,alpha=1){
+  const t=Math.min(1,Math.max(0,((h.tension??0.15)-0.15)/0.45)),c=[245+(239-245)*t,158+(68-158)*t,11+(68-11)*t].map(Math.round);
+  return`rgba(${c[0]},${c[1]},${c[2]},${Math.min(1,(0.08+0.5*k*(0.3+0.7*t))*alpha).toFixed(3)})`;
 }
 const daysLeft=d=>{const t=new Date(d).getTime();if(!isFinite(t))return null;return Math.ceil((t-Date.now())/864e5)};
 const fmtLeft=d=>{const n=daysLeft(d);return n==null?'':n<0?'closed':n===0?'ends today':n===1?'ends tomorrow':n<60?`ends in ${n} days`:`ends ${new Date(d).toLocaleDateString('en-GB',{month:'short',year:'numeric'})}`};
@@ -779,12 +790,13 @@ function Ticker({items}){
 const HAS_WEBGL=(()=>{try{const c=document.createElement('canvas');return!!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}})();
 
 // 2D fallback: equirectangular map with the same markets
-function FlatMap({w,h,countries,points,arcs,selected,onSelect,dcColor}){
+function FlatMap({w,h,countries,points,arcs,selected,onSelect,dcColor,heat,heatKey}){
   const[hov,setHov]=useState(null);
   const W=Math.max(w,200),H=Math.max(h,150),sc=Math.min(W/360,H/180)*1.0,ox=W/2,oy=H/2;
   const px=(lng,lat)=>[ox+lng*sc,oy-lat*sc];
   const rings=g=>g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
-  const paths=useMemo(()=>(countries||[]).map((f,i)=>{let d='';rings(f.geometry||{}).forEach(poly=>poly.forEach(r=>{r.forEach(([lng,lat],k)=>{const[x,y]=px(lng,lat);d+=(k?'L':'M')+x.toFixed(1)+','+y.toFixed(1)});d+='Z'}));return<path key={i} d={d} fill="rgba(59,130,246,0.07)" stroke="rgba(100,180,255,0.3)" strokeWidth="0.6"/>}),[countries,W,H]);
+  const paths=useMemo(()=>(countries||[]).map((f,i)=>{let d='';rings(f.geometry||{}).forEach(poly=>poly.forEach(r=>{r.forEach(([lng,lat],k)=>{const[x,y]=px(lng,lat);d+=(k?'L':'M')+x.toFixed(1)+','+y.toFixed(1)});d+='Z'}));const hh=heat&&heat.get((f.properties||{}).ADMIN);
+    return<path key={i} d={d} fill={hh?hh.fill:'rgba(59,130,246,0.07)'} stroke={hh?hh.stroke:'rgba(100,180,255,0.3)'} strokeWidth={hh?1:0.6} style={{cursor:hh&&hh.lead?'pointer':'default'}} onClick={()=>hh&&hh.lead&&onSelect(hh.lead)}>{hh&&<title>{hh.tip}</title>}</path>}),[countries,W,H,heatKey]);
   const[pxP,pyP]=px(PENTAGON.lng,PENTAGON.lat);
   return(<svg width={W} height={H} style={{display:'block'}}>
     <rect x={ox-180*sc} y={oy-90*sc} width={360*sc} height={180*sc} fill="#0b1324" rx="6"/>
@@ -965,7 +977,7 @@ const[srcFilter,setSrcFilter]=useState('all');
 const[air,setAir]=useState(null);
 const[coverage,setCoverage]=useState(null);
 const[sigFilter,setSigFilter]=useState('ALL');
-const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:true,air:true};
+const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:true,air:true,hot:true};
 const[layers,setLayers]=useState(()=>{try{return{...LAYER_DEFAULTS,...JSON.parse(localStorage.getItem('ct-layers')||'{}')}}catch(e){return LAYER_DEFAULTS}});
 const[globeView,setGlobeView]=useState(()=>{try{const v=localStorage.getItem('ct-view');return GLOBE_VIEWS[v]?v:'night'}catch(e){return'night'}});
 const cycleView=()=>setGlobeView(v=>{const ks=Object.keys(GLOBE_VIEWS),n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('ct-view',n)}catch(e){}return n});
@@ -1122,6 +1134,24 @@ const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(markets),[markets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
 const hotLabels=useMemo(()=>[{lat:PENTAGON.lat,lng:PENTAGON.lng,text:'PENTAGON',pentagon:true},...hot.slice(0,6).filter(h=>h.country!=='USA').map(h=>({lat:h.lat,lng:h.lng,text:h.country.toUpperCase()}))],[hot.slice(0,6).map(h=>h.country).join()]);
+// Hotspot shading: heat relative to the hottest country. Polygon accessors are keyed on the
+// rounded heat, not on prices, so the country layer only re-renders when a country's heat moves.
+// Only countries with conflict/escalation markets count: central-bank or election markets aren't hotspots
+const heatMap=useMemo(()=>{const war=hot.filter(h=>h.tension!=null),top=war.length?Math.max(...war.map(h=>h.heat)):0,m=new Map();
+  if(top>0)war.forEach(h=>{const k=h.heat/top;if(k<0.08)return;const pct=h.tension!=null?Math.round(h.tension*100):null;
+    const lead=h.topWar||h.top;
+    m.set(neName(h.country),{h,k,lead,fill:heatFill(h,k),side:heatFill(h,k,0.35),stroke:heatFill(h,k,1.6),
+      tip:`${h.country} · ${pct!=null?'escalation odds '+pct+'% ('+nehLabel(pct).t+')':'no conflict markets'} · ${h.n} market${h.n>1?'s':''}${lead?' · '+lead.question+' '+fmtProb(lead.probability):''}`})});
+  return m},[hot]);
+const heatKey=[...heatMap].map(([c,x])=>c+':'+x.k.toFixed(2)+':'+(x.h.tension??0).toFixed(2)).join('|');
+const shownHeat=layers.hot?heatMap:null;
+const polyCap=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?x.fill:'rgba(0,0,0,0)'},[heatKey,layers.hot]);
+// sides fainter and a low lift: big countries on the rim (Russia) otherwise show a red wall
+const polySide=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?x.side:'rgba(100,150,200,0.05)'},[heatKey,layers.hot]);
+const polyAlt=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?0.006+0.008*x.k:0.005},[heatKey,layers.hot]);
+const polyLabel=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(!x)return'';
+  return'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid '+x.stroke+';max-width:240px"><div style="font-weight:700;color:white;font-size:11px">🔥 '+x.h.country+'</div><div style="color:#cbd5e1;font-size:10px;margin-top:2px">'+x.tip.split(' · ').slice(1).join('<br/>')+'</div></div>'},[heatKey,layers.hot]);
+const pickCountry=d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(x&&x.lead)setSelected(x.lead)};
 const relatedFor=t=>{const l=getLocs(t||'')[0];return l?hotByCountry.get(l.country):null};
 const srcCounts=useMemo(()=>{const c={};markets.forEach(m=>c[m.source]=(c[m.source]||0)+1);return c},[markets]);
 const similar=useMemo(()=>selected?similarMarkets(selected,markets):[],[selected,markets]);
@@ -1184,13 +1214,13 @@ return(
 </div>)}
 
 <div className="layers" role="group" aria-label="Globe layers">
-{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null]].map(([k,l,c,n])=>(
+{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null]].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
-<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} dcColor={DOUGHCON[dc].color}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
+<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
 {gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl={globeView==='night'?NIGHT_TEX:DAY_TEX} bumpImageUrl={TEX+'earth-topology.png'} backgroundImageUrl={TEX+'night-sky.png'}
-polygonsData={countries.features||[]} polygonCapColor={()=>'rgba(0,0,0,0)'} polygonSideColor={()=>'rgba(100,150,200,0.05)'} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={0.005}
+polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor={polySide} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={polyAlt} polygonLabel={polyLabel} onPolygonClick={pickCountry} polygonsTransitionDuration={REDUCED_MOTION?0:1200}
 pointsData={globePoints} pointLat="lat" pointLng="lng"
 pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:d.isShop?0.01+(d.ratio||0)*0.02:Math.min(0.05+(isUSD(d)?d.volume:d.volume/100)/50000000,0.18)}
 pointRadius={d=>d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.55:0.35}
