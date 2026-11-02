@@ -104,6 +104,7 @@
     .neh-drv{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;cursor:pointer}
     .neh-drv:hover{color:var(--blue)}
     .neh-drv span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .neh-short,.neh-chev{display:none}
     .spotlight{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2));backdrop-filter:blur(12px);border:1px solid rgba(59,130,246,0.3);border-radius:50px;padding:10px 20px;cursor:pointer;max-width:90%}
     .spot-dot{width:8px;height:8px;background:var(--blue);border-radius:50%;animation:pulse 1s infinite;flex-shrink:0}
     .spot-lbl{font-size:10px;font-weight:700;color:var(--blue)}
@@ -218,7 +219,19 @@
       .scroll{overflow:visible}
       .header{flex-wrap:wrap}
       .stats{flex-wrap:wrap;gap:12px}
-      .neh{width:auto;right:12px;top:52px}
+      .neh{width:auto;right:12px;top:52px;transition:padding .25s}
+      .neh .dc-kicker{cursor:pointer}
+      .neh-chev{display:block;position:absolute;top:8px;right:12px;padding:2px 4px;color:var(--faint);cursor:pointer}
+      /* Scrolled to the globe: shrink the card to one thin line so it stops covering the map; tap opens it */
+      .neh.slim{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;cursor:pointer}
+      .neh.slim .neh-full,.neh.slim .info,.neh.slim .dc-legend,.neh.slim .neh-drivers,.neh.slim .doom,.neh.slim .neh-delta{display:none}
+      .neh.slim .neh-short{display:inline}
+      .neh.slim .neh-row{display:contents}
+      .neh.slim .neh-score{font-size:15px}
+      .neh.slim .meter{order:2;flex:1;height:4px;margin:0;min-width:40px}
+      .neh.slim .meter-mark{top:-3px;height:10px;width:3px}
+      .neh.slim .neh-label{order:3;font-size:11px;white-space:nowrap}
+      .neh.slim .neh-chev{order:4;position:static;padding:0}
       .ticker{position:sticky;bottom:0}
     }
   </style>
@@ -1122,6 +1135,21 @@ useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;con
 useEffect(()=>{if(!globeEl.current||!HAS_WEBGL)return;try{return applyDayNight(globeEl.current,globeView==='live')}catch(e){console.log('Day/night unavailable:',e.message)}},[globeView,gsize.w>0]);
 
 // Size the globe to its grid cell, not the window
+// Mobile: the NEH card shrinks to a slim bar once the globe scrolls into view, and again on any further scroll down after a tap opened it
+const[nehSlim,setNehSlim]=useState(false);
+const[nehOpen,setNehOpen]=useState(false);
+useEffect(()=>{
+  const mq=window.matchMedia('(max-width:1100px)');let last=window.scrollY,raf=0;
+  const check=()=>{raf=0;const el=globeWrap.current;if(!el)return;
+    if(!mq.matches){setNehSlim(false);setNehOpen(false);return}
+    const y=window.scrollY,down=y-last>6;if(Math.abs(y-last)>6)last=y;
+    setNehSlim(el.getBoundingClientRect().top<window.innerHeight*0.45);
+    if(down)setNehOpen(false)};
+  const on=()=>{if(!raf)raf=requestAnimationFrame(check)};
+  window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',on);check();
+  return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',on);if(raf)cancelAnimationFrame(raf)};
+},[]);
+const nehMini=nehSlim&&!nehOpen;
 useEffect(()=>{const el=globeWrap.current;if(!el)return;const ro=new ResizeObserver(([e])=>setGsize({w:Math.round(e.contentRect.width),h:Math.round(e.contentRect.height)}));ro.observe(el);return()=>ro.disconnect()},[]);
 
 useEffect(()=>{if(!globeEl.current)return;const c=globeEl.current.controls();c.autoRotate=!REDUCED_MOTION;c.autoRotateSpeed=0.12;c.enableDamping=true;c.dampingFactor=0.08;
@@ -1225,9 +1253,10 @@ return(
 <main className="globe" ref={globeWrap}>
 <div className={`badge-api ${dataSource==='live'?'':'sample'}`}><span className="dot" style={{width:6,height:6,background:dataSource==='live'?'var(--green)':'var(--yellow)'}}></span>{dataSource==='live'?'Live · '+Object.keys(venues).filter(k=>venues[k]).map(srcName).join(', '):'Sample markets'} · {fmtTime(lastUpd)}{wsStatus==='live'?' · streaming':''}</div>
 
-<div className="neh">
-<div className="dc-kicker">NOTHING EVER HAPPENS INDEX<span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
-<div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
+<div className={`neh${nehMini?' slim':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
+<div className="dc-kicker" onClick={e=>{if(nehSlim&&!nehMini){e.stopPropagation();setNehOpen(false)}}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
+<div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono neh-delta" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
+<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini){e.stopPropagation();setNehOpen(false)}}}>{nehMini?'▾':nehSlim?'▴':''}</span>
 <div className="meter" role="meter" aria-valuenow={neh.score} aria-valuemin="0" aria-valuemax="100"><div className="meter-mark" style={{left:neh.score+'%'}}></div></div>
 <div className="dc-legend"><span>Nothing happens</span><span>It's happening</span></div>
 <div className="neh-drivers">{neh.drivers.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{m.question}</span><span className="mono">{fmtProb(m.probability)}</span></div>)}</div>
