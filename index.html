@@ -105,6 +105,8 @@
     .spot-prob{font-size:16px;font-weight:800}
     .detail{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;width:min(440px,92%);background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 24px;min-width:min(380px,92%)}
     .detail-hd{display:flex;justify-content:space-between;margin-bottom:12px}
+    .country-list{max-height:min(44vh,340px);overflow:auto;margin-right:-10px;padding-right:10px}
+    .detail-more{display:block;margin-top:8px;font-size:11px;color:var(--blue);cursor:pointer}
     .detail-q{font-size:14px;font-weight:700;flex:1;margin-right:12px}
     .detail-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px}
     .detail-stats{display:flex;gap:24px}
@@ -744,7 +746,26 @@ function genArcs(ms,flows){
   return out.concat(flows||[]);
 }
 function genArcsDC(ms){return ms.filter(m=>isUSD(m)&&m.volume>1e6&&m.lat).slice(0,6).map((m,i)=>({startLat:PENTAGON.lat,startLng:PENTAGON.lng,endLat:m.lat,endLng:m.lng,color:m.category==='Conflict'?['rgba(249,115,22,0.75)','rgba(249,115,22,0.15)']:m.category==='Trump'?['rgba(239,68,68,0.7)','rgba(239,68,68,0.15)']:['rgba(59,130,246,0.7)','rgba(139,92,246,0.15)'],stroke:0.4,dashLength:0.3,dashGap:0.3,dashAnimateTime:9000+i*700,initGap:hash(m.id+'dc'),altitude:0.1+(i%3)*0.05}))}
-function genRings(ms,dc){const rs=ms.filter(m=>isUSD(m)&&m.volume>2e6&&m.lat).slice(0,12).map((m,i)=>({lat:m.lat,lng:m.lng,maxR:2,propagationSpeed:0.6,repeatPeriod:3500+i*400,color:tensionOf(m)>0.5&&m.category==='Conflict'?'rgba(239,68,68,0.45)':'rgba(59,130,246,0.35)'}));rs.push({lat:PENTAGON.lat,lng:PENTAGON.lng,maxR:2+(5-dc)*1.2,propagationSpeed:0.7+(5-dc)*0.35,repeatPeriod:Math.max(900,2800-(5-dc)*450),color:DOUGHCON[dc].color});return rs}
+// Markers are flat glow dots: size = volume (Manifold's play money scaled down), colour = odds
+const volOf=m=>isUSD(m)?m.volume||0:(m.volume||0)/100;
+const marketColor=m=>m.category==='Conflict'?'#f97316':m.probability>=0.7?'#22c55e':m.probability>=0.4?'#eab308':'#ef4444';
+const dotRadius=m=>0.2+Math.min(Math.sqrt(volOf(m))/9000,0.6);
+// A place's markets fan out in a golden-angle spiral around it instead of random jitter, which piled
+// them on top of each other. Rank by volume band, then id, so a refresh rarely reshuffles positions.
+const SPIRAL_STEP=0.32;
+function layoutMarkets(ms){
+  const groups=new Map(),pos=new Map();
+  ms.forEach(m=>{const la=m.cLat??m.lat,ln=m.cLng??m.lng;if(la==null||ln==null)return;const k=la.toFixed(2)+','+ln.toFixed(2);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(m)});
+  groups.forEach(g=>{
+    const band=m=>Math.floor(Math.log10(volOf(m)+1)*2);
+    g.sort((a,b)=>band(b)-band(a)||String(a.id).localeCompare(String(b.id)));
+    const la=g[0].cLat??g[0].lat,ln=g[0].cLng??g[0].lng,cos=Math.max(0.3,Math.cos(la*Math.PI/180));
+    g.forEach((m,i)=>{const r=SPIRAL_STEP*Math.sqrt(i),a=i*2.39996;pos.set(m.id,{lat:la+r*Math.sin(a),lng:ln+r*Math.cos(a)/cos})});
+  });
+  return ms.map(m=>{const q=pos.get(m.id);return q&&(q.lat!==m.lat||q.lng!==m.lng)?{...m,lat:q.lat,lng:q.lng}:m});
+}
+// Soft pulses on the 25 biggest markets (plus the Pentagon's DOUGHCON ring)
+function genRings(ms,dc){const rs=[...ms].filter(m=>m.lat!=null).sort((a,b)=>volOf(b)-volOf(a)).slice(0,25).map((m,i)=>({lat:m.lat,lng:m.lng,maxR:1.6,propagationSpeed:0.5,repeatPeriod:2600+(i*397)%2400,color:marketColor(m)}));rs.push({lat:PENTAGON.lat,lng:PENTAGON.lng,maxR:2+(5-dc)*1.2,propagationSpeed:0.7+(5-dc)*0.35,repeatPeriod:Math.max(900,2800-(5-dc)*450),color:DOUGHCON[dc].color});return rs}
 function genActs(ms){const a=[];const amts=[500,1000,2500,5000,10000,25000];for(let i=0;i<14;i++){const m=ms[Math.floor(Math.random()*Math.min(ms.length,15))];if(!m)continue;const amt=amts[Math.floor(Math.random()*amts.length)];a.push({id:'a-'+i,market:m.question,action:Math.random()<0.5?'BUY':'SELL',amount:amt,isWhale:amt>=10000,time:new Date(Date.now()-Math.random()*300000),source:m.source})}return a.sort((x,y)=>y.time-x.time)}
 
 // Countries ranked by escalation odds × money at stake (real-money venues only)
@@ -790,13 +811,13 @@ function Ticker({items}){
 const HAS_WEBGL=(()=>{try{const c=document.createElement('canvas');return!!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}})();
 
 // 2D fallback: equirectangular map with the same markets
-function FlatMap({w,h,countries,points,arcs,selected,onSelect,dcColor,heat,heatKey}){
+function FlatMap({w,h,countries,points,arcs,selected,onSelect,onCountry,dcColor,heat,heatKey}){
   const[hov,setHov]=useState(null);
   const W=Math.max(w,200),H=Math.max(h,150),sc=Math.min(W/360,H/180)*1.0,ox=W/2,oy=H/2;
   const px=(lng,lat)=>[ox+lng*sc,oy-lat*sc];
   const rings=g=>g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
   const paths=useMemo(()=>(countries||[]).map((f,i)=>{let d='';rings(f.geometry||{}).forEach(poly=>poly.forEach(r=>{r.forEach(([lng,lat],k)=>{const[x,y]=px(lng,lat);d+=(k?'L':'M')+x.toFixed(1)+','+y.toFixed(1)});d+='Z'}));const hh=heat&&heat.get((f.properties||{}).ADMIN);
-    return<path key={i} d={d} fill={hh?hh.fill:'rgba(59,130,246,0.07)'} stroke={hh?hh.stroke:'rgba(100,180,255,0.3)'} strokeWidth={hh?1:0.6} style={{cursor:hh&&hh.lead?'pointer':'default'}} onClick={()=>hh&&hh.lead&&onSelect(hh.lead)}>{hh&&<title>{hh.tip}</title>}</path>}),[countries,W,H,heatKey]);
+    return<path key={i} d={d} fill={hh?hh.fill:'rgba(59,130,246,0.07)'} stroke={hh?hh.stroke:'rgba(100,180,255,0.3)'} strokeWidth={hh?1:0.6} style={{cursor:hh?'pointer':'default'}} onClick={()=>hh&&onCountry(hh.h.country)}>{hh&&<title>{hh.tip}</title>}</path>}),[countries,W,H,heatKey]);
   const[pxP,pyP]=px(PENTAGON.lng,PENTAGON.lat);
   return(<svg width={W} height={H} style={{display:'block'}}>
     <rect x={ox-180*sc} y={oy-90*sc} width={360*sc} height={180*sc} fill="#0b1324" rx="6"/>
@@ -951,13 +972,19 @@ function App(){
 const globeEl=useRef();
 const globeWrap=useRef();
 const[gsize,setGsize]=useState({w:0,h:0});
-const[markets,setMarkets]=useState(()=>MARKETS.map(m=>({...m,links:getLocs(m.question).filter(l=>l.country!==m.country)})));
+const[markets,setMarkets]=useState(()=>layoutMarkets(MARKETS.map(m=>({...m,links:getLocs(m.question).filter(l=>l.country!==m.country)}))));
 const[news,setNews]=useState([]);
 const[newsSource,setNewsSource]=useState('loading');
 const[newsLoading,setNewsLoading]=useState(true);
 const[activities,setActivities]=useState(()=>genActs(MARKETS));
 const[dataSource,setDataSource]=useState('sample');
 const[selected,setSelected]=useState(null);
+const[country,setCountry]=useState(null); // country panel: every market in one place
+// Dots and rings are sized in degrees, so they'd grow with the zoom and never separate; scale them
+// by camera altitude instead. Stepped, so zooming doesn't re-render every frame.
+const[zoomAlt,setZoomAlt]=useState(2.3);const zoomRef=useRef(2.3);
+const onZoom=pov=>{const a=Math.round(Math.min(pov.altitude,3)*8)/8;if(a!==zoomRef.current){zoomRef.current=a;setZoomAlt(a)}};
+const zf=Math.min(1.2,Math.max(0.1,zoomAlt/2.3));
 const[highlighted,setHighlighted]=useState(null);
 const[search,setSearch]=useState('');
 const[catFilter,setCatFilter]=useState('All');
@@ -1015,7 +1042,7 @@ res.forEach((r,i)=>{const k=keys[i];if(r.status==='fulfilled'&&r.value.length){s
 setVenues(st);
 if(all.some(isUSD)){
 // keep live Polymarket prices from the stream when a refresh lands
-setMarkets(prev=>{const old=new Map(prev.map(m=>[m.id,m]));return all.map(m=>{const o=old.get(m.id);return o&&o.flashAt?{...m,probability:o.probability,flash:o.flash,flashAt:o.flashAt}:m})});
+setMarkets(prev=>{const old=new Map(prev.map(m=>[m.id,m]));return layoutMarkets(all.map(m=>{const o=old.get(m.id);return o&&o.flashAt?{...m,probability:o.probability,flash:o.flash,flashAt:o.flashAt}:m}))});
 setActivities(genActs(all));setDataSource('live');setLastUpd(new Date());setSelected(s=>s&&(all.find(m=>m.id===s.id)||s));
 }
 };
@@ -1035,7 +1062,8 @@ loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,6
 const pendingHash=useRef(decodeURIComponent((location.hash.match(/m=([^&]+)/)||[])[1]||''));
 useEffect(()=>{if(!pendingHash.current)return;const m=markets.find(x=>x.id===pendingHash.current);if(m){setSelected(m);pendingHash.current=''}},[markets]);
 useEffect(()=>{const h=selected?'#m='+encodeURIComponent(selected.id):'';if(location.hash!==h)window.history.replaceState(null,'',h||location.pathname+location.search)},[selected?.id]);
-useEffect(()=>{const k=e=>{if(e.key==='Escape')setSelected(null)};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+const selRef=useRef(null);selRef.current=selected;const countryRef=useRef(null);countryRef.current=country;
+useEffect(()=>{const k=e=>{if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else setCountry(null)};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Real trades: poll the Data API, pulse the globe where they land, arc in the whales
 useEffect(()=>{
@@ -1082,7 +1110,7 @@ setMarkets(ms=>ms.map(apply));setSelected(s=>s&&apply(s));
 useEffect(()=>{setHistory(null);const s=selected;const job=s?.tokenYes?fetchHistory(s.tokenYes):s?.seriesTicker&&s.ticker?fetchKalshiHistory(s):null;if(!job)return;let off=false;job.then(h=>{if(!off)setHistory(h)}).catch(()=>{if(!off)setHistory([])});return()=>{off=true}},[selected?.tokenYes||selected?.ticker]);
 
 const lastTouch=useRef(0);
-useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;const i=setInterval(()=>{if(document.hidden||Date.now()-lastTouch.current<45000)return;const c=marketsRef.current.filter(m=>isUSD(m)&&m.volume>1e6);if(c.length>0){const m=c[Math.floor(Math.random()*c.length)];setHighlighted(m);off=setTimeout(()=>setHighlighted(null),8000)}},25000);return()=>{clearInterval(i);clearTimeout(off)}},[markets.length>0]);
+useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;const i=setInterval(()=>{if(document.hidden||countryRef.current||Date.now()-lastTouch.current<45000)return;const c=marketsRef.current.filter(m=>isUSD(m)&&m.volume>1e6);if(c.length>0){const m=c[Math.floor(Math.random()*c.length)];setHighlighted(m);off=setTimeout(()=>setHighlighted(null),8000)}},25000);return()=>{clearInterval(i);clearTimeout(off)}},[markets.length>0]);
 
 // Live sun: blend day/night textures along the real terminator
 useEffect(()=>{if(!globeEl.current||!HAS_WEBGL)return;try{return applyDayNight(globeEl.current,globeView==='live')}catch(e){console.log('Day/night unavailable:',e.message)}},[globeView,gsize.w>0]);
@@ -1095,8 +1123,13 @@ const touch=()=>{lastTouch.current=Date.now();setHighlighted(null)};c.addEventLi
 globeEl.current.pointOfView({lat:30,lng:-40,altitude:2.3},2500);return()=>c.removeEventListener('start',touch)},[gsize.w>0]);
 
 useEffect(()=>{if(!globeEl.current)return;const c=globeEl.current.controls();
-if(selected){c.autoRotate=false;globeEl.current.pointOfView({lat:selected.lat,lng:selected.lng,altitude:1.6},2000)}
+// the detail/country panels cover the lower half, so aim a little south: the target shows above them
+if(selected){c.autoRotate=false;globeEl.current.pointOfView({lat:selected.lat-12,lng:selected.lng,altitude:1.6},2000)}
 else{c.autoRotate=!REDUCED_MOTION;if(highlighted)globeEl.current.pointOfView({lat:highlighted.lat,lng:highlighted.lng,altitude:2.3},4000)}},[selected?.id,highlighted?.id]);
+useEffect(()=>{if(!globeEl.current||!country||selected)return;const h=hotByCountry.get(country),m=marketsRef.current.find(x=>x.country===country);const la=h?h.lat:m&&(m.cLat??m.lat),ln=h?h.lng:m&&(m.cLng??m.lng);if(la==null)return;
+globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:la-7,lng:ln,altitude:0.9},1800)},[country,selected?.id]);
+// picking a market somewhere else closes a stale country list
+useEffect(()=>{if(selected&&country&&selected.country!==country)setCountry(null)},[selected?.id]);
 
 const filtered=useMemo(()=>markets.filter(m=>{if(srcFilter!=='all'&&m.source!==srcFilter)return false;if(search&&!m.question.toLowerCase().includes(search.toLowerCase()))return false;if(catFilter!=='All'&&m.category!==catFilter)return false;return true}),[markets,search,catFilter,srcFilter]);
 const stats=useMemo(()=>{const u=markets.filter(isUSD);return{total:markets.length,volume:u.reduce((s,m)=>s+m.volume,0),vol24:u.reduce((s,m)=>s+(m.vol24||0),0)}},[markets]);
@@ -1146,12 +1179,19 @@ const heatMap=useMemo(()=>{const war=hot.filter(h=>h.tension!=null),top=war.leng
 const heatKey=[...heatMap].map(([c,x])=>c+':'+x.k.toFixed(2)+':'+(x.h.tension??0).toFixed(2)).join('|');
 const shownHeat=layers.hot?heatMap:null;
 const polyCap=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?x.fill:'rgba(0,0,0,0)'},[heatKey,layers.hot]);
-// sides fainter and a low lift: big countries on the rim (Russia) otherwise show a red wall
+// Hot countries stay flat: a lift showed as a red wall on the rim (Russia) and buried the market
+// dots, which then had to be tall pins to show above it
 const polySide=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?x.side:'rgba(100,150,200,0.05)'},[heatKey,layers.hot]);
-const polyAlt=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);return x?0.006+0.008*x.k:0.005},[heatKey,layers.hot]);
+const polyAlt=0.005;
 const polyLabel=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(!x)return'';
-  return'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid '+x.stroke+';max-width:240px"><div style="font-weight:700;color:white;font-size:11px">🔥 '+x.h.country+'</div><div style="color:#cbd5e1;font-size:10px;margin-top:2px">'+x.tip.split(' · ').slice(1).join('<br/>')+'</div></div>'},[heatKey,layers.hot]);
-const pickCountry=d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(x&&x.lead)setSelected(x.lead)};
+  return'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid '+x.stroke+';max-width:240px"><div style="font-weight:700;color:white;font-size:11px">🔥 '+x.h.country+'</div><div style="color:#cbd5e1;font-size:10px;margin-top:2px">'+x.tip.split(' · ').slice(1).join('<br/>')+'</div><div style="color:#60a5fa;font-size:10px;margin-top:4px">Click for all '+x.h.n+' markets</div></div>'},[heatKey,layers.hot]);
+const openCountry=c=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(c)};
+const pickCountry=d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(x)openCountry(x.h.country)};
+// A globe "point" is a cylinder as tall as its altitude: dots sit just above the (flat) country
+// layer, so only a thin disc shows instead of a pin when zoomed in
+const dotAlt=()=>0.0065;
+const countryMarkets=useMemo(()=>country?markets.filter(m=>m.country===country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[country,markets]);
+const countIn=c=>markets.reduce((n,m)=>n+(m.country===c?1:0),0);
 const relatedFor=t=>{const l=getLocs(t||'')[0];return l?hotByCountry.get(l.country):null};
 const srcCounts=useMemo(()=>{const c={};markets.forEach(m=>c[m.source]=(c[m.source]||0)+1);return c},[markets]);
 const similar=useMemo(()=>selected?similarMarkets(selected,markets):[],[selected,markets]);
@@ -1188,7 +1228,7 @@ return(
 <a className="doom" href={DOOMSDAY.url} target="_blank" rel="noopener noreferrer" title={`Bulletin of the Atomic Scientists, set ${DOOMSDAY.set} (was ${DOOMSDAY.prev}s in 2025)`}><span>☢ Doomsday Clock</span><span className="mono" style={{color:'#fca5a5'}}>{DOOMSDAY.seconds} sec to midnight</span></a>
 </div>
 
-{highlighted&&!selected&&(
+{highlighted&&!selected&&!country&&(
 <div className="spotlight" onClick={()=>setSelected(highlighted)}>
 <div className="spot-dot"></div><span className="spot-lbl">SPOTLIGHT</span>
 <span className="spot-txt">{highlighted.question}</span>
@@ -1210,26 +1250,34 @@ return(
 {selected.links?.length>0&&<div className="shop-meta" style={{marginTop:4}}>Connects {selected.country} ↔ {selected.links.map(l=>l.country).join(', ')}</div>}
 {(selected.tokenYes||selected.seriesTicker)&&<PriceChart data={history&&(history.length?[...history,{t:Date.now(),p:selected.probability}]:history)}/>}
 {similar.length>0&&<div style={{marginTop:12,borderTop:'1px solid var(--border)',paddingTop:8}}><div className="dc-kicker" style={{marginBottom:4}}>SAME QUESTION ELSEWHERE</div>{similar.map(({m})=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {srcName(m.source)} · {m.question}</span><span className="mono" style={{color:Math.abs(m.probability-selected.probability)>=0.05?'var(--yellow)':undefined}}>{fmtProb(m.probability)}{Math.abs(m.probability-selected.probability)>=0.01?' ('+(m.probability>selected.probability?'+':'−')+Math.round(Math.abs(m.probability-selected.probability)*100)+')':''}</span></div>)}</div>}
+{selected.country&&countIn(selected.country)>1&&<div className="detail-more" onClick={()=>openCountry(selected.country)}>{country===selected.country?'← Back to':'All'} {countIn(selected.country)} markets in {selected.country}</div>}
 {selected.url&&<a href={selected.url} target="_blank" rel="noopener noreferrer" className="detail-link">View on {srcName(selected.source)} →</a>}
 </div>)}
+
+{country&&!selected&&(()=>{const h=hotByCountry.get(country),pct=h&&h.tension!=null?Math.round(h.tension*100):null;return(
+<div className="detail">
+<div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>
+{pct!=null&&<div className="shop-meta" style={{marginTop:-6,marginBottom:8}}>Escalation odds <b style={{color:nehLabel(pct).c}}>{pct}%</b> · {nehLabel(pct).t}{h.vol24?' · '+fmtVol(h.vol24)+' traded 24h':''}</div>}
+<div className="country-list">{countryMarkets.slice(0,80).map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
+</div>)})()}
 
 <div className="layers" role="group" aria-label="Globe layers">
 {[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null]].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
-<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
+<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} onCountry={openCountry} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
 {gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl={globeView==='night'?NIGHT_TEX:DAY_TEX} bumpImageUrl={TEX+'earth-topology.png'} backgroundImageUrl={TEX+'night-sky.png'}
 polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor={polySide} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={polyAlt} polygonLabel={polyLabel} onPolygonClick={pickCountry} polygonsTransitionDuration={REDUCED_MOTION?0:1200}
-pointsData={globePoints} pointLat="lat" pointLng="lng"
-pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:d.isShop?0.01+(d.ratio||0)*0.02:Math.min(0.05+(isUSD(d)?d.volume:d.volume/100)/50000000,0.18)}
-pointRadius={d=>d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.55:0.35}
-pointColor={d=>d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:d.category==='Conflict'?'#f97316':d.probability>=0.7?'#22c55e':d.probability>=0.4?'#eab308':'#ef4444'}
+onZoom={onZoom} pointsData={globePoints} pointLat="lat" pointLng="lng" pointResolution={24}
+pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:dotAlt(d)}
+pointRadius={d=>(d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.9:dotRadius(d))*zf}
+pointColor={d=>d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:marketColor(d)}
 pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+SHOP_STATUS(d.ratio).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
 onPointClick={pickPoint} pointsTransitionDuration={REDUCED_MOTION?0:900} arcsTransitionDuration={REDUCED_MOTION?0:1500} arcDashInitialGap="initGap"
 labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:1.05} labelDotRadius={d=>d.pentagon?0.3:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
 arcsData={arcs} arcStartLat="startLat" arcStartLng="startLng" arcEndLat="endLat" arcEndLng="endLng" arcColor="color" arcAltitude="altitude" arcStroke="stroke" arcDashLength="dashLength" arcDashGap="dashGap" arcDashAnimateTime="dashAnimateTime"
-ringsData={rings} ringLat="lat" ringLng="lng" ringMaxRadius="maxR" ringPropagationSpeed="propagationSpeed" ringRepeatPeriod="repeatPeriod" ringColor={d=>t=>{const c=d.color;return c.startsWith('#')?c+Math.round((1-t)*200).toString(16).padStart(2,'0'):c}}
+ringsData={rings} ringLat="lat" ringLng="lng" ringMaxRadius={d=>d.maxR*zf} ringPropagationSpeed={d=>d.propagationSpeed*zf} ringRepeatPeriod="repeatPeriod" ringColor={d=>t=>{const c=d.color;return c.startsWith('#')?c+Math.round((1-t)*200).toString(16).padStart(2,'0'):c}}
 atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 </main>
 
@@ -1259,7 +1307,7 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 {tab==='hot'&&(<div className="tab-fade">
 <div className="note" style={{paddingTop:0}}>Countries ranked by escalation odds × money at stake on real-money markets. Click to fly there.</div>
 {hot.slice(0,15).map((h,i)=>(
-<div key={h.country} className="hot" onClick={()=>h.top&&setSelected(h.top)}>
+<div key={h.country} className="hot" onClick={()=>openCountry(h.country)}>
 <div className="hot-hd"><span className="hot-name"><span className="muted mono" style={{fontSize:11,marginRight:6}}>{i+1}</span>{h.country}</span><span className="shop-meta">{h.n} market{h.n>1?'s':''}{h.vol24?' · '+fmtVol(h.vol24)+' 24h':''}</span></div>
 {h.tension!=null&&<><div className="hot-bar"><span style={{width:Math.round(h.tension*100)+'%',background:nehLabel(Math.round(h.tension*100)).c}}></span></div><div className="shop-meta">Escalation odds {Math.round(h.tension*100)}% · {nehLabel(Math.round(h.tension*100)).t}</div></>}
 {h.top&&<div className="shop-meta" style={{marginTop:4,color:'var(--text)'}}>{h.top.question} <b className="mono">{fmtProb(h.top.probability)}</b></div>}
