@@ -8,17 +8,23 @@
   <meta name="theme-color" content="#0a0f1a">
   <meta property="og:title" content="ConnecTHOR — Pizza Index & Market Intel">
   <meta property="og:description" content="Pentagon Pizza Index, DOUGHCON level and live geopolitical prediction markets on a 3D globe.">
+  <script>
+    // The GitHub Pages copy forwards to the real domain: only there does the /api proxy run
+    // (Kalshi, news, military aircraft). Keeps a shared #m=<market> link intact.
+    if(/github\.io$/.test(location.hostname))location.replace('https://connecthor.org/'+location.hash);
+  </script>
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <meta property="og:image" content="https://mbp-agentz.github.io/connecthor/og-image.png">
+  <meta property="og:image" content="https://connecthor.org/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:url" content="https://mbp-agentz.github.io/connecthor/">
+  <meta property="og:url" content="https://connecthor.org/">
+  <link rel="canonical" href="https://connecthor.org/">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://mbp-agentz.github.io/connecthor/og-image.png">
+  <meta name="twitter:image" content="https://connecthor.org/og-image.png">
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/react-globe.gl@2.27.2"></script>

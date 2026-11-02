@@ -2,6 +2,8 @@
 
 Pentagon Pizza Index + geopolitical prediction-market intel on a 3D globe, in a single static `index.html`. Inspired by [PizzINT](https://www.pizzint.watch/).
 
+**Live: https://connecthor.org**
+
 ## Features
 
 - **🍕 Pentagon Pizza Watch** - "Popular Times"-style busyness charts for pizza shops near the Pentagon, each scored against its usual level for that hour (QUIET / NOMINAL / BUSY / SPIKE)
