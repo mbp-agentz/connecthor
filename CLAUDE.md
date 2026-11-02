@@ -25,6 +25,7 @@ A single-page "situation monitor" inspired by PizzINT (pizzint.watch). A 3D glob
 | adsb.lol military aircraft, GDELT coverage, Doomsday Clock | `OSINT LAYERS` | `DOOMSDAY` is a hand-maintained constant (85 s, Jan 2026) |
 | Globe view: night / day / live sun | `DAY / NIGHT` | `subsolar()` (sun position), `applyDayNight` patches the globe's own MeshPhongMaterial via `onBeforeCompile`; button at the end of the layer bar, saved in `ct-view` |
 | NEH index | `NOTHING EVER HAPPENS INDEX` | Real-money venues only (`isUSD`) |
+| Hotspot shading on the map | `heatMap` (in `App`), `heatFill`, `NE_NAME` | Countries with conflict markets shaded amber→red by `hotspots()` heat × tension; hover = tension, market count, lead conflict market (`topWar`); click opens it. Same on the 2D `FlatMap`. Layer toggle `hot` |
 | Hotspots, Ticker, FlatMap (2D fallback), Boundary | `COMPONENTS` | |
 | App state, effects, render | `function App()` | |
 | Footer (PizzINT credit, data sources, disclaimer) | `className="foot"` | Its own grid row `f` below the ticker |
@@ -44,6 +45,7 @@ A single-page "situation monitor" inspired by PizzINT (pizzint.watch). A 3D glob
 - Day/night: react-globe.gl 2.27's ref has no `globeMaterial()`, so `globeMat` finds the sphere in `scene()`. `Texture.clone()` shares its image `Source`; the night copy needs its own (`new map.source.constructor(img)`) or the day map turns into night too. Never let the view code throw into `App` (it once blanked the page).
 - GDELT allows one request per 5 s per IP: without the proxy, the coverage chart starts 7 s after the news fallback.
 - Only switch from sample markets to live data when a real-money venue loaded (`all.some(isUSD)`); Manifold alone made NEH 0 and volume $0.
+- Hotspot polygon accessors (`polyCap`, `polySide`, `polyAlt`, `polyLabel`) are memoised on `heatKey` (rounded heat per country), never on prices: new accessor functions make globe.gl re-render the whole country layer every price tick. Only countries with conflict markets (`tension!=null`) are shaded; our country labels map to Natural Earth `ADMIN` names via `NE_NAME` (NATO/EU have no shape).
 - Every arc/ring/point number must be finite: a missing `vol24` once made arc stroke `NaN` (three.js "radius is NaN").
 - The page must degrade gracefully: every feed failure falls back to sample data or a labelled simulated view, never to a crash.
 
