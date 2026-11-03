@@ -59,6 +59,7 @@
     .right{grid-area:r;border-left:1px solid var(--border)}
     .panel-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
     .panel-title{font-size:13px;font-weight:700}
+    .fold{display:none;color:var(--muted);font-size:11px;margin-left:6px;transition:transform .2s}
     .badge{background:var(--blue);color:white;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
     .badge.warn{background:rgba(234,179,8,0.15);color:var(--yellow);border:1px solid rgba(234,179,8,0.4)}
     .scroll{flex:1;overflow-y:auto;padding:10px}
@@ -222,6 +223,12 @@
       .app{height:auto;grid-template-columns:1fr;grid-template-rows:auto auto 70vh auto auto auto;grid-template-areas:"h" "l" "g" "r" "t" "f"}
       .left,.right{border:none;border-bottom:1px solid var(--border);max-height:none}
       .scroll{overflow:visible}
+      /* on phones the pizza panel would push the globe a screen down, so it starts folded */
+      .left .panel-hd{cursor:pointer;user-select:none}
+      .left .fold{display:inline-block}
+      .left.open .fold{transform:rotate(180deg)}
+      .left:not(.open) .scroll{display:none}
+      .left:not(.open) .panel-hd{border-bottom:none}
       .header{flex-wrap:wrap}
       .stats{flex-wrap:wrap;gap:12px}
       .neh{width:auto;right:12px;top:52px;transition:padding .25s}
@@ -1024,6 +1031,7 @@ const[lastUpd,setLastUpd]=useState(new Date());
 const[newsLastUpd,setNewsLastUpd]=useState(null);
 const[pizza,setPizza]=useState(null);
 const[pizzaHist,setPizzaHist]=useState(null);
+const[pizzaOpen,setPizzaOpen]=useState(false); // only matters in the mobile layout (CSS)
 const[trades,setTrades]=useState([]);
 const[tradesLive,setTradesLive]=useState(null);
 const[whaleOnly,setWhaleOnly]=useState(false);
@@ -1257,8 +1265,8 @@ return(
 <input className="search" type="text" placeholder="Search markets..." value={search} onChange={e=>setSearch(e.target.value)}/>
 </header></Boundary>
 
-<Boundary name="Pizza panel" className="left"><aside className="left">
-<div className="panel-hd"><span className="panel-title">🍕 Pentagon Pizza Watch</span><span className={`badge ${pizza?.source==='live'?'':'warn'}`}>{pizza?.source==='live'?'LIVE':'SIMULATED'}</span></div>
+<Boundary name="Pizza panel" className="left"><aside className={`left ${pizzaOpen?'open':''}`}>
+<div className="panel-hd" onClick={()=>setPizzaOpen(o=>!o)} aria-expanded={pizzaOpen}><span className="panel-title">🍕 Pentagon Pizza Watch<span className="fold">▼</span></span><span className={`badge ${pizza?.source==='live'?'':'warn'}`}>{pizza?.source==='live'?'LIVE':'SIMULATED'}</span></div>
 <div className="scroll"><PizzaPanel pizza={pizza} history={pizzaHist}/></div>
 </aside></Boundary>
 
