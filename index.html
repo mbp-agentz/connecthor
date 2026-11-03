@@ -89,6 +89,11 @@
     .chart-readout{font-size:10px;color:var(--muted);height:14px;margin-top:2px}
     .axis{display:flex;justify-content:space-between;font-size:9px;color:var(--faint);margin-top:1px}
     .note{font-size:10px;color:var(--faint);line-height:1.5;padding:4px 2px 12px}
+    /* Simulated pizza data must never read as a measurement of a real place */
+    .sim-banner{display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.4;color:#fde68a;background:rgba(234,179,8,0.08);border:1px dashed rgba(234,179,8,0.45);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+    .sim-banner b{color:var(--yellow);letter-spacing:0.05em}
+    .sim-tag{font-size:8px;font-weight:800;letter-spacing:0.08em;color:var(--yellow);opacity:.85}
+    .dc-pill .sim-tag{margin-left:2px}
 
     /* globe */
     .globe{grid-area:g;position:relative;background:radial-gradient(ellipse at center,#1a1f35,#0a0f1a);overflow:hidden;min-height:0}
@@ -104,6 +109,7 @@
     .neh-drv{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;cursor:pointer}
     .neh-drv:hover{color:var(--blue)}
     .neh-drv span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .neh-short,.neh-chev{display:none}
     .spotlight{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2));backdrop-filter:blur(12px);border:1px solid rgba(59,130,246,0.3);border-radius:50px;padding:10px 20px;cursor:pointer;max-width:90%}
     .spot-dot{width:8px;height:8px;background:var(--blue);border-radius:50%;animation:pulse 1s infinite;flex-shrink:0}
     .spot-lbl{font-size:10px;font-weight:700;color:var(--blue)}
@@ -218,8 +224,24 @@
       .scroll{overflow:visible}
       .header{flex-wrap:wrap}
       .stats{flex-wrap:wrap;gap:12px}
-      .neh{width:auto;right:12px;top:52px}
+      .neh{width:auto;right:12px;top:52px;transition:padding .25s}
+      .neh .dc-kicker{cursor:pointer}
+      .neh-chev{display:block;position:absolute;top:8px;right:12px;padding:2px 4px;color:var(--faint);cursor:pointer}
+      /* Scrolled to the globe: shrink the card to one thin line so it stops covering the map; tap opens it */
+      .neh.slim{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;cursor:pointer}
+      .neh.slim .neh-full,.neh.slim .info,.neh.slim .dc-legend,.neh.slim .neh-drivers,.neh.slim .doom,.neh.slim .neh-delta{display:none}
+      .neh.slim .neh-short{display:inline}
+      .neh.slim .neh-row{display:contents}
+      .neh.slim .neh-score{font-size:15px}
+      .neh.slim .meter{order:2;flex:1;height:4px;margin:0;min-width:40px}
+      .neh.slim .meter-mark{top:-3px;height:10px;width:3px}
+      .neh.slim .neh-label{order:3;font-size:11px;white-space:nowrap}
+      .neh.slim .neh-chev{order:4;position:static;padding:0}
       .ticker{position:sticky;bottom:0}
+      /* Six stacked shop cards pushed the globe a full screen down: swipe through them in one row instead */
+      .shops{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -10px 8px;padding:0 10px 4px;scroll-padding:0 10px;scrollbar-width:none}
+      .shops::-webkit-scrollbar{display:none}
+      .shops .shop{flex:0 0 78%;max-width:300px;scroll-snap-align:start;margin-bottom:0}
     }
   </style>
 </head>
@@ -832,7 +854,7 @@ function FlatMap({w,h,countries,points,arcs,selected,onSelect,onCountry,dcColor,
     {points.map(d=>{const[x,y]=px(d.lng,d.lat);const sel=selected?.id===d.id;return<circle key={d.id} cx={x} cy={y} r={d.isAir?1.8:d.isShop?2:sel?7:4+Math.min((d.volume||0)/2e7,4)} fill={d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:d.category==='Conflict'?'#f97316':d.probability>=0.7?'#22c55e':d.probability>=0.4?'#eab308':'#ef4444'} stroke="#0a0f1a" strokeWidth="1.5" style={{cursor:d.isShop?'default':'pointer'}} onMouseEnter={()=>setHov(d)} onMouseLeave={()=>setHov(null)} onClick={()=>!d.isShop&&onSelect(d)}/>})}
     <circle cx={pxP} cy={pyP} r="5" fill="none" stroke={dcColor} strokeWidth="2"><animate attributeName="r" values="4;14;4" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite"/></circle>
     <text x={pxP+8} y={pyP+4} fill={dcColor} fontSize="10" fontWeight="700">PENTAGON</text>
-    {hov&&(()=>{const[x,y]=px(hov.lng,hov.lat);const t=hov.isAir?'✈ '+(hov.callsign||'Military aircraft')+(hov.type?' · '+hov.type:''):hov.isShop?'🍕 '+hov.name:hov.question+' · '+fmtProb(hov.probability);const tw=Math.min(t.length*6.2+16,300);const tx=Math.min(Math.max(x-tw/2,4),W-tw-4);return<g pointerEvents="none"><rect x={tx} y={y-34} width={tw} height="22" rx="5" fill="rgba(10,15,26,0.95)" stroke="rgba(59,130,246,0.4)"/><text x={tx+8} y={y-19} fill="#f1f5f9" fontSize="11">{t.length>48?t.slice(0,47)+'…':t}</text></g>})()}
+    {hov&&(()=>{const[x,y]=px(hov.lng,hov.lat);const t=hov.isAir?'✈ '+(hov.callsign||'Military aircraft')+(hov.type?' · '+hov.type:''):hov.isShop?'🍕 '+hov.name+(hov.source!=='live'?' (simulated)':''):hov.question+' · '+fmtProb(hov.probability);const tw=Math.min(t.length*6.2+16,300);const tx=Math.min(Math.max(x-tw/2,4),W-tw-4);return<g pointerEvents="none"><rect x={tx} y={y-34} width={tw} height="22" rx="5" fill="rgba(10,15,26,0.95)" stroke="rgba(59,130,246,0.4)"/><text x={tx+8} y={y-19} fill="#f1f5f9" fontSize="11">{t.length>48?t.slice(0,47)+'…':t}</text></g>})()}
   </svg>);
 }
 
@@ -863,7 +885,7 @@ function Clock(){
 
 // Popular-times style bars: typical busyness per hour, current hour shows live value
 const HOURS=Array.from({length:24},(_,i)=>(i+6)%24); // 6am → 5am
-function PopChart({shop,hour}){
+function PopChart({shop,hour,sim}){
   const[hov,setHov]=useState(null);
   const W=240,H=50,bw=8,gap=2,cur=Math.floor(hour);
   const st=SHOP_STATUS(shop.ratio);
@@ -875,12 +897,12 @@ function PopChart({shop,hour}){
       <line x1="0" x2={W} y1={H-0.5} y2={H-0.5} stroke="rgba(148,163,184,0.25)"/>
       {HOURS.map((h,i)=>{const x=i*(bw+gap);const typ=shop.curve[h];const isCur=h===cur;return(<g key={h}>
         {typ>0&&<path d={`M${x},${H} V${y(typ)+2} q0,-2 2,-2 h${bw-4} q2,0 2,2 V${H} Z`} fill={isCur?'rgba(148,163,184,0.18)':hov===h?'rgba(148,163,184,0.55)':'var(--track)'} stroke={isCur?'rgba(226,232,240,0.7)':'none'} strokeDasharray={isCur?'2 2':undefined}/>}
-        {isCur&&shop.live!=null&&<path d={`M${x+1},${H} V${y(shop.live)+2} q0,-2 2,-2 h${bw-6} q2,0 2,2 V${H} Z`} fill={st.c}/>}
+        {isCur&&shop.live!=null&&<path d={`M${x+1},${H} V${y(shop.live)+2} q0,-2 2,-2 h${bw-6} q2,0 2,2 V${H} Z`} fill={st.c} fillOpacity={sim?0.7:1} stroke={sim?st.c:'none'} strokeDasharray={sim?'2 1.5':undefined}/>}
         <rect x={x-1} y="0" width={bw+gap} height={H} fill="transparent" onMouseEnter={()=>setHov(h)}/>
       </g>)})}
     </svg>
     <div className="axis"><span>6a</span><span>12p</span><span>6p</span><span>12a</span><span>5a</span></div>
-    <div className="chart-readout">{fmtHour(read)}: usually {readTyp?readTyp+'% busy':'closed'}{read===cur&&shop.live!=null?` · now ${Math.round(shop.live)}%`:''}</div>
+    <div className="chart-readout">{fmtHour(read)}: usually {readTyp?readTyp+'% busy':'closed'}{read===cur&&shop.live!=null?` · ${sim?'simulated':'now'} ${Math.round(shop.live)}%`:''}</div>
   </div>);
 }
 
@@ -952,25 +974,27 @@ function PizzaPanel({pizza,history}){
   if(!pizza)return<div className="news-loading">Loading pizza intel…</div>;
   const dc=doughconFor(pizza.index);const D=DOUGHCON[dc];
   const shops=[...pizza.shops].sort((a,b)=>a.dist-b.dist); // fixed order, nearest first, so cards don't reshuffle
+  const sim=pizza.source!=='live';
   return(<>
+    {sim&&<div className="sim-banner"><span>🧪</span><span><b>SIMULATED</b> · Not real foot traffic. Typical-day curves plus random surges, for fun.</span></div>}
     <div className="dc-box" style={{borderColor:D.color+'66'}}>
       <div className="dc-top">
-        <div><div className="dc-kicker">DOUGHCON</div><div className="dc-level" style={{color:D.color}}>LEVEL {dc}</div><div className="dc-name">{D.name}</div></div>
-        <div className="dc-index"><div className="dc-kicker">PIZZA INDEX</div><div className="v mono">{pizza.index.toFixed(2)}×</div><div className="shop-meta">of usual activity</div></div>
+        <div><div className="dc-kicker">DOUGHCON{sim&&<span className="sim-tag"> · SIM</span>}</div><div className="dc-level" style={{color:D.color}}>LEVEL {dc}</div><div className="dc-name">{D.name}</div></div>
+        <div className="dc-index"><div className="dc-kicker">PIZZA INDEX</div><div className="v mono">{pizza.index.toFixed(2)}×</div><div className="shop-meta">{sim?'simulated vs usual':'of usual activity'}</div></div>
       </div>
       <div className="dc-scale">{[5,4,3,2,1].map(l=><div key={l} className={`dc-seg ${l===dc?'on':''}`} style={l===dc?{background:DOUGHCON[l].color}:{}}>{l}</div>)}</div>
       <div className="dc-legend"><span>Peacetime</span><span>Max readiness</span></div>
       <Sparkline data={history}/>
     </div>
-    {shops.map(s=>{const st=SHOP_STATUS(s.ratio);return(
+    <div className="shops">{shops.map(s=>{const st=SHOP_STATUS(s.ratio);return(
       <div key={s.id} className="shop">
         <div className="shop-hd">
           <div><div className="shop-name">{s.name}</div><div className="shop-meta">{s.area} · {s.dist} mi from Pentagon</div></div>
-          <div className="shop-pct"><span className="chip" style={{color:st.c,borderColor:st.c+'66'}}>● {st.t}</span>{s.ratio!=null&&<div className="v mono">{Math.round(s.ratio*100)}%</div>}</div>
+          <div className="shop-pct"><span className="chip" style={{color:st.c,borderColor:st.c+'66'}}>● {st.t}</span>{s.ratio!=null&&<div className="v mono">{Math.round(s.ratio*100)}%</div>}{s.ratio!=null&&sim&&<div className="sim-tag">SIM vs usual</div>}</div>
         </div>
-        <PopChart shop={s} hour={pizza.hour}/>
-      </div>)})}
-    <div className="note">{pizza.source==='model'?'⚠ Modeled data. Google Maps Popular Times has no public API, so live busyness is simulated from typical curves with occasional correlated surges. Set PIZZA_DATA_URL to connect a real feed.':'Live feed · updated '+fmtTime(pizza.updated)}<br/>The Pentagon Pizza Index is folklore-grade OSINT — for fun, not for decisions.</div>
+        <PopChart shop={s} hour={pizza.hour} sim={sim}/>
+      </div>)})}</div>
+    <div className="note">{sim?'Why simulated: Google Maps Popular Times has no public API. Shop names are generic and the busyness is made up, so it says nothing about any real restaurant.':'Live feed · updated '+fmtTime(pizza.updated)}<br/>The Pentagon Pizza Index is folklore-grade OSINT. For fun, not for decisions.</div>
   </>);
 }
 
@@ -1122,6 +1146,21 @@ useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;con
 useEffect(()=>{if(!globeEl.current||!HAS_WEBGL)return;try{return applyDayNight(globeEl.current,globeView==='live')}catch(e){console.log('Day/night unavailable:',e.message)}},[globeView,gsize.w>0]);
 
 // Size the globe to its grid cell, not the window
+// Mobile: the NEH card shrinks to a slim bar once the globe scrolls into view, and again on any further scroll down after a tap opened it
+const[nehSlim,setNehSlim]=useState(false);
+const[nehOpen,setNehOpen]=useState(false);
+useEffect(()=>{
+  const mq=window.matchMedia('(max-width:1100px)');let last=window.scrollY,raf=0;
+  const check=()=>{raf=0;const el=globeWrap.current;if(!el)return;
+    if(!mq.matches){setNehSlim(false);setNehOpen(false);return}
+    const y=window.scrollY,down=y-last>6;if(Math.abs(y-last)>6)last=y;
+    setNehSlim(el.getBoundingClientRect().top<window.innerHeight*0.45);
+    if(down)setNehOpen(false)};
+  const on=()=>{if(!raf)raf=requestAnimationFrame(check)};
+  window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',on);check();
+  return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',on);if(raf)cancelAnimationFrame(raf)};
+},[]);
+const nehMini=nehSlim&&!nehOpen;
 useEffect(()=>{const el=globeWrap.current;if(!el)return;const ro=new ResizeObserver(([e])=>setGsize({w:Math.round(e.contentRect.width),h:Math.round(e.contentRect.height)}));ro.observe(el);return()=>ro.disconnect()},[]);
 
 useEffect(()=>{if(!globeEl.current)return;const c=globeEl.current.controls();c.autoRotate=!REDUCED_MOTION;c.autoRotateSpeed=0.12;c.enableDamping=true;c.dampingFactor=0.08;
@@ -1148,6 +1187,7 @@ const whaleKey=pulses.filter(p=>p.whale).map(p=>p.id).join('|');
 const flowArcs=useMemo(()=>pulses.filter(p=>p.whale).map(p=>({startLat:PENTAGON.lat,startLng:PENTAGON.lng,endLat:p.lat,endLng:p.lng,color:p.side==='SELL'?['rgba(239,68,68,0.1)','rgba(239,68,68,0.95)']:['rgba(34,197,94,0.1)','rgba(34,197,94,0.95)'],stroke:1.4,dashLength:1,dashGap:0,dashAnimateTime:0,altitude:0.35})),[whaleKey]);
 const nl=nehLabel(neh.score);
 const dc=pizza?doughconFor(pizza.index):5;
+const pizzaSim=pizza?.source!=='live';
 // Rebuilding arc/ring objects restarts their animations, so key them on which markets are shown, not on prices
 const shownKey=filtered.map(m=>m.id).join('|');
 const baseArcs=useMemo(()=>genArcs(filtered),[shownKey]);
@@ -1155,7 +1195,7 @@ const arcs=useMemo(()=>{const a=layers.arcs?baseArcs:[];return layers.trades&&fl
 const baseRings=useMemo(()=>genRings(filtered,dc),[shownKey,dc]);
 const hlRing=useMemo(()=>highlighted?[{lat:highlighted.lat,lng:highlighted.lng,maxR:4,propagationSpeed:1,repeatPeriod:2200,color:'rgba(255,255,255,0.5)'}]:[],[highlighted?.id]);
 const rings=useMemo(()=>[...hlRing,...(layers.markets?baseRings:baseRings.slice(-1)),...(layers.trades?pulses:[])],[hlRing,baseRings,pulses,layers.markets,layers.trades]);
-const shopPoints=useMemo(()=>(pizza?.shops||[]).map(s=>({...s,isShop:true})),[pizza]);
+const shopPoints=useMemo(()=>(pizza?.shops||[]).map(s=>({...s,isShop:true,source:pizza.source})),[pizza]);
 // Reuse the same point objects so the globe updates colours/heights in place instead of re-growing every marker on each price tick
 const pointCache=useRef(new Map());
 const globePoints=useMemo(()=>{const prev=pointCache.current,next=new Map();
@@ -1163,12 +1203,12 @@ const globePoints=useMemo(()=>{const prev=pointCache.current,next=new Map();
   pointCache.current=next;return out},[filtered,shopPoints,air,layers.markets,layers.pizza,layers.air]);
 const pickPoint=d=>{if(d.isShop||d.isAir){if(d.isAir)window.open('https://globe.adsb.lol/?icao='+d.id.slice(4),'_blank','noopener');return}setSelected(marketsRef.current.find(m=>m.id===d.id)||{...d})};
 const tickerItems=useMemo(()=>{
-const head=[{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
+const head=[{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}${pizzaSim?' (simulated)':''}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
 ...movers.slice(0,3).map(m=>({text:`${m.change24>0?'📈':'📉'} ${m.question} ${fmtProb(m.probability)} (${fmtChg(m.change24)} 24h)`,onClick:()=>setSelected(m)})),
 ...geoWhales.map(t=>({text:`🐋 ${fmtVol(t.usd)} ${t.side} ${t.outcome} — ${t.title}`,href:t.url}))];
 if(news.length===0){const r=[...head,{text:'Loading live news…'}];r.placeholder=true;return r}
 return[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.source+': '+n.title,href:n.url}))];
-},[news,dc,neh.score,movers,geoWhales]);
+},[news,dc,pizzaSim,neh.score,movers,geoWhales]);
 const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(markets),[markets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
@@ -1207,7 +1247,7 @@ return(
 <Boundary name="Header" className="header"><header className="header">
 <div className="logo"><span className="logo-icon">⚡</span><div><h1>ConnecTHOR</h1><div className="logo-sub">Pentagon Pizza Index · Market Intel</div></div></div>
 <div className="stats">
-<div className="dc-pill" title="DOUGHCON: a DEFCON-style 5→1 level from how busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum." style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}</div>
+<div className="dc-pill" title={`DOUGHCON: a DEFCON-style 5→1 level from how busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.${pizza?.source!=='live'?' Currently simulated, not real data.':''}`} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
 <div className="stat"><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index</div></div>
 <div className="stat"><div className="stat-val">{stats.total}</div><div className="stat-lbl">Markets</div></div>
 <div className="stat"><div className="stat-val" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'center',color:wsStatus==='live'?'var(--green)':'var(--muted)'}}><span className="dot" style={{background:wsStatus==='live'?'var(--green)':'var(--faint)',animation:wsStatus==='live'?undefined:'none'}}></span>{wsStatus==='live'?'LIVE':wsStatus==='connecting'?'…':'OFF'}</div><div className="stat-lbl">Price stream</div></div>
@@ -1218,16 +1258,17 @@ return(
 </header></Boundary>
 
 <Boundary name="Pizza panel" className="left"><aside className="left">
-<div className="panel-hd"><span className="panel-title">🍕 Pentagon Pizza Watch</span><span className={`badge ${pizza?.source==='live'?'':'warn'}`}>{pizza?.source==='live'?'LIVE':'MODELED'}</span></div>
+<div className="panel-hd"><span className="panel-title">🍕 Pentagon Pizza Watch</span><span className={`badge ${pizza?.source==='live'?'':'warn'}`}>{pizza?.source==='live'?'LIVE':'SIMULATED'}</span></div>
 <div className="scroll"><PizzaPanel pizza={pizza} history={pizzaHist}/></div>
 </aside></Boundary>
 
 <main className="globe" ref={globeWrap}>
 <div className={`badge-api ${dataSource==='live'?'':'sample'}`}><span className="dot" style={{width:6,height:6,background:dataSource==='live'?'var(--green)':'var(--yellow)'}}></span>{dataSource==='live'?'Live · '+Object.keys(venues).filter(k=>venues[k]).map(srcName).join(', '):'Sample markets'} · {fmtTime(lastUpd)}{wsStatus==='live'?' · streaming':''}</div>
 
-<div className="neh">
-<div className="dc-kicker">NOTHING EVER HAPPENS INDEX<span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
-<div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
+<div className={`neh${nehMini?' slim':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
+<div className="dc-kicker" onClick={e=>{if(nehSlim&&!nehMini){e.stopPropagation();setNehOpen(false)}}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
+<div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono neh-delta" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
+<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini){e.stopPropagation();setNehOpen(false)}}}>{nehMini?'▾':nehSlim?'▴':''}</span>
 <div className="meter" role="meter" aria-valuenow={neh.score} aria-valuemin="0" aria-valuemax="100"><div className="meter-mark" style={{left:neh.score+'%'}}></div></div>
 <div className="dc-legend"><span>Nothing happens</span><span>It's happening</span></div>
 <div className="neh-drivers">{neh.drivers.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{m.question}</span><span className="mono">{fmtProb(m.probability)}</span></div>)}</div>
@@ -1279,7 +1320,7 @@ onZoom={onZoom} pointsData={globePoints} pointLat="lat" pointLng="lng" pointReso
 pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:dotAlt(d)}
 pointRadius={d=>(d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.9:dotRadius(d))*zf}
 pointColor={d=>d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:marketColor(d)}
-pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+SHOP_STATUS(d.ratio).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
+pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+SHOP_STATUS(d.ratio).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+(d.source!=='live'?' · simulated':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
 onPointClick={pickPoint} pointsTransitionDuration={REDUCED_MOTION?0:900} arcsTransitionDuration={REDUCED_MOTION?0:1500} arcDashInitialGap="initGap"
 labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:1.05} labelDotRadius={d=>d.pentagon?0.3:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
 arcsData={arcs} arcStartLat="startLat" arcStartLng="startLng" arcEndLat="endLat" arcEndLng="endLng" arcColor="color" arcAltitude="altitude" arcStroke="stroke" arcDashLength="dashLength" arcDashGap="dashGap" arcDashAnimateTime="dashAnimateTime"

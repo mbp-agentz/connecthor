@@ -1,0 +1,62 @@
+# Deploys to Cloudflare Pages (project "connecthor"), so nobody needs a computer with wrangler:
+# - push to main  -> production (connecthor.org)
+# - pull request  -> preview at https://pr-<number>.connecthor.pages.dev, linked in a PR comment
+# Needs repo secrets CLOUDFLARE_API_TOKEN (permission: Account > Cloudflare Pages > Edit) and CLOUDFLARE_ACCOUNT_ID.
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: deploy-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Fork PRs get no secrets; skip instead of failing
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Upload exactly the tracked files (same as the old manual `git archive` deploy), never .git or workflow files
+      - name: Prepare files
+        run: |
+          mkdir -p "$RUNNER_TEMP/site"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/site"
+          rm -rf "$RUNNER_TEMP/site/.github"
+
+      - name: Deploy
+        id: deploy
+        working-directory: ${{ runner.temp }}/site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BRANCH: ${{ github.event_name == 'push' && 'main' || format('pr-{0}', github.event.pull_request.number) }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (see README → Deploy)."; exit 1
+          fi
+          npx --yes wrangler@4.20.0 pages deploy . --project-name connecthor --branch "$BRANCH" --commit-hash "$GITHUB_SHA" --commit-dirty=true
+          if [ "$BRANCH" = main ]; then echo "url=https://connecthor.org" >> "$GITHUB_OUTPUT"; else echo "url=https://$BRANCH.connecthor.pages.dev" >> "$GITHUB_OUTPUT"; fi
+          echo "Deployed: $(grep -o 'https://.*' "$GITHUB_OUTPUT" | head -1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview link
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          body="Preview: $URL (commit ${GITHUB_SHA:0:7}). Updates on every push to this PR."
+          gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --edit-last --body "$body" 2>/dev/null \
+            || gh pr comment ${{ github.event.pull_request.number }} --repo "$GITHUB_REPOSITORY" --body "$body"
