@@ -42,9 +42,15 @@ To use real data, run your own collector and set `PIZZA_DATA_URL` in `index.html
 ### Cloudflare Pages (recommended: full data)
 Browsers can't read Kalshi, the military-aircraft feed or the news RSS feeds directly (no CORS headers, bot challenges). On Cloudflare Pages, `functions/api/[[path]].js` serves them as `/api/*`: an allow-listed proxy with edge caching that also merges the RSS feeds into `/api/news`.
 
-1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → pick `connecthor`.
-2. Framework preset **None**, build command empty, build output directory `/`.
-3. **Save and Deploy.** Every push to `main` redeploys; other branches get preview URLs.
+The live project `connecthor` is a direct-upload project, so a GitHub Action deploys it (`.github/workflows/deploy.yml`):
+- every merge to `main` → production (connecthor.org)
+- every pull request → preview at `https://pr-<number>.connecthor.pages.dev`, linked in a PR comment
+
+One-time setup (works from a phone browser):
+1. Cloudflare dashboard → profile icon → **My Profile → API Tokens → Create Token → Custom token**. Permission: **Account · Cloudflare Pages · Edit**, account: the one that owns `connecthor`. Create and copy the token.
+2. Cloudflare dashboard → **Workers & Pages**: copy the **Account ID** (right-hand side, or from the URL `dash.cloudflare.com/<account-id>/…`).
+3. GitHub → repo **Settings → Secrets and variables → Actions → New repository secret**: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+4. Re-run the latest "Deploy to Cloudflare Pages" run under **Actions**, or push/merge anything.
 
 Local test: `npx wrangler pages dev .` → http://localhost:8788
 
