@@ -116,8 +116,15 @@
     .spot-lbl{font-size:10px;font-weight:700;color:var(--blue)}
     .spot-txt{font-size:13px;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .spot-prob{font-size:16px;font-weight:800}
-    .detail{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;width:min(440px,92%);background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 24px;min-width:min(380px,92%)}
+    .detail{position:absolute;bottom:20px;left:50%;transform:translateX(calc(-50% + var(--dx,0px))) rotate(var(--rot,0deg));touch-action:pan-y;z-index:60;width:min(440px,92%);background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 24px;min-width:min(380px,92%)}
     .detail-hd{display:flex;justify-content:space-between;margin-bottom:12px}
+    .detail-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .detail-nav{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex-shrink:0}
+    .detail-nav button{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;width:26px;height:24px;cursor:pointer;font-size:14px;line-height:1}
+    .detail-nav button:hover{border-color:var(--blue)}
+    .detail.dragging{user-select:none;cursor:grabbing}
+    .detail.enter-right{animation:slideInR .28s cubic-bezier(.2,.8,.2,1)}
+    .detail.enter-left{animation:slideInL .28s cubic-bezier(.2,.8,.2,1)}
     .country-list{max-height:min(44vh,340px);overflow:auto;margin-right:-10px;padding-right:10px}
     .detail-more{display:block;margin-top:8px;font-size:11px;color:var(--blue);cursor:pointer}
     .detail-q{font-size:14px;font-weight:700;flex:1;margin-right:12px}
@@ -200,6 +207,8 @@
     .tag.CYBER{background:rgba(168,85,247,0.15);color:#d8b4fe}
     @keyframes fadeUp{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideInR{from{opacity:0;transform:translateX(calc(-50% + 70px)) rotate(4deg)}to{opacity:1;transform:translateX(-50%)}}
+    @keyframes slideInL{from{opacity:0;transform:translateX(calc(-50% - 70px)) rotate(-4deg)}to{opacity:1;transform:translateX(-50%)}}
     .app{animation:fadeIn .6s ease-out}
     .spotlight,.detail{animation:fadeUp .45s cubic-bezier(.2,.8,.2,1)}
     .dc-pill{transition:color .8s,border-color .8s,background .8s}
@@ -215,7 +224,7 @@
     .info{cursor:help;color:var(--faint);font-size:10px;margin-left:4px}
     .ticker-item a,.ticker-item .lnk{color:inherit;text-decoration:none;cursor:pointer}
     .ticker-item a:hover,.ticker-item .lnk:hover{color:var(--blue)}
-    @media(prefers-reduced-motion:reduce){.dot,.spot-dot,.livedot{animation:none!important}.app,.spotlight,.detail{animation:none}}
+    @media(prefers-reduced-motion:reduce){.dot,.spot-dot,.livedot{animation:none!important}.app,.spotlight,.detail,.detail.enter-left,.detail.enter-right{animation:none}}
     ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
     @media(max-width:1100px){
@@ -245,6 +254,7 @@
       .neh.slim .neh-label{order:3;font-size:11px;white-space:nowrap}
       .neh.slim .neh-chev{order:4;position:static;padding:0}
       .ticker{position:sticky;bottom:0}
+      .detail-stats{flex-wrap:wrap;gap:10px 18px}
       /* Six stacked shop cards pushed the globe a full screen down: swipe through them in one row instead */
       .shops{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -10px 8px;padding:0 10px 4px;scroll-padding:0 10px;scrollbar-width:none}
       .shops::-webkit-scrollbar{display:none}
@@ -1100,8 +1110,10 @@ loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,6
 const pendingHash=useRef(decodeURIComponent((location.hash.match(/m=([^&]+)/)||[])[1]||''));
 useEffect(()=>{if(!pendingHash.current)return;const m=markets.find(x=>x.id===pendingHash.current);if(m){setSelected(m);pendingHash.current=''}},[markets]);
 useEffect(()=>{const h=selected?'#m='+encodeURIComponent(selected.id):'';if(location.hash!==h)window.history.replaceState(null,'',h||location.pathname+location.search)},[selected?.id]);
-const selRef=useRef(null);selRef.current=selected;const countryRef=useRef(null);countryRef.current=country;
-useEffect(()=>{const k=e=>{if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else setCountry(null)};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
+useEffect(()=>{const k=e=>{
+if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else setCountry(null)};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Real trades: poll the Data API, pulse the globe where they land, arc in the whales
 useEffect(()=>{
@@ -1244,6 +1256,26 @@ const pickCountry=d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(x)
 // A globe "point" is a cylinder as tall as its altitude: dots sit just above the (flat) country
 // layer, so only a thin disc shows instead of a pin when zoomed in
 const dotAlt=()=>0.0065;
+// Swipe / ← → through the markets of the selected market's place, in country-list order, so you
+// don't have to go back to the list between them. Wraps around at the ends.
+const siblings=useMemo(()=>selected?.country?markets.filter(m=>m.country===selected.country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[selected?.country,markets]);
+const sibIdx=selected?siblings.findIndex(m=>m.id===selected.id):-1;
+const[enter,setEnter]=useState(null); // {id,dir}: which side the next card slides in from
+const stepMarket=d=>{if(siblings.length<2)return;const i=sibIdx<0?0:sibIdx,n=siblings[(i+d+siblings.length)%siblings.length];setEnter({id:n.id,dir:d>0?'right':'left'});setSelected(n)};
+stepRef.current=stepMarket;
+// Tinder-style drag: the card follows the finger with a slight tilt; past 80 px it flies out and the
+// neighbour slides in. Mostly-vertical drags are left to the page (touch-action: pan-y). The drag
+// moves the card element directly: a React render per pointer move would re-render the whole globe.
+const drag=useRef(null);
+const setCard=(el,dx,anim)=>{el.style.transition=anim?'transform .17s ease-out, opacity .17s ease-out':'none';el.style.setProperty('--dx',dx+'px');el.style.setProperty('--rot',(dx/25)+'deg');el.style.opacity=String(1-Math.min(Math.abs(dx)/700,0.35))};
+const onCardDown=e=>{if(siblings.length<2||e.button>0||e.target.closest('a,button,.neh-drv'))return;drag.current={x:e.clientX,y:e.clientY,id:e.pointerId,on:false,el:e.currentTarget}};
+const onCardMove=e=>{const d=drag.current;if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;
+  if(!d.on){if(Math.abs(dx)<8&&Math.abs(dy)<8)return;if(Math.abs(dy)>Math.abs(dx)){drag.current=null;return}d.on=true;d.el.classList.add('dragging');try{d.el.setPointerCapture(d.id)}catch(err){}}
+  setCard(d.el,dx,false)};
+const onCardUp=e=>{const d=drag.current;drag.current=null;if(!d||!d.on)return;d.el.classList.remove('dragging');const dx=e.clientX-d.x;
+  if(Math.abs(dx)<=80){setCard(d.el,0,true);return}
+  if(REDUCED_MOTION){stepMarket(dx<0?1:-1);return}
+  const side=dx<0?-1:1;setCard(d.el,side*Math.max(window.innerWidth,600),true);d.el.style.opacity='0';setTimeout(()=>stepMarket(-side),170)};
 const countryMarkets=useMemo(()=>country?markets.filter(m=>m.country===country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[country,markets]);
 const countIn=c=>markets.reduce((n,m)=>n+(m.country===c?1:0),0);
 const relatedFor=t=>{const l=getLocs(t||'')[0];return l?hotByCountry.get(l.country):null};
@@ -1291,8 +1323,13 @@ return(
 </div>)}
 
 {selected&&(
-<div className="detail">
+<div key={selected.id} className={`detail${enter&&enter.id===selected.id?' enter-'+enter.dir:''}`}
+ onPointerDown={onCardDown} onPointerMove={onCardMove} onPointerUp={onCardUp} onPointerCancel={onCardUp}>
+<div className="detail-top">
 <div className="src">{SOURCES[selected.source]?.icon} {srcName(selected.source)}{selected.source==='manifold'?' · play money':''}</div>
+{siblings.length>1&&sibIdx>=0&&<div className="detail-nav" title="Swipe the card or use ← → to move between this place's markets">
+<button onClick={()=>stepMarket(-1)} aria-label="Previous market">‹</button><span className="mono">{sibIdx+1} / {siblings.length}</span><button onClick={()=>stepMarket(1)} aria-label="Next market">›</button></div>}
+</div>
 <div className="detail-hd"><div className="detail-q">{selected.question}</div><button className="detail-close" onClick={()=>setSelected(null)}>✕</button></div>
 <div className="detail-stats">
 <div className="detail-stat"><div className="detail-val" style={{color:selected.probability>=0.6?'var(--green)':selected.probability<=0.4?'var(--red)':'var(--yellow)'}}>{fmtProb(selected.probability)}</div><div className="detail-lbl">Yes</div></div>
