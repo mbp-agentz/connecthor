@@ -26,8 +26,14 @@ const miles = (a, b) => {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 };
-// "1201 S Joyce St, Arlington, VA 22202, United States" -> "Arlington"
-const areaOf = addr => (String(addr || '').split(',')[1] || '').trim() || 'Arlington';
+// BestTime addresses vary ("…Arlington, VA 22202 United States", "…Arlington VA 22202"), so name the
+// neighbourhood from the ZIP code; 22202 spans Pentagon City (north) and Crystal City (south)
+const ZIP_AREA = { 22201: 'Clarendon', 22203: 'Ballston', 22204: 'Columbia Pike', 22206: 'Shirlington', 22209: 'Rosslyn', 20001: 'Washington DC', 20024: 'Washington DC' };
+const areaOf = (addr, lat) => {
+  const zip = (String(addr || '').match(/\b(2\d{4})\b/) || [])[1];
+  if (zip === '22202') return lat >= 38.858 ? 'Pentagon City' : 'Crystal City';
+  return ZIP_AREA[zip] || 'Arlington';
+};
 
 // BestTime days run 6 AM to 5 AM (day_raw[0] = 6:00, day 0 = Monday). The page wants clock hours,
 // so 00:00-05:00 of a weekday come from the end of the previous BestTime day.
@@ -62,7 +68,7 @@ const venues = [];
 for (const v of found) {
   try {
     const w = await call('/forecasts/week/raw2', { venue_id: v.venue_id, api_key_public: PUB });
-    venues.push({ venue_id: v.venue_id, name: v.venue_name, address: v.venue_address, area: areaOf(v.venue_address), lat: +v.lat.toFixed(5), lng: +v.lng.toFixed(5), dist: Math.round(v.dist * 10) / 10, week: clockWeek(w.analysis?.week_raw || []) });
+    venues.push({ venue_id: v.venue_id, name: v.venue_name, address: v.venue_address, area: areaOf(v.venue_address, v.lat), lat: +v.lat.toFixed(5), lng: +v.lng.toFixed(5), dist: Math.round(v.dist * 10) / 10, week: clockWeek(w.analysis?.week_raw || []) });
   } catch (e) { console.log(`  skipped ${v.venue_name}: ${e.message}`); }
 }
 if (!venues.length) throw new Error('no venue had usable forecast data; pizza-venues.json left unchanged');
