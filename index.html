@@ -323,13 +323,12 @@ async function fetchNews() {
 }
 
 // ============ PIZZA INDEX ============
-// Google Maps "Popular Times" has no public API and can't be read from a static page.
-// Until a backend feed exists, live busyness is MODELED: each shop gets a typical
-// weekday curve, and the live value is that curve plus deterministic noise and rare
-// correlated surges (same result for every viewer at the same moment).
-// To plug in real data, set PIZZA_DATA_URL to a JSON endpoint returning
-//   {"updated":"<ISO time>","shops":[{"id":"shop-1","live":72,"typical":[24 hourly values 0-100]}]}
-const PIZZA_DATA_URL = null;
+// Real foot traffic comes from BestTime.app through /api/pizza (functions/api): the pizza places near
+// the Pentagon from pizza-venues.json, their usual curve for today and BestTime's live value. Google
+// Maps "Popular Times" has no API and scraping it breaks Google's terms, so it isn't used.
+// Without the proxy or the BestTime key (GitHub Pages, local file, feed down) busyness is SIMULATED:
+// generic shops with a typical curve plus deterministic noise and rare correlated surges.
+const PIZZA_FEED = '/api/pizza';
 const PENTAGON = {lat:38.8719,lng:-77.0563};
 
 // open/close in ET hours (close may exceed 24 = after midnight); peaks are 0-100 busyness
@@ -353,6 +352,8 @@ null,
 ];
 const doughconFor=idx=>idx>=2.2?1:idx>=1.75?2:idx>=1.4?3:idx>=1.15?4:5;
 const SHOP_STATUS=r=>r==null?{t:'CLOSED',c:'#64748b'}:r<0.8?{t:'QUIET',c:'#3b82f6'}:r<1.2?{t:'NOMINAL',c:'#22c55e'}:r<1.6?{t:'BUSY',c:'#eab308'}:{t:'SPIKE',c:'#ef4444'};
+// BestTime has no live reading for some venues: say so instead of calling them closed
+const shopStatus=s=>s.noLive?{t:'NO LIVE',c:'#64748b'}:SHOP_STATUS(s.ratio);
 
 const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}h^=h>>>13;h=Math.imul(h,1274126177);return((h^(h>>>16))>>>0)/4294967296};
 const ET_FMT=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hourCycle:'h23',weekday:'short'});
@@ -389,13 +390,14 @@ function modelHistory(t){const out=[];for(let i=48;i>=0;i--){const tt=t-i*180000
 
 async function fetchPizza(){
   const now=Date.now();
-  if(PIZZA_DATA_URL){
+  if(apiUp){
     try{
-      const r=await fetch(PIZZA_DATA_URL,{signal:AbortSignal.timeout(8000)});
-      const d=await r.json();const{h}=etTime(now);
-      const shops=SHOPS.map(s=>{const x=d.shops?.find(y=>y.id===s.id);const curve=x?.typical?.length===24?x.typical:Array.from({length:24},(_,i)=>typicalAt(s,i));const typ=curve[Math.floor(h)];const live=x?x.live:null;return{...s,typical:typ,live,ratio:ratioOf(live,typ),curve}});
-      return{snap:{shops,index:indexOf(shops.map(s=>s.ratio)),hour:h,source:'live',updated:new Date(d.updated||now)},history:null};
-    }catch(e){console.log('Pizza feed error, using model:',e.message)}
+      const d=await getJSON(PIZZA_FEED,12000);const{h}=etTime(now);
+      // the feed's real venues replace the generic placeholder shops; "usual" = BestTime's forecast for this hour
+      const shops=(d.shops||[]).filter(x=>Array.isArray(x.typical)&&x.typical.length===24).map(x=>{const curve=x.typical.slice();if(x.forecast!=null)curve[Math.floor(h)]=x.forecast;const typ=curve[Math.floor(h)];
+        return{...x,typical:typ,live:x.live,ratio:x.live==null?null:ratioOf(x.live,typ),noLive:x.live==null&&typ>0,curve}});
+      if(shops.some(s=>s.live!=null))return{snap:{shops,index:indexOf(shops.map(s=>s.ratio)),hour:h,source:'live',updated:new Date(d.updated||now)},history:null};
+    }catch(e){console.log('Pizza feed unavailable, using the simulation:',e.message)}
   }
   return{snap:modelSnapshot(now),history:modelHistory(now)};
 }
@@ -868,7 +870,7 @@ function FlatMap({w,h,countries,points,arcs,selected,onSelect,onCountry,dcColor,
     <rect x={ox-180*sc} y={oy-90*sc} width={360*sc} height={180*sc} fill="#0b1324" rx="6"/>
     {paths}
     {arcs.filter(a=>a.endLat!=null).slice(0,40).map((a,i)=>{const[x1,y1]=px(a.startLng,a.startLat),[x2,y2]=px(a.endLng,a.endLat);const mx=(x1+x2)/2,my=(y1+y2)/2-Math.hypot(x2-x1,y2-y1)*0.25;return<path key={i} d={`M${x1},${y1} Q${mx},${my} ${x2},${y2}`} fill="none" stroke={(a.color&&a.color[0])||'rgba(59,130,246,0.6)'} strokeWidth="1.2" opacity="0.7"/>})}
-    {points.map(d=>{const[x,y]=px(d.lng,d.lat);const sel=selected?.id===d.id;return<circle key={d.id} cx={x} cy={y} r={d.isAir?1.8:d.isShop?2:sel?7:4+Math.min((d.volume||0)/2e7,4)} fill={d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:d.category==='Conflict'?'#f97316':d.probability>=0.7?'#22c55e':d.probability>=0.4?'#eab308':'#ef4444'} stroke="#0a0f1a" strokeWidth="1.5" style={{cursor:d.isShop?'default':'pointer'}} onMouseEnter={()=>setHov(d)} onMouseLeave={()=>setHov(null)} onClick={()=>!d.isShop&&onSelect(d)}/>})}
+    {points.map(d=>{const[x,y]=px(d.lng,d.lat);const sel=selected?.id===d.id;return<circle key={d.id} cx={x} cy={y} r={d.isAir?1.8:d.isShop?2:sel?7:4+Math.min((d.volume||0)/2e7,4)} fill={d.isAir?'#7dd3fc':d.isShop?shopStatus(d).c:d.category==='Conflict'?'#f97316':d.probability>=0.7?'#22c55e':d.probability>=0.4?'#eab308':'#ef4444'} stroke="#0a0f1a" strokeWidth="1.5" style={{cursor:d.isShop?'default':'pointer'}} onMouseEnter={()=>setHov(d)} onMouseLeave={()=>setHov(null)} onClick={()=>!d.isShop&&onSelect(d)}/>})}
     <circle cx={pxP} cy={pyP} r="5" fill="none" stroke={dcColor} strokeWidth="2"><animate attributeName="r" values="4;14;4" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0;1" dur="2s" repeatCount="indefinite"/></circle>
     <text x={pxP+8} y={pyP+4} fill={dcColor} fontSize="10" fontWeight="700">PENTAGON</text>
     {hov&&(()=>{const[x,y]=px(hov.lng,hov.lat);const t=hov.isAir?'✈ '+(hov.callsign||'Military aircraft')+(hov.type?' · '+hov.type:''):hov.isShop?'🍕 '+hov.name+(hov.source!=='live'?' (simulated)':''):hov.question+' · '+fmtProb(hov.probability);const tw=Math.min(t.length*6.2+16,300);const tx=Math.min(Math.max(x-tw/2,4),W-tw-4);return<g pointerEvents="none"><rect x={tx} y={y-34} width={tw} height="22" rx="5" fill="rgba(10,15,26,0.95)" stroke="rgba(59,130,246,0.4)"/><text x={tx+8} y={y-19} fill="#f1f5f9" fontSize="11">{t.length>48?t.slice(0,47)+'…':t}</text></g>})()}
@@ -905,7 +907,7 @@ const HOURS=Array.from({length:24},(_,i)=>(i+6)%24); // 6am → 5am
 function PopChart({shop,hour,sim}){
   const[hov,setHov]=useState(null);
   const W=240,H=50,bw=8,gap=2,cur=Math.floor(hour);
-  const st=SHOP_STATUS(shop.ratio);
+  const st=shopStatus(shop);
   const y=v=>H-Math.max(v,0)/100*H;
   const read=hov!=null?hov:cur;
   const readTyp=Math.round(shop.curve[read]);
@@ -1003,7 +1005,7 @@ function PizzaPanel({pizza,history}){
       <div className="dc-legend"><span>Peacetime</span><span>Max readiness</span></div>
       <Sparkline data={history}/>
     </div>
-    <div className="shops">{shops.map(s=>{const st=SHOP_STATUS(s.ratio);return(
+    <div className="shops">{shops.map(s=>{const st=shopStatus(s);return(
       <div key={s.id} className="shop">
         <div className="shop-hd">
           <div><div className="shop-name">{s.name}</div><div className="shop-meta">{s.area} · {s.dist} mi from Pentagon</div></div>
@@ -1011,7 +1013,7 @@ function PizzaPanel({pizza,history}){
         </div>
         <PopChart shop={s} hour={pizza.hour} sim={sim}/>
       </div>)})}</div>
-    <div className="note">{sim?'Why simulated: Google Maps Popular Times has no public API. Shop names are generic and the busyness is made up, so it says nothing about any real restaurant.':'Live feed · updated '+fmtTime(pizza.updated)}<br/>The Pentagon Pizza Index is folklore-grade OSINT. For fun, not for decisions.</div>
+    <div className="note">{sim?'Why simulated: Google Maps Popular Times has no public API. Shop names are generic and the busyness is made up, so it says nothing about any real restaurant.':<>Live foot traffic: <a href="https://besttime.app" target="_blank" rel="noopener" style={{color:'var(--blue)'}}>BestTime.app</a> · updated {fmtTime(pizza.updated)}. Relative busyness (0–100), not visitor counts; "NO LIVE" = BestTime has no live reading for that place right now.</>}<br/>The Pentagon Pizza Index is folklore-grade OSINT. For fun, not for decisions.</div>
   </>);
 }
 
@@ -1062,7 +1064,9 @@ const pizzaRef=useRef(null);pizzaRef.current=pizza;
 const newsRef=useRef(0);newsRef.current=news.length;
 
 useEffect(()=>{
-const load=async()=>{if(document.hidden&&pizzaRef.current)return;const{snap,history}=await fetchPizza();setPizza(snap);if(history)setPizzaHist(history)};
+let lastLive=0;
+// the simulation ticks every minute; the live feed only changes hourly, so ask it every 10 min
+const load=async()=>{if(document.hidden&&pizzaRef.current)return;if(pizzaRef.current?.source==='live'&&Date.now()-lastLive<600000)return;const{snap,history}=await fetchPizza();if(snap.source==='live')lastLive=Date.now();setPizza(snap);if(history)setPizzaHist(history)};
 load();const i=setInterval(load,60000);return()=>clearInterval(i);
 },[]);
 
@@ -1364,8 +1368,8 @@ polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor
 onZoom={onZoom} pointsData={globePoints} pointLat="lat" pointLng="lng" pointResolution={24}
 pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:dotAlt(d)}
 pointRadius={d=>(d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.9:dotRadius(d))*zf}
-pointColor={d=>d.isAir?'#7dd3fc':d.isShop?SHOP_STATUS(d.ratio).c:marketColor(d)}
-pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+SHOP_STATUS(d.ratio).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+(d.source!=='live'?' · simulated':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
+pointColor={d=>d.isAir?'#7dd3fc':d.isShop?shopStatus(d).c:marketColor(d)}
+pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+shopStatus(d).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+(d.source!=='live'?' · simulated':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
 onPointClick={pickPoint} pointsTransitionDuration={REDUCED_MOTION?0:900} arcsTransitionDuration={REDUCED_MOTION?0:1500} arcDashInitialGap="initGap"
 labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:1.05} labelDotRadius={d=>d.pentagon?0.3:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
 arcsData={arcs} arcStartLat="startLat" arcStartLng="startLng" arcEndLat="endLat" arcEndLng="endLng" arcColor="color" arcAltitude="altitude" arcStroke="stroke" arcDashLength="dashLength" arcDashGap="dashGap" arcDashAnimateTime="dashAnimateTime"
@@ -1441,7 +1445,7 @@ atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
 <Ticker items={tickerItems}/>
 </div></Boundary>
 <footer className="foot">
-<span>Inspired by <a href="https://www.pizzint.watch/" target="_blank" rel="noopener">PizzINT</a> · Data: Polymarket, Kalshi, Manifold, PredictIt, adsb.lol, GDELT, BBC/NYT/Al Jazeera/NPR/Guardian RSS</span>
+<span>Inspired by <a href="https://www.pizzint.watch/" target="_blank" rel="noopener">PizzINT</a> · Data: BestTime.app (pizza foot traffic), Polymarket, Kalshi, Manifold, PredictIt, adsb.lol, GDELT, BBC/NYT/Al Jazeera/NPR/Guardian RSS</span>
 <span>For fun, not financial advice. Pizza busyness is modeled, not real. Odds are market prices, not predictions. · <a href="https://github.com/mbp-agentz/connecthor" target="_blank" rel="noopener">Source</a></span>
 </footer>
 </div>
