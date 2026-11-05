@@ -27,15 +27,17 @@ Pentagon Pizza Index + geopolitical prediction-market intel on a 3D globe, in a 
 
 ### About the pizza data
 
-Google Maps Popular Times has no public API and can't be read from a static page, so out of the box the pizza busyness is **modeled**: typical hourly curves per shop plus deterministic noise and occasional correlated surges (every viewer sees the same values at the same time). The panel is badged `MODELED` while this is the case.
+Real foot traffic comes from [BestTime.app](https://besttime.app) (a commercial foot-traffic API; Google Maps Popular Times has no API and scraping it breaks Google's terms). Until it is set up, or whenever the feed is down, the panel falls back to a clearly labelled **SIMULATED** model with generic shop names.
 
-To use real data, run your own collector and set `PIZZA_DATA_URL` in `index.html` to a JSON endpoint returning:
+How it fits together:
+- `pizza-venues.json`: the pizza places within 2.5 km of the Pentagon and each one's typical week (BestTime forecast, US Eastern clock hours). Written by `tools/pizza-setup.mjs` via the **Pizza venues** GitHub Action, which opens a PR (monthly, or run it by hand).
+- `/api/pizza` (in `functions/api`): fetches BestTime's live busyness for each venue with the private key, cached for an hour (BestTime refreshes live data hourly). Cost: about 1 credit per venue per hour per Cloudflare location serving visitors, plus ~41 credits per monthly venue refresh.
 
-```json
-{"updated":"2026-10-08T20:00:00Z","shops":[{"id":"shop-1","live":72,"typical":[0,0,0,0,0,0,0,0,0,0,10,25,45,40,30,28,35,55,70,72,60,45,30,15]}]}
-```
-
-`id` must match an entry in `SHOPS`; `typical` is 24 hourly values (0-100, ET).
+One-time setup:
+1. Create an account at https://besttime.app and open **API keys**; copy the **private** key (`pri_…`).
+2. GitHub → **Settings → Secrets and variables → Actions → New repository secret**: `BESTTIME_PRIVATE_KEY`.
+3. Cloudflare → **Workers & Pages → connecthor → Settings → Variables and Secrets → Add** (type **Secret**, environment **Production**): `BESTTIME_PRIVATE_KEY`, same value.
+4. GitHub → **Actions → Pizza venues → Run workflow**. Check the venue list in the run summary, then merge the pull request it opens; the deploy workflow puts it live.
 
 ## 🚀 Deploy
 

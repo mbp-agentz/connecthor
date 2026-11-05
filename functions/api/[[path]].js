@@ -3,6 +3,8 @@
 // headers, bot challenges), and caching here keeps a traffic spike from hitting the APIs'
 // rate limits (GDELT allows one request per 5 s). Only GET, only the hosts below.
 
+import PIZZA from '../../pizza-venues.json';
+
 const UA = 'ConnecTHOR/1.0 (+https://github.com/mbp-agentz/connecthor)';
 
 // route -> upstream base(s) and edge cache seconds. Several bases = try in order.
@@ -40,6 +42,9 @@ export async function onRequest(ctx) {
   const url = new URL(request.url);
   const [route, ...rest] = url.pathname.replace(/^\/api\/?/, '').split('/');
   if (route === 'news') return cached(ctx, 300, news);
+  // Every uncached call spends one BestTime credit per venue, so the cache key ignores the query
+  // string (no ?x=1 cache-busting) and lives an hour: BestTime refreshes live data hourly anyway.
+  if (route === 'pizza') return cached(ctx, 3600, () => pizza(ctx.env), url.origin + '/api/pizza');
   const r = ROUTES[route];
   if (!r) return json({ error: 'unknown route' }, 404);
   // pathname is already percent-encoded; the upstream host is fixed, so the path can't escape it
@@ -49,9 +54,9 @@ export async function onRequest(ctx) {
 
 // Serve from the edge cache, or build the response and store it for ttl seconds.
 // (The Cache API only persists on a custom domain; on *.pages.dev it is a no-op.)
-async function cached(ctx, ttl, build) {
+async function cached(ctx, ttl, build, keyUrl) {
   const cache = caches.default;
-  const key = new Request(new URL(ctx.request.url).toString(), { method: 'GET' });
+  const key = new Request(keyUrl || new URL(ctx.request.url).toString(), { method: 'GET' });
   const hit = await cache.match(key);
   if (hit) return hit;
   const res = await build();
@@ -115,4 +120,44 @@ async function news() {
   if (!items.length) return json({ error: 'all feeds failed', failed }, 502);
   items.sort((a, b) => (Date.parse(b.time) || 0) - (Date.parse(a.time) || 0));
   return json({ source: 'rss', failed, items: items.slice(0, 40) });
+}
+
+// ---- pizza: live foot traffic for the pizza places near the Pentagon (BestTime.app) ----
+// pizza-venues.json (written by tools/pizza-setup.mjs) holds the venues and their typical week in US
+// Eastern clock hours; only the live value is fetched here, with the BESTTIME_PRIVATE_KEY secret.
+const ET_DAY = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' });
+const DOW = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+async function besttimeLive(key, venueId) {
+  // the docs show both spellings of the live path; try the plural first
+  for (const path of ['forecasts/live', 'forecast/live']) {
+    const res = await fetch(`https://besttime.app/api/v1/${path}?api_key_private=${encodeURIComponent(key)}&venue_id=${encodeURIComponent(venueId)}`,
+      { method: 'POST', headers: { 'user-agent': UA }, signal: AbortSignal.timeout(10000) });
+    if (res.status === 404) continue;
+    const d = await res.json();
+    if (d.status !== 'OK') throw new Error(d.message || `BestTime HTTP ${res.status}`);
+    return d.analysis || {};
+  }
+  throw new Error('BestTime live endpoint not found');
+}
+
+async function pizza(env) {
+  const key = env && env.BESTTIME_PRIVATE_KEY, venues = (PIZZA && PIZZA.venues) || [];
+  if (!key || !venues.length) return json({ error: 'pizza feed not configured' }, 503);
+  const day = DOW[ET_DAY.format(new Date())];
+  const res = await Promise.allSettled(venues.map(v => besttimeLive(key, v.venue_id)));
+  const shops = venues.map((v, i) => {
+    const a = res[i].status === 'fulfilled' ? res[i].value : null;
+    return {
+      id: v.venue_id, name: v.name, area: v.area, dist: v.dist, lat: v.lat, lng: v.lng,
+      typical: (v.week && v.week[day]) || null,
+      live: a && a.venue_live_busyness_available ? a.venue_live_busyness : null,
+      forecast: a && a.venue_forecast_busyness_available ? a.venue_forecasted_busyness : null,
+    };
+  });
+  if (!shops.some(s => s.live != null || s.forecast != null)) {
+    const why = res.find(r => r.status === 'rejected');
+    return json({ error: 'no BestTime data' + (why ? ': ' + why.reason.message : '') }, 502);
+  }
+  return json({ source: 'besttime', updated: new Date().toISOString(), forecast_updated: PIZZA.updated, shops });
 }

@@ -1,0 +1,48 @@
+# Refreshes pizza-venues.json from BestTime.app (pizza places near the Pentagon + their typical week)
+# and opens a pull request with the result. Run it by hand (Actions -> Pizza venues -> Run workflow)
+# after adding the BESTTIME_PRIVATE_KEY repo secret; it also runs monthly, since BestTime recommends
+# refreshing forecasts every 2-4 weeks. Merging the PR deploys it.
+name: Pizza venues
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 7 1 * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch venues from BestTime
+        env:
+          BESTTIME_PRIVATE_KEY: ${{ secrets.BESTTIME_PRIVATE_KEY }}
+        run: |
+          if [ -z "$BESTTIME_PRIVATE_KEY" ]; then
+            echo "::error::Add the BESTTIME_PRIVATE_KEY repository secret first (README -> Pizza data)."; exit 1
+          fi
+          node tools/pizza-setup.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --quiet pizza-venues.json && { echo "No change."; exit 0; }
+          branch="pizza-venues-$(date -u +%Y%m%d-%H%M)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add pizza-venues.json
+          git commit -m "Refresh pizza venues from BestTime"
+          git push -u origin "$branch"
+          gh pr create --base main --head "$branch" --title "Refresh pizza venues from BestTime" \
+            --body "Automatic refresh of pizza-venues.json (venues near the Pentagon and their typical week). Check the list in the run summary, then merge to deploy."
