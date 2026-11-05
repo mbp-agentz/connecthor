@@ -44,5 +44,8 @@ jobs:
           git add pizza-venues.json
           git commit -m "Refresh pizza venues from BestTime"
           git push -u origin "$branch"
+          # Needs Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests";
+          # without it the branch is still pushed, so link it instead of failing the run
           gh pr create --base main --head "$branch" --title "Refresh pizza venues from BestTime" \
-            --body "Automatic refresh of pizza-venues.json (venues near the Pentagon and their typical week). Check the list in the run summary, then merge to deploy."
+            --body "Automatic refresh of pizza-venues.json (venues near the Pentagon and their typical week). Check the list in the run summary, then merge to deploy." \
+            || echo "::warning::Could not open the pull request. Open it here: https://github.com/${GITHUB_REPOSITORY}/compare/main...${branch}?expand=1" | tee -a "$GITHUB_STEP_SUMMARY"
