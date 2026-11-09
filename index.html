@@ -179,7 +179,7 @@
     .news-loading{text-align:center;padding:20px;color:var(--muted);font-size:11px}
 
     /* ticker */
-    .ticker{grid-area:t;background:linear-gradient(90deg,rgba(220,38,38,0.15),rgba(239,68,68,0.1));border-top:1px solid rgba(239,68,68,0.3);padding:8px 0;overflow:hidden;display:flex;align-items:center}
+    .ticker{grid-area:t;background:linear-gradient(90deg,rgba(220,38,38,0.15),rgba(239,68,68,0.1)),var(--bg);border-top:1px solid rgba(239,68,68,0.3);padding:8px 0;overflow:hidden;display:flex;align-items:center}
     .foot{grid-area:f;font-size:10px;color:var(--faint);padding:5px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:space-between}
     .foot a{color:var(--muted)}
     .ticker-lbl{position:relative;z-index:2;box-shadow:12px 0 12px rgba(10,15,26,0.9);background:var(--red);color:white;padding:4px 12px;font-size:10px;font-weight:700;margin-right:16px;flex-shrink:0;display:flex;align-items:center;gap:6px}
@@ -194,6 +194,34 @@
     .layer{display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s}
     .layer.on{color:var(--text);border-color:rgba(59,130,246,0.6);background:rgba(59,130,246,0.15)}
     .layer .sw{width:7px;height:7px;border-radius:50%}
+    .deck{display:none}
+    .dc-pill{white-space:nowrap}
+    .mj-pill{white-space:nowrap;display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px dashed rgba(148,163,184,0.45);background:transparent;color:var(--muted);font-weight:800;font-size:13px;letter-spacing:.05em;cursor:pointer;font-family:inherit;transition:all .3s}
+    .mj-pill .mj-off{font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15)}
+    .mj-pill:hover{color:var(--text);border-color:rgba(34,211,238,0.6)}
+    .mj-pill.on{color:#a5f3fc;border:1px solid rgba(34,211,238,0.75);background:rgba(34,211,238,0.12);animation:mjglow 2.4s ease-in-out infinite}
+    @keyframes mjglow{0%,100%{box-shadow:0 0 8px rgba(34,211,238,0.35)}50%{box-shadow:0 0 20px rgba(34,211,238,0.75)}}
+    .info-wrap{position:relative;display:flex;align-items:center;gap:4px}
+    .info-btn{display:none;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;padding:0;align-items:center;justify-content:center}
+    .info-pop{position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);width:290px;z-index:300;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.55);text-align:left;font-weight:400;letter-spacing:normal;animation:mjpop .18s ease-out}
+    .info-pop.mj{border-color:rgba(34,211,238,0.5);box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 18px rgba(34,211,238,.15)}
+    .info-pop::before{content:'';position:absolute;top:-10px;left:0;right:0;height:10px} /* bridges the gap so the card stays open on the way down */
+    @keyframes mjpop{from{opacity:0}to{opacity:1}}
+    .info-pitch{font-size:14px;font-weight:700;color:var(--text);line-height:1.35;margin-top:4px}
+    .info-hint{font-size:11px;color:var(--muted);margin-top:6px}
+    .mj-more-btn{background:none;border:none;color:#67e8f9;font-size:12px;font-weight:600;padding:0;margin-top:8px;cursor:pointer;font-family:inherit}
+    .mj-more{font-size:12px;line-height:1.5;color:#cbd5e1;margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+    .mj-detail{border-color:rgba(34,211,238,0.5);box-shadow:0 0 30px rgba(34,211,238,0.2);max-height:min(72vh,620px);overflow:auto}
+    .mj-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+    .mj-col{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px}
+    .mj-q{font-size:12px;margin:4px 0 6px;line-height:1.35}
+    .mj-big{font-size:18px;font-weight:800}
+    .mj-big span{font-size:11px;font-weight:600}
+    .mj-asset{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-top:6px}
+    .mj-why{margin-top:10px;font-size:12px;line-height:1.45;padding:8px 10px;border-left:2px solid #22d3ee;background:rgba(34,211,238,0.07);border-radius:0 8px 8px 0}
+    .mj-news{display:block;font-size:12px;line-height:1.35;color:var(--text);text-decoration:none;padding:6px 0;border-bottom:1px solid var(--border)}
+    .mj-news:hover{color:#a5f3fc}
+    .more-btn{display:block;width:100%;margin-top:8px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--blue);font-size:12px;font-weight:600;cursor:pointer}
     .doom{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-decoration:none}
     .doom:hover{color:var(--text)}
     .chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
@@ -224,7 +252,7 @@
     .info{cursor:help;color:var(--faint);font-size:10px;margin-left:4px}
     .ticker-item a,.ticker-item .lnk{color:inherit;text-decoration:none;cursor:pointer}
     .ticker-item a:hover,.ticker-item .lnk:hover{color:var(--blue)}
-    @media(prefers-reduced-motion:reduce){.dot,.spot-dot,.livedot{animation:none!important}.app,.spotlight,.detail,.detail.enter-left,.detail.enter-right{animation:none}}
+    @media(prefers-reduced-motion:reduce){.dot,.spot-dot,.livedot,.mj-pill.on{animation:none!important}.app,.spotlight,.detail,.detail.enter-left,.detail.enter-right{animation:none}}
     ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
     @media(max-width:1100px){
@@ -259,6 +287,34 @@
       .shops{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -10px 8px;padding:0 10px 4px;scroll-padding:0 10px;scrollbar-width:none}
       .shops::-webkit-scrollbar{display:none}
       .shops .shop{flex:0 0 78%;max-width:300px;scroll-snap-align:start;margin-bottom:0}
+      /* Dots are too small to hit with a thumb: a swipeable hotspot deck drives the globe instead */
+      .deck{display:flex;position:absolute;left:0;right:0;bottom:10px;z-index:46;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 12px;scroll-padding:0 12px;scrollbar-width:none;overflow-anchor:none;transition:opacity .2s}
+      .deck::-webkit-scrollbar{display:none}
+      .deck.off{opacity:0;pointer-events:none}
+      .deck-card{flex:0 0 82%;max-width:340px;scroll-snap-align:start;background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;transition:border-color .2s}
+      .deck-card.on{border-color:rgba(239,68,68,0.6)}
+      .deck-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;white-space:nowrap}
+      .deck-top span:first-child{overflow:hidden;text-overflow:ellipsis}
+      .deck-q{font-size:12px;line-height:1.35;margin-top:3px;height:32px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .deck-meta{font-size:10px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between}
+      .layers{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;bottom:112px}
+      .layers::-webkit-scrollbar{display:none}
+      .layer{flex:none}
+      .mj-cols{grid-template-columns:1fr}
+      .info-btn{display:inline-flex}
+      .info-pop{position:fixed;left:16px;right:16px;width:auto;transform:none}
+      .info-pop::before{display:none}
+      .dc-pill{cursor:pointer}
+      .deck-card.mj{border-color:rgba(34,211,238,0.35)}
+      .deck-card.mj.on{border-color:rgba(34,211,238,0.9);box-shadow:0 0 12px rgba(34,211,238,0.35)}
+      /* the header already shows the NEH score; the card only covered the globe, so it opens on a tap there */
+      .globe .neh:not(.show){display:none}
+      .stat-markets{display:none}
+      .stat.neh-tap{cursor:pointer;border-radius:8px;padding:2px 6px;background:rgba(59,130,246,0.08)}
+      /* thumb-sized rows: two lines of question instead of one cut-off line of 11px text */
+      .country-list .neh-drv{font-size:13px;line-height:1.35;padding:11px 12px;margin-bottom:6px;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:10px}
+      .country-list .neh-drv span:first-child{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+      .country-list .neh-drv .mono{font-size:14px;font-weight:700;white-space:nowrap}
     }
   </style>
 </head>
@@ -506,14 +562,17 @@ async function fetchPoly(){
   return[...byId.values()].sort((a,b)=>b.vol24-a.vol24||b.volume-a.volume);
 }
 
-// Recent fills across all of Polymarket, newest first
-async function fetchTrades(){
-  let d;
-  try{d=await getJSON(`${DATA_API}/trades?limit=200&takerOnly=true&filterType=CASH&filterAmount=100`)}
-  catch(e){d=await getJSON(`${DATA_API}/trades?limit=200`)}
-  if(!Array.isArray(d))throw new Error('bad trades response');
-  return d.map(t=>{const w=t.proxyWallet||'';return{id:[t.transactionHash,t.asset,t.timestamp,t.size].join(':'),conditionId:t.conditionId,title:t.title||'',outcome:t.outcome||'',side:t.side,price:num(t.price),usd:num(t.size)*num(t.price),
-    time:new Date(num(t.timestamp)*(num(t.timestamp)<1e12?1000:1)),who:t.pseudonym||t.name||(w?w.slice(0,6)+'…'+w.slice(-4):'anon'),url:t.eventSlug?'https://polymarket.com/event/'+t.eventSlug:null}}).filter(t=>t.usd>0);
+// Recent fills (≥ $100), newest first. Data API v1 was retired in Nov 2026 (410); v2 wraps the list
+// in {data} and uses snake_case. With condition ids it returns only the markets on the globe, which
+// is what pulses need: the global feed is mostly sports and crypto and hardly ever hit a tracked market.
+async function fetchTrades(cids){
+  const q=cids&&cids.length?'&condition_id='+cids.join(','):'';
+  const d=await getJSON(`${DATA_API}/v2/trades?limit=200&filter_type=CASH&filter_amount=100${q}`);
+  const rows=Array.isArray(d)?d:d&&Array.isArray(d.data)?d.data:null;
+  if(!rows)throw new Error('bad trades response');
+  return rows.map(t=>{const w=t.proxy_wallet||t.proxyWallet||'',ts=num(t.timestamp),slug=t.event_slug||t.eventSlug||t.slug;
+    return{id:[t.transaction_hash||t.transactionHash,t.token_id||t.asset,ts,t.size].join(':'),conditionId:t.condition_id||t.conditionId,title:t.title||'',outcome:t.outcome||'',side:t.side,price:num(t.price),usd:num(t.size)*num(t.price),
+    time:new Date(ts*(ts<1e12?1000:1)),who:t.pseudonym||t.name||(w?w.slice(0,6)+'…'+w.slice(-4):'anon'),url:slug?'https://polymarket.com/'+(t.event_slug||t.eventSlug?'event/':'market/')+slug:null}}).filter(t=>t.usd>0);
 }
 
 async function fetchHistory(token){
@@ -685,6 +744,44 @@ function similarMarkets(m,all){
   return all.filter(x=>x.source!==m.source).map(x=>{const b=toks(x.question);let n=0;a.forEach(w=>{if(b.has(w))n++});return{m:x,score:n/(a.size+b.size-n)}}).filter(x=>x.score>=0.3).sort((x,y)=>y.score-x.score).slice(0,4);
 }
 
+// ============ MJÖLNIR (demo) ============
+// Betting odds set against the stock / commodity markets that should price the same risk. DEMO: the
+// market side, the timing and the scores are made up for testing; the betting market and the
+// headlines come from the live feeds whenever they have a match.
+const EXCH={nyse:{name:'NYSE',lat:40.7069,lng:-74.0113},nymex:{name:'NYMEX',lat:40.7146,lng:-74.0151},nasdaq:{name:'Nasdaq',lat:40.7568,lng:-73.986},ice:{name:'ICE London',lat:51.5155,lng:-0.099},xetra:{name:'Frankfurt',lat:50.1109,lng:8.6821},ttf:{name:'ICE Endex',lat:52.37,lng:4.89},twse:{name:'Taiwan SE',lat:25.033,lng:121.5654},krx:{name:'Korea Exchange',lat:37.5235,lng:126.9269},tse:{name:'Tokyo SE',lat:35.6828,lng:139.7744},cph:{name:'Copenhagen',lat:55.6761,lng:12.5683},tase:{name:'Tel Aviv SE',lat:32.0636,lng:34.7748}};
+const MJ_KIND={gap:{t:'DIVERGENCE',d:'betting market and stock market disagree',c:'#22d3ee'},lead:{t:'STOCKS MOVED FIRST',d:'the stock market reacted before the odds',c:'#a78bfa'},confirm:{t:'CONFIRMED',d:'both markets price the same story',c:'#38bdf8'}};
+const MJOLNIR_DEMO=[
+ {id:'mj-iran',country:'Iran',re:/strike|attack|war|military|invade/i,q:'US military strike on Iran in 2026?',p:0.27,d:0.09,kind:'gap',score:86,
+  assets:[{n:'Brent crude',x:'ice',chg:-0.003},{n:'US defense ETF (ITA)',x:'nyse',chg:0.001}],
+  lead:'Odds moved 2 h 10 min before oil did anything',why:'Escalation odds jumped in 24 hours, yet oil and defense stocks barely moved. Either the betting market is early, or the stock market thinks it is priced in already.'},
+ {id:'mj-taiwan',country:'Taiwan',re:/china|invade|blockade|taiwan/i,q:'China blockade of Taiwan in 2026?',p:0.11,d:0.03,kind:'lead',score:78,
+  assets:[{n:'TSMC',x:'twse',chg:-0.021},{n:'Chip index (SOX)',x:'nasdaq',chg:-0.017}],
+  lead:'Taiwan stocks fell 3 h before the odds followed',why:'Chip stocks sold off hard while blockade odds only crept up afterwards: the stock market is pricing Taiwan risk ahead of the bettors.'},
+ {id:'mj-ukraine',country:'Ukraine',re:/ceasefire|peace|truce/i,q:'Russia x Ukraine ceasefire by end of 2026?',p:0.22,d:-0.05,kind:'confirm',score:61,
+  assets:[{n:'Rheinmetall',x:'xetra',chg:0.038},{n:'EU gas (TTF)',x:'ttf',chg:0.025}],
+  lead:'Both moved within the same hour',why:'Ceasefire odds fell while European defense stocks and gas prices rose together. Both markets tell the same story: no peace soon.'},
+ {id:'mj-israel',country:'Israel',re:/ceasefire|strike|iran|hezbollah|war/i,q:'Israel x Iran ceasefire holds through December 31?',p:0.56,d:-0.04,kind:'confirm',score:57,
+  assets:[{n:'Elbit Systems',x:'tase',chg:0.024},{n:'Lockheed Martin',x:'nyse',chg:0.006}],
+  lead:'Defense stocks led by about 30 min',why:'Odds of the ceasefire holding slipped and Israeli defense names climbed in step. A quiet but consistent signal.'},
+ {id:'mj-venezuela',country:'Venezuela',re:/military|invade|strike|action|maduro/i,q:'US military action against Venezuela in 2026?',p:0.33,d:0.07,kind:'gap',score:69,
+  assets:[{n:'WTI crude',x:'nymex',chg:-0.004},{n:'Chevron',x:'nyse',chg:0.002}],
+  lead:'Odds moved, oil did not',why:'Bettors raised the odds of US action, but the oil companies most exposed to Venezuela traded flat. One of the two is wrong.'},
+ {id:'mj-nk',country:'North Korea',re:/icbm|missile|nuclear|test|launch/i,q:'Will North Korea test an ICBM in 2026?',p:0.55,d:0.06,kind:'lead',score:72,
+  assets:[{n:'KOSPI',x:'krx',chg:-0.012},{n:'Mitsubishi Heavy',x:'tse',chg:0.029}],
+  lead:'Japanese defense stocks moved 90 min before the odds',why:'Mitsubishi Heavy jumped and Korean stocks dipped before the ICBM odds rose: Asian markets reacted first.'},
+ {id:'mj-yemen',country:'Yemen',re:/houthi|red sea|ship|attack|strike/i,q:'Houthi attack on a commercial ship in December?',p:0.48,d:0.11,kind:'gap',score:81,
+  assets:[{n:'Maersk',x:'cph',chg:0.051}],
+  lead:'Shipping stocks moved the same morning',why:'Odds of a new attack jumped 11 points and Maersk rallied 5 %: higher freight rates if ships avoid the Red Sea. The surprise is how small the odds move still is.'}];
+const fmtPct=c=>(c>0?'+':c<0?'−':'')+Math.abs(c*100).toFixed(1)+'%';
+const gcDeg=(a,b)=>{const r=Math.PI/180;return Math.acos(Math.min(1,Math.sin(a.lat*r)*Math.sin(b.lat*r)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.cos((a.lng-b.lng)*r)))/r};
+const seeded=x=>()=>(x=(x*16807)%2147483647)/2147483647;
+// A bolt: great-circle points with a jagged sideways and vertical jitter that is zero at both ends
+function boltPath(a,b,seed){const r=seeded(seed),R=Math.PI/180,v=p=>[Math.cos(p.lat*R)*Math.cos(p.lng*R),Math.cos(p.lat*R)*Math.sin(p.lng*R),Math.sin(p.lat*R)];
+  const A=v(a),B=v(b),om=Math.max(1e-4,Math.acos(Math.min(1,A[0]*B[0]+A[1]*B[1]+A[2]*B[2]))),N=30,h=Math.min(0.42,0.06+om*0.22),pts=[];
+  for(let i=0;i<=N;i++){const t=i/N,s1=Math.sin((1-t)*om)/Math.sin(om),s2=Math.sin(t*om)/Math.sin(om),x=s1*A[0]+s2*B[0],y=s1*A[1]+s2*B[1],z=s1*A[2]+s2*B[2],env=Math.sin(Math.PI*t),j=i%N?1:0;
+    pts.push([Math.atan2(z,Math.hypot(x,y))/R+(r()-0.5)*2.8*env*j,Math.atan2(y,x)/R+(r()-0.5)*2.8*env*j,Math.max(0.003,h*env+(r()-0.5)*0.05*env)])}
+  return pts}
+
 // ============ OSINT LAYERS ============
 // Military aircraft broadcasting ADS-B, from the community aggregator adsb.lol (free, no key)
 async function fetchMilAir(){
@@ -853,6 +950,27 @@ function Ticker({items}){
 }
 
 // ============ COMPONENTS ============
+// Info card on hover (desktop) or tap (touch). With tapChild a tap on the wrapped element opens it;
+// otherwise the element keeps its own tap action and an ⓘ next to it opens the card
+const CAN_HOVER=typeof matchMedia!=='undefined'&&matchMedia('(hover:hover)').matches;
+function HoverInfo({card,tapChild,tone,style,label,children}){
+  const[open,setOpen]=useState(null),wrap=useRef(null),hide=useRef(0); // open: null, or {top} for the fixed card on touch
+  const enter=()=>{if(!CAN_HOVER)return;clearTimeout(hide.current);setOpen(o=>o||{})};
+  const leave=()=>{if(!CAN_HOVER)return;hide.current=setTimeout(()=>setOpen(null),220)};
+  const tap=e=>{if(CAN_HOVER)return;e.stopPropagation();const b=e.currentTarget.getBoundingClientRect().bottom;setOpen(o=>o?null:{top:Math.round(b+8)})};
+  useEffect(()=>{if(!open||CAN_HOVER)return;const close=e=>{if(e.type==='scroll'||!wrap.current||!wrap.current.contains(e.target))setOpen(null)};
+    document.addEventListener('pointerdown',close);window.addEventListener('scroll',close,{passive:true});return()=>{document.removeEventListener('pointerdown',close);window.removeEventListener('scroll',close)}},[open]);
+  return<div className="info-wrap" ref={wrap} onMouseEnter={enter} onMouseLeave={leave} onFocus={enter} onBlur={leave}>
+    {tapChild?<div onClick={tap} style={{display:'contents'}}>{children}</div>:<>{children}<button className="info-btn" onClick={tap} aria-label={label||'More info'} aria-expanded={!!open}>ⓘ</button></>}
+    {open&&<div className={`info-pop ${tone||''}`} role="tooltip" style={{...style,...(open.top?{top:open.top}:{})}}>{card}</div>}
+  </div>}
+function MjCard({on}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
+  <div className="dc-kicker" style={{color:'#67e8f9'}}>⚡ MJÖLNIR</div>
+  <div className="info-pitch">Flags anomalies: money moving before the news.</div>
+  <div className="info-hint">{on?`On · tap the lightning on the globe for details. ${act} the button to switch off.`:`${act} the button to switch on.`} Test version with demo data.</div>
+  <button className="mj-more-btn" onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
+  {more&&<div className="mj-more">Mjölnir compares two crowds that price the same risks: prediction markets and financial markets. It tracks betting odds on conflicts and elections, prices of the stocks and commodities most exposed to them (oil, defense, shipping, chips, insurers), unusual options activity, and the headlines in our news feed. When one side moves sharply and the other doesn't, or moves first, lightning connects the region to the exchange.</div>}
+</>}
 // Catches a crash in one part of the page, shows the error there, and keeps the rest running
 // The 3D globe needs WebGL; Brave/Chrome without graphics acceleration can't create a context
 const HAS_WEBGL=(()=>{try{const c=document.createElement('canvas');return!!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}})();
@@ -1114,27 +1232,40 @@ loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,6
 const pendingHash=useRef(decodeURIComponent((location.hash.match(/m=([^&]+)/)||[])[1]||''));
 useEffect(()=>{if(!pendingHash.current)return;const m=markets.find(x=>x.id===pendingHash.current);if(m){setSelected(m);pendingHash.current=''}},[markets]);
 useEffect(()=>{const h=selected?'#m='+encodeURIComponent(selected.id):'';if(location.hash!==h)window.history.replaceState(null,'',h||location.pathname+location.search)},[selected?.id]);
+const[mobile,setMobile]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches);const mobileRef=useRef(mobile);mobileRef.current=mobile;
+useEffect(()=>{const mq=matchMedia('(max-width:1100px)'),on=()=>setMobile(mq.matches);mq.addEventListener('change',on);return()=>mq.removeEventListener('change',on)},[]);
+const[mjolnir,setMjolnir]=useState(false); // test version: off on every visit
+const[bolt,setBolt]=useState(null); // id of the Mjölnir signal whose panel is open
+const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
 useEffect(()=>{const k=e=>{
 if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
-if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else setCountry(null)};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
+// Pulse trades on the globe where their market sits; whales pulse bigger and longer (and get an arc)
+const pulseTrades=list=>{const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
+  const hits=list.map(t=>({t,m:byCond.get(t.conditionId)})).filter(x=>x.m).slice(0,20);
+  if(hits.length)setPulses(ps=>[...ps.filter(p=>p.until>now),...hits.map(({t,m})=>{const w=t.usd>=WHALE_USD;return{id:t.id,lat:m.lat,lng:m.lng,whale:w,side:t.side,until:now+(w?15000:8000),maxR:w?5:2.5,propagationSpeed:w?1.6:1,repeatPeriod:w?1600:2600,color:t.side==='SELL'?'#ef4444':'#22c55e'}})])};
+// Off-hours the tracked markets trade only every few minutes and the layer looked dead, so the last
+// 15 minutes are replayed one pulse at a time on the first load and whenever the layer is switched on
+const replayT=useRef([]);
+const replayTrades=list=>{const cut=Date.now()-900000;
+  replayT.current=list.filter(t=>t.time>cut).slice(0,12).reverse().map((t,i)=>setTimeout(()=>pulseTrades([t]),i*1500)).concat(replayT.current)};
+useEffect(()=>{replayT.current.forEach(clearTimeout);replayT.current=[];if(layers.trades)replayTrades(trades);return()=>replayT.current.forEach(clearTimeout)},[layers.trades]);
 // Real trades: poll the Data API, pulse the globe where they land, arc in the whales
 useEffect(()=>{
 const seen=new Set();let first=true,kFirst=true;
-// The first batch of each feed is history: list it, but only pulse trades that arrive later
+// The first batch of each feed is history: list it and replay its last 15 minutes; later trades pulse live
 const ingest=(ts,pulse)=>{
 const fresh=ts.filter(t=>!seen.has(t.id));fresh.forEach(t=>seen.add(t.id));
 if(fresh.length)setTrades(prev=>[...fresh,...prev].sort((a,b)=>b.time-a.time).slice(0,150));
-if(pulse){
-const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
-const hits=fresh.map(t=>({t,m:byCond.get(t.conditionId)})).filter(x=>x.m).slice(0,20);
-if(hits.length)setPulses(ps=>[...ps.filter(p=>p.until>now),...hits.map(({t,m})=>{const w=t.usd>=WHALE_USD;return{id:t.id,lat:m.lat,lng:m.lng,whale:w,side:t.side,until:now+(w?15000:8000),maxR:w?5:2.5,propagationSpeed:w?1.6:1,repeatPeriod:w?1600:2600,color:t.side==='SELL'?'#ef4444':'#22c55e'}})]);
-}
+if(pulse)pulseTrades(fresh);else replayTrades(fresh);
 };
 const load=async()=>{
 if(document.hidden&&!first)return;
-try{const ts=await fetchTrades();setTradesLive(true);ingest(ts,!first);first=false}
+try{const cids=marketsRef.current.filter(m=>m.source==='polymarket'&&m.conditionId).sort((a,b)=>(b.vol24||0)-(a.vol24||0)).slice(0,20).map(m=>m.conditionId); // v2 takes at most 20 ids
+if(!cids.length)return; // still on sample markets: wait, or the off-topic global feed (sports, crypto) fills Flow
+const ts=await fetchTrades(cids);setTradesLive(true);ingest(ts,!first);first=false}
 catch(e){setTradesLive(v=>v===null?false:v);console.log('Trades error:',e.message)}
 };
 // Kalshi has no public firehose worth reading (mostly sports and 15-min crypto), so poll the
@@ -1164,7 +1295,7 @@ setMarkets(ms=>ms.map(apply));setSelected(s=>s&&apply(s));
 useEffect(()=>{setHistory(null);const s=selected;const job=s?.tokenYes?fetchHistory(s.tokenYes):s?.seriesTicker&&s.ticker?fetchKalshiHistory(s):null;if(!job)return;let off=false;job.then(h=>{if(!off)setHistory(h)}).catch(()=>{if(!off)setHistory([])});return()=>{off=true}},[selected?.tokenYes||selected?.ticker]);
 
 const lastTouch=useRef(0);
-useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;const i=setInterval(()=>{if(document.hidden||countryRef.current||Date.now()-lastTouch.current<45000)return;const c=marketsRef.current.filter(m=>isUSD(m)&&m.volume>1e6);if(c.length>0){const m=c[Math.floor(Math.random()*c.length)];setHighlighted(m);off=setTimeout(()=>setHighlighted(null),8000)}},25000);return()=>{clearInterval(i);clearTimeout(off)}},[markets.length>0]);
+useEffect(()=>{if(markets.length===0)return;let off;if(REDUCED_MOTION)return;const i=setInterval(()=>{if(document.hidden||mobileRef.current||mjRef.current||countryRef.current||Date.now()-lastTouch.current<45000)return;const c=marketsRef.current.filter(m=>isUSD(m)&&m.volume>1e6);if(c.length>0){const m=c[Math.floor(Math.random()*c.length)];setHighlighted(m);off=setTimeout(()=>setHighlighted(null),8000)}},25000);return()=>{clearInterval(i);clearTimeout(off)}},[markets.length>0]);
 
 // Live sun: blend day/night textures along the real terminator
 useEffect(()=>{if(!globeEl.current||!HAS_WEBGL)return;try{return applyDayNight(globeEl.current,globeView==='live')}catch(e){console.log('Day/night unavailable:',e.message)}},[globeView,gsize.w>0]);
@@ -1184,7 +1315,9 @@ useEffect(()=>{
   window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',on);check();
   return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',on);if(raf)cancelAnimationFrame(raf)};
 },[]);
-const nehMini=nehSlim&&!nehOpen;
+const[nehShow,setNehShow]=useState(false); // mobile: the card is hidden until the header's NEH score is tapped
+const nehMini=nehSlim&&!nehOpen&&!(mobile&&nehShow);
+const nehClose=e=>{e.stopPropagation();if(mobile)setNehShow(false);else setNehOpen(false)};
 useEffect(()=>{const el=globeWrap.current;if(!el)return;const ro=new ResizeObserver(([e])=>setGsize({w:Math.round(e.contentRect.width),h:Math.round(e.contentRect.height)}));ro.observe(el);return()=>ro.disconnect()},[]);
 
 useEffect(()=>{if(!globeEl.current)return;const c=globeEl.current.controls();c.autoRotate=!REDUCED_MOTION;c.autoRotateSpeed=0.12;c.enableDamping=true;c.dampingFactor=0.08;
@@ -1218,14 +1351,42 @@ const baseArcs=useMemo(()=>genArcs(filtered),[shownKey]);
 const arcs=useMemo(()=>{const a=layers.arcs?baseArcs:[];return layers.trades&&flowArcs.length?a.concat(flowArcs):a},[baseArcs,flowArcs,layers.arcs,layers.trades]);
 const baseRings=useMemo(()=>genRings(filtered,dc),[shownKey,dc]);
 const hlRing=useMemo(()=>highlighted?[{lat:highlighted.lat,lng:highlighted.lng,maxR:4,propagationSpeed:1,repeatPeriod:2200,color:'rgba(255,255,255,0.5)'}]:[],[highlighted?.id]);
-const rings=useMemo(()=>[...hlRing,...(layers.markets?baseRings:baseRings.slice(-1)),...(layers.trades?pulses:[])],[hlRing,baseRings,pulses,layers.markets,layers.trades]);
+const[focus,setFocus]=useState(null);const[globeReady,setGlobeReady]=useState(false); // mobile deck: the country the globe is turned to
+const focusRing=useMemo(()=>{const h=focus&&hotspots(marketsRef.current).find(x=>x.country===focus);return h?[{lat:h.lat,lng:h.lng,maxR:5,propagationSpeed:1.2,repeatPeriod:1600,color:'rgba(255,255,255,0.6)'}]:[]},[focus]);
+const signals=useMemo(()=>!mjolnir?[]:MJOLNIR_DEMO.map(x=>{
+  const h=hotspots(marketsRef.current).find(y=>y.country===x.country),loc=Object.values(LOCS).find(l=>l.c===x.country),lat=h?h.lat:loc&&loc.lat,lng=h?h.lng:loc&&loc.lng;if(lat==null)return null;
+  const m=markets.filter(y=>y.country===x.country&&isUSD(y)&&x.re.test(y.question)).sort((a,b)=>volOf(b)-volOf(a))[0]||null;
+  // odds and move stay demo so they match the story; a related live market is only linked
+  return{...x,lat,lng,market:m,news:news.filter(n=>getLocs(n.title).some(l=>l.country===x.country)).slice(0,3)}}).filter(Boolean),[mjolnir,markets,news]);
+const sigKey=signals.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|');
+// Bolts re-strike every 1.6 s with fresh jitter; only this layer is rebuilt, markers and arcs stay put
+const[boltTick,setBoltTick]=useState(0);
+useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
+const boltPaths=useMemo(()=>{const out=[];signals.forEach((x,k)=>x.assets.forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
+  const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
+const mjRings=useMemo(()=>signals.flatMap((x,k)=>[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300+k*170,color:'#22d3ee'},...x.assets.map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]),[sigKey]);
+const sigById=useMemo(()=>new Map(signals.map(x=>[x.id,x])),[signals]);
+const boltSig=bolt?sigById.get(bolt):null;
+const mjScore=signals.length?Math.round(signals.reduce((t,x)=>t+x.score,0)/signals.length):0;
+const rings=useMemo(()=>[...hlRing,...focusRing,...mjRings,...(layers.markets?baseRings.slice(0,-1):[]),...(layers.pizza?baseRings.slice(-1):[]),...(layers.trades?pulses:[])],[hlRing,focusRing,mjRings,baseRings,pulses,layers.markets,layers.trades,layers.pizza]);
 const shopPoints=useMemo(()=>(pizza?.shops||[]).map(s=>({...s,isShop:true,source:pizza.source})),[pizza]);
 // Reuse the same point objects so the globe updates colours/heights in place instead of re-growing every marker on each price tick
 const pointCache=useRef(new Map());
 const globePoints=useMemo(()=>{const prev=pointCache.current,next=new Map();
   const out=[...(layers.markets?filtered:[]),...(layers.pizza?shopPoints:[]),...(layers.air&&air?air:[])].map(d=>{const k=(d.isShop?'shop:':'')+d.id;const o=prev.get(k)||{};Object.keys(o).forEach(x=>{if(!(x in d))delete o[x]});Object.assign(o,d);next.set(k,o);return o});
   pointCache.current=next;return out},[filtered,shopPoints,air,layers.markets,layers.pizza,layers.air]);
-const pickPoint=d=>{if(d.isShop||d.isAir){if(d.isAir)window.open('https://globe.adsb.lol/?icao='+d.id.slice(4),'_blank','noopener');return}setSelected(marketsRef.current.find(m=>m.id===d.id)||{...d})};
+// globe.gl clears its drag flag when the first finger of a pinch lifts, so lifting the second one
+// counts as a click: that opened the nearest country and flew the camera there mid-zoom. Every tap
+// that belongs to a two-finger gesture (and the 400 ms after it) is ignored.
+const touchIds=useRef(new Set()),pinchUntil=useRef(0);
+const onTouchPtr=e=>{if(e.pointerType!=='touch')return;const s=touchIds.current;
+  if(e.type==='pointerdown'){if(e.isPrimary)s.clear();s.add(e.pointerId);if(s.size>1)pinchUntil.current=Infinity;return}
+  s.delete(e.pointerId);if(s.size===0&&pinchUntil.current===Infinity)pinchUntil.current=Date.now()+400};
+const tapOK=()=>Date.now()>pinchUntil.current;
+const pickPoint=d=>{if(!tapOK())return;if(d.isShop||d.isAir){if(d.isAir)window.open('https://globe.adsb.lol/?icao='+d.id.slice(4),'_blank','noopener');return}const m=marketsRef.current.find(x=>x.id===d.id)||{...d};
+  if(mjolnir&&mobileRef.current){const x=signals.find(y=>y.country===m.country);if(x){openBolt(x.id);return}}
+  if(mobileRef.current&&m.country&&marketsRef.current.filter(x=>x.country===m.country).length>1){openCountry(m.country);return}
+  setSelected(m)};
 const tickerItems=useMemo(()=>{
 const head=[{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}${pizzaSim?' (simulated)':''}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
 ...movers.slice(0,3).map(m=>({text:`${m.change24>0?'📈':'📉'} ${m.question} ${fmtProb(m.probability)} (${fmtChg(m.change24)} 24h)`,onClick:()=>setSelected(m)})),
@@ -1257,6 +1418,37 @@ const polyLabel=useMemo(()=>d=>{const x=shownHeat&&shownHeat.get(d.properties.AD
   return'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid '+x.stroke+';max-width:240px"><div style="font-weight:700;color:white;font-size:11px">🔥 '+x.h.country+'</div><div style="color:#cbd5e1;font-size:10px;margin-top:2px">'+x.tip.split(' · ').slice(1).join('<br/>')+'</div><div style="color:#60a5fa;font-size:10px;margin-top:4px">Click for all '+x.h.n+' markets</div></div>'},[heatKey,layers.hot]);
 const openCountry=c=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(c)};
 const pickCountry=d=>{const x=shownHeat&&shownHeat.get(d.properties.ADMIN);if(x)openCountry(x.h.country)};
+// Mobile: a tap anywhere near a place with markets opens its list; the hit radius grows with the
+// camera altitude, so a thumb never has to land on a 2 mm dot
+const places=useMemo(()=>{const p=new Map();filtered.forEach(m=>{const la=m.cLat??m.lat,ln=m.cLng??m.lng;if(m.country&&la!=null&&!p.has(m.country))p.set(m.country,{lat:la,lng:ln})});return p},[shownKey]);
+const snapTap=(c,fallback)=>{if(!c||c.lat==null){if(fallback)pickCountry(fallback);return}
+  let best=null,bd=Math.max(4,5*zoomRef.current);places.forEach((p,k)=>{const d=gcDeg(c,p);if(d<bd){bd=d;best=k}});
+  if(best)openCountry(best);else if(fallback)pickCountry(fallback)};
+// With Mjölnir on, a tap near a bolt's source opens that signal (the bolt line itself is too thin to hit)
+const hitSig=c=>{if(!mjolnir||!c||c.lat==null)return null;let best=null,bd=Math.max(4,5*zoomRef.current);signals.forEach(x=>{const d=gcDeg(c,x);if(d<bd){bd=d;best=x.id}});return best};
+const openBolt=id=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(null);setBolt(id)};
+const toggleMj=()=>{setBolt(null);setMjolnir(v=>!v)};
+// switching on turns the globe to where most bolts strike (Middle East to Europe)
+useEffect(()=>{if(!mjolnir||!globeEl.current||selRef.current)return;lastTouch.current=Date.now();globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:mobile?18:32,lng:30,altitude:mobile?2.8:2.5},REDUCED_MOTION?0:1600)},[mjolnir]);
+const onPolyClick=(d,e,c)=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);mobile?snapTap(c,d):pickCountry(d)};
+const onGlobeTap=c=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);if(mobile)snapTap(c)};
+useEffect(()=>{if(!boltSig||!globeEl.current)return;globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:boltSig.lat-(mobile?14:8),lng:boltSig.lng+8,altitude:2},REDUCED_MOTION?0:1500)},[bolt]);
+// Mobile hotspot deck: swiping a card turns the globe to that country; tapping opens its markets
+// Card order stays put across price refreshes (a reshuffle under the thumb moved the globe on its
+// own); only the switch from sample to live data re-sorts it
+const deckOrder=useRef({src:null,ids:[]});
+const deck=useMemo(()=>{const top=hot.slice(0,12),by=new Map(top.map(h=>[h.country,h])),o=deckOrder.current;
+  const keep=o.src===dataSource?o.ids.filter(c=>by.has(c)):[];deckOrder.current={src:dataSource,ids:[...keep,...top.map(h=>h.country).filter(c=>!keep.includes(c))]};
+  return deckOrder.current.ids.map(c=>by.get(c))},[hot,dataSource]);
+const deckRef=useRef(null),deckT=useRef(0),deckTouch=useRef(0);
+// scroll snapping re-snaps to the card it was on, which the live re-sort moves to the far end
+useEffect(()=>{if(deckRef.current)deckRef.current.scrollLeft=0;setFocus(null)},[dataSource,mobile,mjolnir]);
+// only a swipe moves the globe, not a scroll the browser makes when cards change
+const deckKeys=mjolnir?signals.map(x=>'sig:'+x.id):deck.map(h=>h.country);
+const onDeckScroll=()=>{if(Date.now()-deckTouch.current>3000)return;clearTimeout(deckT.current);deckT.current=setTimeout(()=>{const el=deckRef.current,c=el&&el.firstChild;if(!c)return;
+  const i=Math.min(deckKeys.length-1,Math.max(0,Math.round(el.scrollLeft/(c.offsetWidth+8))));if(deckKeys[i])setFocus(deckKeys[i])},120)};
+useEffect(()=>{if(!mobile||!focus||selected||country||bolt||!globeEl.current)return;const h=focus.startsWith('sig:')?sigById.get(focus.slice(4)):hotByCountry.get(focus);if(!h)return;
+  lastTouch.current=Date.now();globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:h.lat-8,lng:h.lng,altitude:1.6},REDUCED_MOTION?0:1200)},[focus,mobile,globeReady]); // a swipe before the globe was ready got reset by its start-up view
 // A globe "point" is a cylinder as tall as its altitude: dots sit just above the (flat) country
 // layer, so only a thin disc shows instead of a pin when zoomed in
 const dotAlt=()=>0.0065;
@@ -1281,6 +1473,10 @@ const onCardUp=e=>{const d=drag.current;drag.current=null;if(!d||!d.on)return;d.
   if(REDUCED_MOTION){stepMarket(dx<0?1:-1);return}
   const side=dx<0?-1:1;setCard(d.el,side*Math.max(window.innerWidth,600),true);d.el.style.opacity='0';setTimeout(()=>stepMarket(-side),170)};
 const countryMarkets=useMemo(()=>country?markets.filter(m=>m.country===country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[country,markets]);
+// Mobile: a 30-row list buried the globe, so it starts with the 3 busiest and grows 5 at a time
+const[countryN,setCountryN]=useState(3);
+useEffect(()=>setCountryN(3),[country]);
+const countryRows=mobile?countryMarkets.slice(0,countryN):countryMarkets.slice(0,80);
 const countIn=c=>markets.reduce((n,m)=>n+(m.country===c?1:0),0);
 const relatedFor=t=>{const l=getLocs(t||'')[0];return l?hotByCountry.get(l.country):null};
 const srcCounts=useMemo(()=>{const c={};markets.forEach(m=>c[m.source]=(c[m.source]||0)+1);return c},[markets]);
@@ -1291,9 +1487,18 @@ return(
 <Boundary name="Header" className="header"><header className="header">
 <div className="logo"><span className="logo-icon">⚡</span><div><h1>ConnecTHOR</h1><div className="logo-sub">Pentagon Pizza Index · Market Intel</div></div></div>
 <div className="stats">
-<div className="dc-pill" title={`DOUGHCON: a DEFCON-style 5→1 level from how busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.${pizza?.source!=='live'?' Currently simulated, not real data.':''}`} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
-<div className="stat"><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index</div></div>
-<div className="stat"><div className="stat-val">{stats.total}</div><div className="stat-lbl">Markets</div></div>
+<HoverInfo tapChild style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
+<div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
+<div className="info-pitch">Pentagon-area pizza rush as a crisis early warning.</div>
+<div className="info-hint">How busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.{pizza?.source!=='live'?' Currently simulated, not real data.':''}</div>
+</>}>
+<div className="dc-pill" tabIndex={0} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
+</HoverInfo>
+<HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir}/>}>
+<button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>⚡ MJÖLNIR {mjolnir?<span className="mono">{mjScore}</span>:<span className="mj-off">OFF</span>}{mjolnir&&<span className="sim-tag">DEMO</span>}</button>
+</HoverInfo>
+<div className={`stat${mobile?' neh-tap':''}`} onClick={mobile?()=>setNehShow(v=>!v):undefined} aria-expanded={mobile?nehShow:undefined}><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index{mobile?(nehShow?' ▴':' ▾'):''}</div></div>
+<div className="stat stat-markets"><div className="stat-val">{stats.total}</div><div className="stat-lbl">Markets</div></div>
 <div className="stat"><div className="stat-val" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'center',color:wsStatus==='live'?'var(--green)':'var(--muted)'}}><span className="dot" style={{background:wsStatus==='live'?'var(--green)':'var(--faint)',animation:wsStatus==='live'?undefined:'none'}}></span>{wsStatus==='live'?'LIVE':wsStatus==='connecting'?'…':'OFF'}</div><div className="stat-lbl">Price stream</div></div>
 <div className="stat" title={`All-time volume on real-money markets: ${fmtVol(stats.volume)}`}><div className="stat-val">{fmtVol(stats.vol24||stats.volume)}</div><div className="stat-lbl">{stats.vol24?'24h Volume':'Volume'}</div></div>
 <Clock/>
@@ -1306,20 +1511,20 @@ return(
 <div className="scroll"><PizzaPanel pizza={pizza} history={pizzaHist}/></div>
 </aside></Boundary>
 
-<main className="globe" ref={globeWrap}>
+<main className="globe" ref={globeWrap} onPointerDownCapture={onTouchPtr} onPointerUpCapture={onTouchPtr} onPointerCancelCapture={onTouchPtr}>
 <div className={`badge-api ${dataSource==='live'?'':'sample'}`}><span className="dot" style={{width:6,height:6,background:dataSource==='live'?'var(--green)':'var(--yellow)'}}></span>{dataSource==='live'?'Live · '+Object.keys(venues).filter(k=>venues[k]).map(srcName).join(', '):'Sample markets'} · {fmtTime(lastUpd)}{wsStatus==='live'?' · streaming':''}</div>
 
-<div className={`neh${nehMini?' slim':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
-<div className="dc-kicker" onClick={e=>{if(nehSlim&&!nehMini){e.stopPropagation();setNehOpen(false)}}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
+<div className={`neh${nehMini?' slim':''}${nehShow?' show':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
+<div className="dc-kicker" onClick={e=>{if(mobile||(nehSlim&&!nehMini))nehClose(e)}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
 <div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono neh-delta" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
-<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini){e.stopPropagation();setNehOpen(false)}}}>{nehMini?'▾':nehSlim?'▴':''}</span>
+<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini)nehClose(e)}}>{mobile?'✕':nehMini?'▾':nehSlim?'▴':''}</span>
 <div className="meter" role="meter" aria-valuenow={neh.score} aria-valuemin="0" aria-valuemax="100"><div className="meter-mark" style={{left:neh.score+'%'}}></div></div>
 <div className="dc-legend"><span>Nothing happens</span><span>It's happening</span></div>
 <div className="neh-drivers">{neh.drivers.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{m.question}</span><span className="mono">{fmtProb(m.probability)}</span></div>)}</div>
 <a className="doom" href={DOOMSDAY.url} target="_blank" rel="noopener noreferrer" title={`Bulletin of the Atomic Scientists, set ${DOOMSDAY.set} (was ${DOOMSDAY.prev}s in 2025)`}><span>☢ Doomsday Clock</span><span className="mono" style={{color:'#fca5a5'}}>{DOOMSDAY.seconds} sec to midnight</span></a>
 </div>
 
-{highlighted&&!selected&&!country&&(
+{highlighted&&!selected&&!country&&!mobile&&(
 <div className="spotlight" onClick={()=>setSelected(highlighted)}>
 <div className="spot-dot"></div><span className="spot-lbl">SPOTLIGHT</span>
 <span className="spot-txt">{highlighted.question}</span>
@@ -1354,9 +1559,39 @@ return(
 <div className="detail">
 <div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>
 {pct!=null&&<div className="shop-meta" style={{marginTop:-6,marginBottom:8}}>Escalation odds <b style={{color:nehLabel(pct).c}}>{pct}%</b> · {nehLabel(pct).t}{h.vol24?' · '+fmtVol(h.vol24)+' traded 24h':''}</div>}
-<div className="country-list">{countryMarkets.slice(0,80).map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
+<div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
+{mobile&&countryMarkets.length>countryN&&<button className="more-btn" onClick={()=>setCountryN(n=>n+5)}>Show {Math.min(5,countryMarkets.length-countryN)} more · {countryN} of {countryMarkets.length}</button>}
 </div>)})()}
 
+{boltSig&&!selected&&!country&&(()=>{const x=boltSig,K=MJ_KIND[x.kind];return(
+<div className="detail mj-detail">
+<div className="detail-top"><div className="src" style={{color:K.c}}>⚡ MJÖLNIR · {K.t} <span className="sim-tag">DEMO</span></div><div className="mono shop-meta">signal {x.score}/100</div></div>
+<div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>
+<div className="mj-cols">
+<div className="mj-col"><div className="dc-kicker">BETTING MARKET</div><div className="mj-q">{x.q}</div><div className="mj-big mono">{fmtProb(x.p)} <span style={{color:x.d>0?'var(--red)':'var(--green)'}}>{fmtChg(x.d)} pts 24h</span></div></div>
+<div className="mj-col"><div className="dc-kicker">STOCK MARKET · 24H</div>{x.assets.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {EXCH[a.x].name}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}</span></div>)}</div>
+</div>
+<div className="mj-why"><b>Why it flashes:</b> {x.why}</div>
+<div className="shop-meta" style={{marginTop:6}}>⏱ {x.lead}</div>
+<div className="dc-kicker" style={{marginTop:12}}>HEADLINES BEHIND IT</div>
+{x.news.length?x.news.map(n=><a key={n.id} className="mj-news" href={n.url} target="_blank" rel="noopener noreferrer"><span className="muted">{n.source} · {fmtTime(n.time)}</span><br/>{n.title}</a>):<div className="shop-meta">No headline about {x.country} in the news feed right now.</div>}
+{x.market&&<div className="detail-more" onClick={()=>setSelected(x.market)}>Open a related live market →</div>}
+<div className="note" style={{marginTop:8}}>Test version: odds moves, stock moves, timing and signal strength are demo data; headlines are live.</div>
+</div>)})()}
+
+{mobile&&deckKeys.length>0&&<div className={`deck${selected||country||boltSig?' off':''}`} ref={deckRef} onScroll={onDeckScroll} onPointerDown={()=>deckTouch.current=Date.now()} onTouchMove={()=>deckTouch.current=Date.now()} onWheel={()=>deckTouch.current=Date.now()}>
+{mjolnir?signals.map((x,i)=>{const K=MJ_KIND[x.kind];return(
+<div key={x.id} className={`deck-card mj${focus==='sig:'+x.id?' on':''}`} onClick={()=>{setFocus('sig:'+x.id);openBolt(x.id)}}>
+<div className="deck-top"><span>⚡ {x.country}</span><span className="mono" style={{color:K.c}}>{K.t}</span></div>
+<div className="deck-q">{x.q}</div>
+<div className="deck-meta"><span>Odds {fmtChg(x.d)} · {x.assets[0].n} {fmtPct(x.assets[0].chg)}</span><span className="mono">{i+1}/{signals.length} ›</span></div>
+</div>)}):deck.map((h,i)=>{const lead=h.topWar||h.top,pct=h.tension!=null?Math.round(h.tension*100):null;return(
+<div key={h.country} className={`deck-card${focus===h.country?' on':''}`} onClick={()=>{setFocus(h.country);openCountry(h.country)}}>
+<div className="deck-top"><span>{pct!=null?'🔥 ':''}{h.country}</span>{pct!=null&&<span className="mono" style={{color:nehLabel(pct).c}}>{pct}% · {nehLabel(pct).t}</span>}</div>
+<div className="deck-q">{lead?lead.question:''}</div>
+<div className="deck-meta"><span>{lead?'Yes '+fmtProb(lead.probability)+' · ':''}{h.n} market{h.n>1?'s':''}</span><span className="mono">{i+1}/{deck.length} ›</span></div>
+</div>)})}
+</div>}
 <div className="layers" role="group" aria-label="Globe layers">
 {[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null]].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
@@ -1364,7 +1599,7 @@ return(
 </div>
 <Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} onCountry={openCountry} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
 {gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl={globeView==='night'?NIGHT_TEX:DAY_TEX} bumpImageUrl={TEX+'earth-topology.png'} backgroundImageUrl={TEX+'night-sky.png'}
-polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor={polySide} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={polyAlt} polygonLabel={polyLabel} onPolygonClick={pickCountry} polygonsTransitionDuration={REDUCED_MOTION?0:1200}
+polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor={polySide} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={polyAlt} polygonLabel={polyLabel} onPolygonClick={onPolyClick} onGlobeClick={onGlobeTap} onGlobeReady={()=>setGlobeReady(true)} polygonsTransitionDuration={REDUCED_MOTION?0:1200}
 onZoom={onZoom} pointsData={globePoints} pointLat="lat" pointLng="lng" pointResolution={24}
 pointAltitude={d=>d.isAir?0.015+Math.min((d.alt||0)/45000,1)*0.05:dotAlt(d)}
 pointRadius={d=>(d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.id===d.id)?0.9:dotRadius(d))*zf}
@@ -1374,7 +1609,12 @@ onPointClick={pickPoint} pointsTransitionDuration={REDUCED_MOTION?0:900} arcsTra
 labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:1.05} labelDotRadius={d=>d.pentagon?0.3:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
 arcsData={arcs} arcStartLat="startLat" arcStartLng="startLng" arcEndLat="endLat" arcEndLng="endLng" arcColor="color" arcAltitude="altitude" arcStroke="stroke" arcDashLength="dashLength" arcDashGap="dashGap" arcDashAnimateTime="dashAnimateTime"
 ringsData={rings} ringLat="lat" ringLng="lng" ringMaxRadius={d=>d.maxR*zf} ringPropagationSpeed={d=>d.propagationSpeed*zf} ringRepeatPeriod="repeatPeriod" ringColor={d=>t=>{const c=d.color;return c.startsWith('#')?c+Math.round((1-t)*200).toString(16).padStart(2,'0'):c}}
-atmosphereColor="#3b82f6" atmosphereAltitude={0.12}/>}</Boundary>
+pathsData={boltPaths} pathPoints="pts" pathPointLat={p=>p[0]} pathPointLng={p=>p[1]} pathPointAlt={p=>p[2]} pathResolution={1} pathTransitionDuration={0}
+pathColor={d=>d.fork?['rgba(165,243,252,0.05)','rgba(165,243,252,0.7)']:['rgba(34,211,238,0.25)','#f0fdff','rgba(34,211,238,0.95)']} pathStroke={d=>d.fork?0.6:1.6}
+pathDashLength={d=>d.fork?1:0.45} pathDashGap={d=>d.fork?0:0.06} pathDashAnimateTime={d=>d.fork?0:REDUCED_MOTION?0:700}
+pathLabel={d=>{const x=sigById.get(d.sig);return x?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(34,211,238,0.6);max-width:240px"><div style="font-weight:700;color:#a5f3fc;font-size:11px">⚡ '+x.country+' · '+MJ_KIND[x.kind].t+'</div><div style="color:#cbd5e1;font-size:10px;margin-top:2px">'+x.q+'</div><div style="color:#67e8f9;font-size:10px;margin-top:4px">Click to see why it flashes</div></div>':''}}
+onPathClick={d=>{if(tapOK())openBolt(d.sig)}}
+atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.12}/>}</Boundary>
 </main>
 
 <Boundary name="Right panel" className="right"><aside className="right">
