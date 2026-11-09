@@ -209,6 +209,10 @@
     @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
     .dc-pill{white-space:nowrap}
     .mj-pill{white-space:nowrap;display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px dashed rgba(148,163,184,0.45);background:transparent;color:var(--muted);font-weight:800;font-size:13px;letter-spacing:.05em;cursor:pointer;font-family:inherit;transition:all .3s}
+    .dc-sw{font:inherit;font-size:10px;font-weight:800;letter-spacing:0.05em;padding:1px 6px;border-radius:4px;border:0;cursor:pointer;color:#94a3b8;background:rgba(148,163,184,0.15)}
+    .dc-sw.on{color:#0b1220;background:var(--dc,#3b82f6)}
+    .dc-pill.off{color:var(--muted);border:1px dashed rgba(148,163,184,0.45);background:transparent}
+    .dc-pill.off:hover{color:var(--text)}
     .mj-pill .mj-off{font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15)}
     .mj-pill:hover{color:var(--text);border-color:rgba(34,211,238,0.6)}
     .mj-pill.on{color:#a5f3fc;border:1px solid rgba(34,211,238,0.75);background:rgba(34,211,238,0.12);animation:mjglow 2.4s ease-in-out infinite}
@@ -1187,7 +1191,7 @@ const[srcFilter,setSrcFilter]=useState('all');
 const[air,setAir]=useState(null);
 const[coverage,setCoverage]=useState(null);
 const[sigFilter,setSigFilter]=useState('ALL');
-const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:true,air:true,hot:true};
+const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:false,air:true,hot:true};
 const[layers,setLayers]=useState(()=>{try{return{...LAYER_DEFAULTS,...JSON.parse(localStorage.getItem('ct-layers')||'{}')}}catch(e){return LAYER_DEFAULTS}});
 const[globeView,setGlobeView]=useState(()=>{try{const v=localStorage.getItem('ct-view');return GLOBE_VIEWS[v]?v:'night'}catch(e){return'night'}});
 const cycleView=()=>setGlobeView(v=>{const ks=Object.keys(GLOBE_VIEWS),n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('ct-view',n)}catch(e){}return n});
@@ -1513,9 +1517,9 @@ return(
 <HoverInfo noTouch style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
 <div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
 <div className="info-pitch">Pentagon-area pizza rush as a crisis early warning.</div>
-<div className="info-hint">How busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.{pizza?.source!=='live'?' Currently simulated, not real data.':''} Click to open the Pizza Watch.</div>
+<div className="info-hint">How busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.{pizza?.source!=='live'?' Currently simulated, not real data.':''} Click to open the Pizza Watch; ON/OFF shows it on the globe.</div>
 </>}>
-<div className="dc-pill" role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
+<div className={`dc-pill${layers.pizza?'':' off'}`} role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={layers.pizza?{'--dc':DOUGHCON[dc].color,color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}:undefined}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}<button className={`dc-sw${layers.pizza?' on':''}`} aria-pressed={layers.pizza} aria-label="Show DOUGHCON on the globe" title={layers.pizza?'Hide on globe':'Show on globe'} onClick={e=>{e.stopPropagation();toggleLayer('pizza')}} onKeyDown={e=>e.stopPropagation()}>{layers.pizza?'ON':'OFF'}</button></div>
 </HoverInfo>
 <HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir}/>}>
 <button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>⚡ MJÖLNIR {mjolnir?<span className="mono">{mjScore}</span>:<span className="mj-off">OFF</span>}{mjolnir&&<span className="sim-tag">DEMO</span>}</button>
