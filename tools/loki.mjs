@@ -84,10 +84,38 @@ async function rss([source, url]) {
   const xml = await r.text();
   return [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi)].map(([it]) => ({ title: tag(it, 'title'), url: tag(it, 'link'), source, t: Date.parse(tag(it, 'pubDate') || tag(it, 'dc:date')) })).filter(n => n.title && isFinite(n.t));
 }
-async function gdelt() {
-  const q = '(military OR missile OR airstrike OR troops OR ceasefire OR sanctions OR nuclear OR invasion OR drone OR election OR strike) sourcelang:english';
-  const d = await getJSON(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(q)}&mode=artlist&maxrecords=250&sort=datedesc&timespan=24h&format=json`, 2);
-  return (d.articles || []).map(a => { const m = String(a.seendate).match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/); return { title: a.title || '', url: a.url, source: (a.domain || 'News').replace(/^www\./, ''), t: m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : NaN } }).filter(n => n.title && isFinite(n.t));
+// GDELT's raw GKG files: every article GDELT saw in each 15-minute slot, with its page title
+// (~1,400 per file, ~6 MB zipped, no rate limit unlike the DOC API, which answers 429 to everyone).
+// Only titles that name a place we know are kept. Slots already read live in a cache file that
+// the workflow carries between runs (actions/cache), so an hourly run reads ~4 new files.
+const GKG_CACHE = process.env.GKG_CACHE || '.cache/gkg.json', SLOT = 15 * 60e3;
+const GKG_SPAN = WINDOW + QUIET; // trades of the last 24 h + the 6 h before them
+const slotStamp = t => new Date(t).toISOString().replace(/[-:T]/g, '').slice(0, 12) + '00';
+async function gkgSlot(t) {
+  const r = await fetch(`https://data.gdeltproject.org/gdeltv2/${slotStamp(t)}.gkg.csv.zip`, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(60000) });
+  if (r.status === 404) return { t, items: [] }; // GDELT skips a slot now and then
+  if (!r.ok) throw new Error(`GKG ${slotStamp(t)} HTTP ${r.status}`);
+  const items = [];
+  for (const line of unzipOne(Buffer.from(await r.arrayBuffer())).split('\n')) {
+    const f = line.split('\t'), m = (f[26] || '').match(/<PAGE_TITLE>([^<]*)<\/PAGE_TITLE>/);
+    if (!m) continue;
+    const title = decode(m[1]);
+    if (title.length < 20 || !locsIn(title).some(h => !SKIP_KEYS.has(h.k))) continue;
+    items.push({ title, url: f[4], source: f[3] || 'GDELT' });
+  }
+  return { t, items };
+}
+async function gkg() {
+  let cache = {}; try { if (existsSync(GKG_CACHE)) cache = JSON.parse(readFileSync(GKG_CACHE, 'utf8')).slots || {} } catch { }
+  const last = Math.floor((Date.now() - 20 * 60e3) / SLOT) * SLOT, first = last - GKG_SPAN;
+  const slots = {}; for (const [t, v] of Object.entries(cache)) if (+t > first) slots[t] = v;
+  const want = []; for (let t = first + SLOT; t <= last; t += SLOT) if (!slots[t]) want.push(t);
+  for (const x of await pool(want, 6, gkgSlot)) if (x) slots[x.t] = x.items;
+  mkdirSync(dirname(GKG_CACHE), { recursive: true });
+  writeFileSync(GKG_CACHE, JSON.stringify({ slots }));
+  const heads = Object.entries(slots).flatMap(([t, items]) => items.map(x => ({ ...x, t: +t })));
+  console.log(`GKG: ${want.length} new slots read, ${Object.keys(slots).length} slots, ${heads.length} titles with a place`);
+  return heads;
 }
 
 // The page's "war coverage" curve, from GDELT's raw 15-minute event files. The DOC API
@@ -180,7 +208,7 @@ async function walletInfo(w) {
 const short = w => w.slice(0, 6) + '…' + w.slice(-4);
 async function main() {
   const prev = await loadPrev();
-  const [ms, cov, ...news] = await Promise.all([markets(), coverage(prev).catch(e => (console.warn('GDELT coverage', e.message), null)), gdelt().catch(e => (console.warn('GDELT articles', e.message), [])), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), [])))]);
+  const [ms, cov, ...news] = await Promise.all([markets(), coverage(prev).catch(e => (console.warn('GDELT coverage', e.message), null)), gkg().catch(e => (console.warn('GDELT GKG', e.message), [])), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), [])))]);
   const heads = news.flat().sort((a, b) => a.t - b.t);
   console.log(`${ms.length} markets, ${heads.length} headlines`);
   const all = await pool(ms, 4, trades);
