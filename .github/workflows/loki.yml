@@ -1,6 +1,6 @@
 # Loki: hourly scan of geopolitical Polymarket markets for early bets (big trades placed shortly
-# before the first matching headline) and staged-looking volume. It also fetches GDELT's war-coverage
-# curve for the whole page (GDELT rate-limits visitors and Cloudflare). tools/loki.mjs writes loki.json,
+# before the first matching headline) and staged-looking volume. It also builds GDELT's war-coverage
+# curve for the whole page from GDELT's raw event files (the GDELT API rate-limits everyone). tools/loki.mjs writes loki.json,
 # which is force-pushed as the only file on the orphan branch loki-data. The page reads it from
 # raw.githubusercontent.com, so visitors cost no Pages Function calls.
 name: Loki data
