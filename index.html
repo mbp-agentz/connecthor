@@ -1376,7 +1376,10 @@ return()=>clearInterval(i);
 // Military aircraft every 60s, GDELT coverage every 30 min
 useEffect(()=>{
 const loadAir=async()=>{if(document.hidden&&air)return;try{setAir(await fetchMilAir())}catch(e){console.log('Aircraft feed unavailable:',e.message)}}; // keep the last fix; never show a fake 0
-const loadCov=async()=>{try{const c=await fetchCoverage();if(c)setCoverage(c)}catch(e){console.log('GDELT unavailable:',e.message)}};
+// The Loki scan stores GDELT's curve hourly (static file, no rate limit, no Function call); asking
+// GDELT from the browser is only the fallback when that file is missing or older than 6 h
+const loadCov=async()=>{try{const d=await fetchLoki(),pts=d.coverage&&d.coverage.pts;if(pts&&pts.length>2&&Date.now()-Date.parse(d.coverage.updated)<216e5){setCoverage(pts);return}}catch(e){console.log('Coverage file unavailable:',e.message)}
+  try{const c=await fetchCoverage();if(c)setCoverage(c)}catch(e){console.log('GDELT unavailable:',e.message)}};
 loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,60000),j=setInterval(loadCov,1800000);return()=>{clearTimeout(k);clearInterval(i);clearInterval(j)};
 },[]);
 

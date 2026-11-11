@@ -3,10 +3,10 @@
 // loki-data branch. The page reads it as a static file from raw.githubusercontent.com, so
 // visitors never trigger a Pages Function for it (free plan: 100k calls a day).
 // Usage: node tools/loki.mjs [out.json]
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const OUT = process.argv[2] || 'loki.json';
+const OUT = process.argv[2] || 'loki.json', PREV = process.argv[3] || OUT; // previous file keeps the GDELT curve when GDELT refuses
 const UA = 'ConnecTHOR-Loki/1.0 (+https://github.com/mbp-agentz/connecthor)';
 const GAMMA = 'https://gamma-api.polymarket.com', DATA = 'https://data-api.polymarket.com';
 const H = 3600e3, WINDOW = 24 * H;
@@ -28,7 +28,7 @@ async function getJSON(url, tries = 3) {
   for (let i = 0; ; i++) {
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA, accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
-      if (r.status === 429 && i < tries - 1) { await sleep(2000 * (i + 1)); continue; }
+      if (r.status === 429 && i < tries - 1) { await sleep(/gdelt/.test(url) ? 6000 : 2000 * (i + 1)); continue; } // GDELT: one call per 5 s
       if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`);
       return await r.json();
     } catch (e) { if (i >= tries - 1) throw e; await sleep(1500 * (i + 1)); }
@@ -89,6 +89,30 @@ async function gdelt() {
   return (d.articles || []).map(a => { const m = String(a.seendate).match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/); return { title: a.title || '', url: a.url, source: (a.domain || 'News').replace(/^www\./, ''), t: m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : NaN } }).filter(n => n.title && isFinite(n.t));
 }
 
+// The page's "war coverage" curve (share of world news about military conflict, 7 days). Fetched
+// here once an hour because GDELT allows one request per 5 s per IP and often takes 10-20 s:
+// from visitors' browsers or Cloudflare's shared IPs it mostly fails
+const COV_Q = '(airstrike OR missile OR "military strike" OR invasion OR "armed conflict" OR shelling)'; // = GDELT_Q in index.html
+async function coverage() {
+  const d = await getJSON(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(COV_Q)}&mode=timelinevol&timespan=7d&timelinesmooth=3&format=json`, 2);
+  const pts = (d.timeline?.[0]?.data || []).map(x => { const m = String(x.date).match(/^(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?/); return m ? { t: Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)), v: num(x.value) } : null }).filter(Boolean);
+  if (pts.length < 3) throw new Error('empty timeline');
+  return { updated: new Date().toISOString(), pts };
+}
+// GDELT twice in a row would trip its 5 s limit: articles first, then the curve after a pause
+async function gdeltAll() {
+  const arts = await gdelt().catch(e => (console.warn('GDELT articles', e.message), []));
+  await sleep(6000);
+  const cov = await coverage().catch(e => (console.warn('GDELT coverage', e.message), null));
+  return [arts, cov];
+}
+async function loadPrev() {
+  try {
+    if (/^https?:/.test(PREV)) { const r = await fetch(PREV, { headers: { 'user-agent': UA } }); return r.ok ? await r.json() : null }
+    return existsSync(PREV) ? JSON.parse(readFileSync(PREV, 'utf8')) : null;
+  } catch { return null }
+}
+
 // ---- markets: open geopolitical Polymarket markets with a place, busiest first ----
 async function markets() {
   const now = Date.now(), seen = new Map();
@@ -136,11 +160,15 @@ async function walletInfo(w) {
 
 const short = w => w.slice(0, 6) + '…' + w.slice(-4);
 async function main() {
-  const [ms, ...news] = await Promise.all([markets(), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), []))), gdelt().catch(e => (console.warn('GDELT', e.message), []))]);
+  const [prev, ms, [arts, cov], ...news] = await Promise.all([loadPrev(), markets(), gdeltAll(), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), [])))]);
+  news.push(arts);
   const heads = news.flat().sort((a, b) => a.t - b.t);
   console.log(`${ms.length} markets, ${heads.length} headlines`);
   const all = await pool(ms, 4, trades);
-  const out = { updated: new Date().toISOString(), windowHours: 24, checked: ms.length, headlines: heads.length, flags: [], volume: [] };
+  // a failed GDELT call keeps the last good curve for up to a day
+  const coverageOut = cov || (prev?.coverage && Date.now() - Date.parse(prev.coverage.updated) < 864e5 ? prev.coverage : null);
+  console.log(`GDELT coverage: ${cov ? 'fresh' : coverageOut ? 'kept from last run' : 'none'}`);
+  const out = { updated: new Date().toISOString(), windowHours: 24, checked: ms.length, headlines: heads.length, coverage: coverageOut, flags: [], volume: [] };
   ms.forEach((m, i) => {
     const ts = all[i]; if (!ts) return;
     const fv = fakeVolume(ts);
