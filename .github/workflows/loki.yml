@@ -28,6 +28,14 @@ jobs:
         with:
           node-version: 22
 
+      # GDELT GKG slots already read (article titles, ~4 MB): an hourly run then reads ~4 new files
+      # instead of 120. Each run saves a new cache; restore-keys picks the latest one.
+      - uses: actions/cache@v4
+        with:
+          path: .cache/gkg.json
+          key: gkg-${{ github.run_id }}
+          restore-keys: gkg-
+
       - name: Scan markets, trades and news
         run: node tools/loki.mjs "$RUNNER_TEMP/loki/loki.json" "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/loki-data/loki.json"
 
