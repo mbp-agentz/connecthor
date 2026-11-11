@@ -42,12 +42,27 @@
     .logo{display:flex;align-items:center;gap:10px;min-width:0}
     .logo-icon{font-size:26px}
     .logo h1{font-size:19px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
-    .logo-sub{font-size:10px;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase}
     .stats{display:flex;gap:18px;align-items:center}
+    .header{flex-wrap:wrap;row-gap:8px}
+    .dc-pill{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;border:1px solid;font-weight:800;font-size:13px;letter-spacing:0.05em;white-space:nowrap;cursor:pointer;transition:color .8s,border-color .8s,background .8s}
+    .dc-pill .sim-tag{margin-left:2px}
+    .tools{position:relative}
+    .mj-pill.tools-btn.open,.mj-pill.tools-btn:hover{color:var(--text);border-color:rgba(148,163,184,0.8)}
+    .tools-menu{position:absolute;top:calc(100% + 8px);left:0;z-index:320;width:290px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+    .tool{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+    .tool:hover:not(:disabled){background:rgba(148,163,184,0.1)}
+    .tool:disabled{cursor:default;opacity:.55}
+    .tool-ico{font-size:18px;width:22px;text-align:center}
+    .tool-txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+    .tool-txt b{font-size:13px;letter-spacing:.04em}
+    .tool-txt small{font-size:11px;color:var(--muted)}
+    .tool-st{font-size:10px;font-weight:800;letter-spacing:.05em;padding:1px 6px;border-radius:4px;color:var(--muted);background:rgba(148,163,184,0.15)}
+    .tool-st.on{color:#0b1220;background:#3b82f6}
+    @media(min-width:1101px){.mods .info-pop{left:0;transform:none}} /* the tools row starts at the left edge: a centred card would hang off-screen */
+    .mods{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px;align-items:center} /* Mjölnir/Tyr get their own row under the stats */
     .stat{text-align:center}
     .stat-val{font-size:16px;font-weight:700;white-space:nowrap}
     .stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
-    .dc-pill{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;border:1px solid;font-weight:800;font-size:13px;letter-spacing:0.05em}
     .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;display:inline-block}
     .dot.red{background:var(--red)}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.45}}
@@ -94,12 +109,14 @@
     .sim-banner{display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.4;color:#fde68a;background:rgba(234,179,8,0.08);border:1px dashed rgba(234,179,8,0.45);border-radius:10px;padding:8px 10px;margin-bottom:10px}
     .sim-banner b{color:var(--yellow);letter-spacing:0.05em}
     .sim-tag{font-size:8px;font-weight:800;letter-spacing:0.08em;color:var(--yellow);opacity:.85}
-    .dc-pill .sim-tag{margin-left:2px}
 
     /* globe */
     .globe{grid-area:g;position:relative;background:radial-gradient(ellipse at center,#1a1f35,#0a0f1a);overflow:hidden;min-height:0}
     .badge-api{position:absolute;top:12px;right:12px;z-index:50;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:10px;font-weight:600;background:var(--card);border:1px solid var(--green);color:var(--green)}
     .badge-api.sample{border-color:var(--yellow);color:var(--yellow)}
+    /* the header already shows the NEH score; the card covers the globe, so it only opens from the header */
+    .globe .neh:not(.show){display:none}
+    .stat.neh-tap{cursor:pointer;border-radius:8px;padding:2px 6px;background:rgba(59,130,246,0.08)}
     .neh{position:absolute;top:12px;left:12px;z-index:50;width:280px;background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
     .neh-row{display:flex;align-items:baseline;justify-content:space-between}
     .neh-score{font-size:30px;font-weight:900}
@@ -110,7 +127,8 @@
     .neh-drv{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;cursor:pointer}
     .neh-drv:hover{color:var(--blue)}
     .neh-drv span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .neh-short,.neh-chev{display:none}
+    .neh-short{display:none}
+    .neh-chev{display:block;position:absolute;top:8px;right:12px;padding:2px 4px;color:var(--faint);cursor:pointer}
     .spotlight{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2));backdrop-filter:blur(12px);border:1px solid rgba(59,130,246,0.3);border-radius:50px;padding:10px 20px;cursor:pointer;max-width:90%}
     .spot-dot{width:8px;height:8px;background:var(--blue);border-radius:50%;animation:pulse 1s infinite;flex-shrink:0}
     .spot-lbl{font-size:10px;font-weight:700;color:var(--blue)}
@@ -195,7 +213,6 @@
     .layer.on{color:var(--text);border-color:rgba(59,130,246,0.6);background:rgba(59,130,246,0.15)}
     .layer .sw{width:7px;height:7px;border-radius:50%}
     .deck{display:none}
-    .dc-pill{cursor:pointer}
     .bets-h{margin:12px 2px 6px}
     .bet{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:border-color .2s}
     .bet:hover{border-color:rgba(59,130,246,0.6)}
@@ -207,14 +224,12 @@
     .bet-bar span{display:block;height:100%;border-radius:2px}
     .pizza-drawer{position:fixed;left:0;top:0;bottom:0;width:360px;max-width:100%;z-index:250;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;box-shadow:10px 0 40px rgba(0,0,0,.55);animation:drawerIn .25s ease-out}
     @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
-    .dc-pill{white-space:nowrap}
     .mj-pill{white-space:nowrap;display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px dashed rgba(148,163,184,0.45);background:transparent;color:var(--muted);font-weight:800;font-size:13px;letter-spacing:.05em;cursor:pointer;font-family:inherit;transition:all .3s}
-    .dc-sw{font:inherit;font-size:10px;font-weight:800;letter-spacing:0.05em;padding:1px 6px;border-radius:4px;border:0;cursor:pointer;color:#94a3b8;background:rgba(148,163,184,0.15)}
-    .dc-sw.on{color:#0b1220;background:var(--dc,#3b82f6)}
-    .dc-pill.off{color:var(--muted);border:1px dashed rgba(148,163,184,0.45);background:transparent}
-    .dc-pill.off:hover{color:var(--text)}
     .mj-pill .mj-off{font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15)}
     .mj-pill:hover{color:var(--text);border-color:rgba(34,211,238,0.6)}
+    .mj-pill.tyr-pill:hover{border-color:rgba(239,68,68,0.6)}
+    .mj-pill.tyr-pill.on{color:#fca5a5;border:1px solid rgba(239,68,68,0.75);background:rgba(239,68,68,0.12);animation:none}
+    .info-pop.tyr{border-color:rgba(239,68,68,0.5)}
     .mj-pill.on{color:#a5f3fc;border:1px solid rgba(34,211,238,0.75);background:rgba(34,211,238,0.12);animation:mjglow 2.4s ease-in-out infinite}
     @keyframes mjglow{0%,100%{box-shadow:0 0 8px rgba(34,211,238,0.35)}50%{box-shadow:0 0 20px rgba(34,211,238,0.75)}}
     .info-wrap{position:relative;display:flex;align-items:center;gap:4px}
@@ -226,6 +241,7 @@
     .info-pitch{font-size:14px;font-weight:700;color:var(--text);line-height:1.35;margin-top:4px}
     .info-hint{font-size:11px;color:var(--muted);margin-top:6px}
     .mj-more-btn{background:none;border:none;color:#67e8f9;font-size:12px;font-weight:600;padding:0;margin-top:8px;cursor:pointer;font-family:inherit}
+    .tyr-more-btn{color:#f87171}
     .mj-more{font-size:12px;line-height:1.5;color:#cbd5e1;margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
     .mj-detail{border-color:rgba(34,211,238,0.5);box-shadow:0 0 30px rgba(34,211,238,0.2);max-height:min(72vh,620px);overflow:auto}
     .mj-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
@@ -255,7 +271,6 @@
     @keyframes slideInL{from{opacity:0;transform:translateX(calc(-50% - 70px)) rotate(-4deg)}to{opacity:1;transform:translateX(-50%)}}
     .app{animation:fadeIn .6s ease-out}
     .spotlight,.detail{animation:fadeUp .45s cubic-bezier(.2,.8,.2,1)}
-    .dc-pill{transition:color .8s,border-color .8s,background .8s}
     .tab-fade{animation:fadeIn .25s ease-out}
     .hot{display:block;padding:10px;border-radius:8px;margin-bottom:6px;background:var(--card2);border:1px solid var(--border);cursor:pointer}
     .hot:hover{border-color:var(--blue)}
@@ -324,10 +339,7 @@
       .info-pop::before{display:none}
       .deck-card.mj{border-color:rgba(34,211,238,0.35)}
       .deck-card.mj.on{border-color:rgba(34,211,238,0.9);box-shadow:0 0 12px rgba(34,211,238,0.35)}
-      /* the header already shows the NEH score; the card only covered the globe, so it opens on a tap there */
-      .globe .neh:not(.show){display:none}
       .stat-markets{display:none}
-      .stat.neh-tap{cursor:pointer;border-radius:8px;padding:2px 6px;background:rgba(59,130,246,0.08)}
       /* thumb-sized rows: two lines of question instead of one cut-off line of 11px text */
       .country-list .neh-drv{font-size:13px;line-height:1.35;padding:11px 12px;margin-bottom:6px;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:10px}
       .country-list .neh-drv span:first-child{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
@@ -538,6 +550,7 @@ const POLY_FEEDS=['tag_slug=geopolitics','tag_slug=world','tag_slug=politics','t
 
 const LOCS={trump:{lat:38.9,lng:-77,c:'USA'},'united states':{lat:38.9,lng:-77,c:'USA'},'u.s.':{lat:38.9,lng:-77,c:'USA'},fed:{lat:38.89,lng:-77.04,c:'USA'},ukraine:{lat:48.38,lng:31.17,c:'Ukraine'},crimea:{lat:45.3,lng:34.1,c:'Ukraine'},russia:{lat:55.76,lng:37.62,c:'Russia'},putin:{lat:55.76,lng:37.62,c:'Russia'},china:{lat:39.9,lng:116.4,c:'China'},' xi ':{lat:39.9,lng:116.4,c:'China'},taiwan:{lat:25.03,lng:121.57,c:'Taiwan'},iran:{lat:35.69,lng:51.39,c:'Iran'},israel:{lat:31.77,lng:35.22,c:'Israel'},gaza:{lat:31.5,lng:34.47,c:'Gaza'},hamas:{lat:31.5,lng:34.47,c:'Gaza'},lebanon:{lat:33.89,lng:35.5,c:'Lebanon'},syria:{lat:33.51,lng:36.29,c:'Syria'},yemen:{lat:15.37,lng:44.19,c:'Yemen'},venezuela:{lat:10.49,lng:-66.88,c:'Venezuela'},maduro:{lat:10.49,lng:-66.88,c:'Venezuela'},'north korea':{lat:39.03,lng:125.75,c:'North Korea'},'south korea':{lat:37.57,lng:126.98,c:'South Korea'},india:{lat:28.61,lng:77.21,c:'India'},pakistan:{lat:33.68,lng:73.05,c:'Pakistan'},greenland:{lat:64.18,lng:-51.72,c:'Greenland'},nato:{lat:50.88,lng:4.42,c:'NATO'},' eu ':{lat:50.85,lng:4.35,c:'EU'},france:{lat:48.86,lng:2.35,c:'France'},macron:{lat:48.86,lng:2.35,c:'France'},germany:{lat:52.52,lng:13.4,c:'Germany'},' uk ':{lat:51.51,lng:-0.13,c:'UK'},japan:{lat:35.68,lng:139.69,c:'Japan'},mexico:{lat:19.43,lng:-99.13,c:'Mexico'},canada:{lat:45.42,lng:-75.7,c:'Canada'},bitcoin:{lat:37.77,lng:-122.42,c:'USA'},kyiv:{lat:50.45,lng:30.52,c:'Ukraine'},zelensky:{lat:50.45,lng:30.52,c:'Ukraine'},moscow:{lat:55.76,lng:37.62,c:'Russia'},kremlin:{lat:55.76,lng:37.62,c:'Russia'},beijing:{lat:39.9,lng:116.4,c:'China'},tehran:{lat:35.69,lng:51.39,c:'Iran'},khamenei:{lat:35.69,lng:51.39,c:'Iran'},netanyahu:{lat:31.77,lng:35.22,c:'Israel'},hezbollah:{lat:33.89,lng:35.5,c:'Lebanon'},houthi:{lat:15.37,lng:44.19,c:'Yemen'},hormuz:{lat:26.57,lng:56.25,c:'Iran'},pahlavi:{lat:35.69,lng:51.39,c:'Iran'},romania:{lat:44.43,lng:26.1,c:'Romania'},falkland:{lat:-51.7,lng:-57.85,c:'Falklands'},'kim jong':{lat:39.03,lng:125.75,c:'North Korea'},saudi:{lat:24.71,lng:46.68,c:'Saudi Arabia'},qatar:{lat:25.29,lng:51.53,c:'Qatar'},egypt:{lat:30.04,lng:31.24,c:'Egypt'},turkey:{lat:39.93,lng:32.86,c:'Turkey'},erdogan:{lat:39.93,lng:32.86,c:'Turkey'},modi:{lat:28.61,lng:77.21,c:'India'},starmer:{lat:51.51,lng:-0.13,c:'UK'},britain:{lat:51.51,lng:-0.13,c:'UK'},brazil:{lat:-15.79,lng:-47.88,c:'Brazil'},argentina:{lat:-34.6,lng:-58.38,c:'Argentina'},colombia:{lat:4.71,lng:-74.07,c:'Colombia'},cuba:{lat:23.11,lng:-82.37,c:'Cuba'},panama:{lat:8.98,lng:-79.52,c:'Panama'},poland:{lat:52.23,lng:21.01,c:'Poland'},hungary:{lat:47.5,lng:19.04,c:'Hungary'},serbia:{lat:44.79,lng:20.45,c:'Serbia'},sudan:{lat:15.5,lng:32.56,c:'Sudan'},congo:{lat:-4.32,lng:15.31,c:'DR Congo'},ethiopia:{lat:9.03,lng:38.74,c:'Ethiopia'},somalia:{lat:2.05,lng:45.32,c:'Somalia'},philippines:{lat:14.6,lng:120.98,c:'Philippines'},vietnam:{lat:21.03,lng:105.85,c:'Vietnam'},australia:{lat:-35.28,lng:149.13,c:'Australia'},'south africa':{lat:-25.75,lng:28.19,c:'South Africa'},nigeria:{lat:9.08,lng:7.4,c:'Nigeria'}};
 
+const isWar=m=>m.category==='Conflict'||CONFLICT_RE.test(m.question); // Tyr filter: war bets stay hidden until it is on
 const CONFLICT_RE=/\b(war|invade|invasion|strike|attack|nuclear|military|ceasefire|missile|clash|troops|icbm|article 5|bomb)/i;
 // All places a question mentions, in the order they appear; the first is where the market sits
 function getLocs(q){
@@ -970,9 +983,10 @@ function Ticker({items}){
 // Info card on hover (desktop) or tap (touch). With tapChild a tap on the wrapped element opens it;
 // otherwise the element keeps its own tap action and an ⓘ next to it opens the card
 const CAN_HOVER=typeof matchMedia!=='undefined'&&matchMedia('(hover:hover)').matches;
+const MOBILE_Q=window.matchMedia('(max-width:1100px)');
 function HoverInfo({card,tapChild,noTouch,tone,style,label,children}){
   const[open,setOpen]=useState(null),wrap=useRef(null),hide=useRef(0); // open: null, or {top} for the fixed card on touch
-  const enter=()=>{if(!CAN_HOVER)return;clearTimeout(hide.current);setOpen(o=>o||{})};
+  const enter=()=>{if(!CAN_HOVER)return;clearTimeout(hide.current);const b=wrap.current?.getBoundingClientRect().bottom||0;setOpen(o=>o||(MOBILE_Q.matches?{top:Math.round(b+8)}:{}))}; // narrow screens pin the card (position:fixed), so it needs a top
   const leave=()=>{if(!CAN_HOVER)return;hide.current=setTimeout(()=>setOpen(null),220)};
   const tap=e=>{if(CAN_HOVER)return;e.stopPropagation();const b=e.currentTarget.getBoundingClientRect().bottom;setOpen(o=>o?null:{top:Math.round(b+8)})};
   useEffect(()=>{if(!open||CAN_HOVER)return;const close=e=>{if(e.type==='scroll'||!wrap.current||!wrap.current.contains(e.target))setOpen(null)};
@@ -981,8 +995,22 @@ function HoverInfo({card,tapChild,noTouch,tone,style,label,children}){
     {tapChild?<div onClick={tap} style={{display:'contents'}}>{children}</div>:<>{children}{!noTouch&&<button className="info-btn" onClick={tap} aria-label={label||'More info'} aria-expanded={!!open}>ⓘ</button>}</>}
     {open&&<div className={`info-pop ${tone||''}`} role="tooltip" style={{...style,...(open.top?{top:open.top}:{})}}>{card}</div>}
   </div>}
+function NehCard({c}){const[more,setMore]=useState(false);return<>
+  <div className="dc-kicker" style={{color:c}}>NOTHING EVER HAPPENS INDEX</div>
+  <div className="info-pitch">Betting odds of escalation: 0 = calm, 100 = it's happening.</div>
+  <div className="info-hint">Click to visualize.</div>
+  <button className="mj-more-btn" style={{color:c}} onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
+  {more&&<div className="mj-more">The Nothing Ever Happens Index reads the crowd's money on war. It takes every real-money conflict market on Polymarket, Kalshi and PredictIt, from missile strikes to invasions, and averages their odds of escalation, weighted by trading volume. Ceasefire and peace deals count in reverse. 0 means traders bet that nothing ever happens, 100 means they bet it is happening. Click the score to open the full card with the markets driving it and the Doomsday Clock.</div>}
+</>}
+function TyrCard({on}){const[more,setMore]=useState(false);return<>
+  <div className="dc-kicker" style={{color:'#f87171'}}>⚔️ TYR</div>
+  <div className="info-pitch">Shows all war and conflict bets.</div>
+  <div className="info-hint">Named after the Norse god of war. Off by default: war bets stay hidden. {CAN_HOVER?'Click':'Tap'} the button to switch {on?'off':'on'}.</div>
+  <button className="mj-more-btn tyr-more-btn" onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
+  {more&&<div className="mj-more">Switching Tyr on adds every war and conflict bet we track from Polymarket, Kalshi, Manifold and PredictIt: invasions, missile strikes, nuclear tests, ceasefires and peace deals. They appear as dots on the globe, in the country lists, in Top Bets and the biggest live trades on them. The countries with conflict markets are shaded amber to red by how much money is at stake and how likely escalation is. The button's counter shows how many are live.</div>}
+</>}
 function MjCard({on}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
-  <div className="dc-kicker" style={{color:'#67e8f9'}}>⚡ MJÖLNIR</div>
+  <div className="dc-kicker" style={{color:'#67e8f9'}}>🔨 MJÖLNIR</div>
   <div className="info-pitch">Flags anomalies: money moving before the news.</div>
   <div className="info-hint">{on?`On · tap the lightning on the globe for details. ${act} the button to switch off.`:`${act} the button to switch on.`} Test version with demo data.</div>
   <button className="mj-more-btn" onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
@@ -1254,6 +1282,13 @@ useEffect(()=>{const h=selected?'#m='+encodeURIComponent(selected.id):'';if(loca
 const[mobile,setMobile]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches);const mobileRef=useRef(mobile);mobileRef.current=mobile;
 useEffect(()=>{const mq=matchMedia('(max-width:1100px)'),on=()=>setMobile(mq.matches);mq.addEventListener('change',on);return()=>mq.removeEventListener('change',on)},[]);
 const[mjolnir,setMjolnir]=useState(false); // test version: off on every visit
+const[toolsOpen,setToolsOpen]=useState(false),toolsRef=useRef(null); // "Get more tools" dropdown
+useEffect(()=>{if(!toolsOpen)return;const close=e=>{if(e.type==='keydown'?e.key==='Escape':!toolsRef.current?.contains(e.target))setToolsOpen(false)};
+  document.addEventListener('pointerdown',close);document.addEventListener('keydown',close);return()=>{document.removeEventListener('pointerdown',close);document.removeEventListener('keydown',close)}},[toolsOpen]);
+const[tyr,setTyr]=useState(false); // war bets are hidden until Tyr is switched on (off on every visit)
+const bets=useMemo(()=>tyr?markets:markets.filter(m=>!isWar(m)),[markets,tyr]);
+const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
+useEffect(()=>{if(!tyr){setSelected(m=>m&&isWar(m)?null:m)}},[tyr]); // switching Tyr off closes an open war market
 const[bolt,setBolt]=useState(null); // id of the Mjölnir signal whose panel is open
 const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
@@ -1334,9 +1369,9 @@ useEffect(()=>{
   window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',on);check();
   return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',on);if(raf)cancelAnimationFrame(raf)};
 },[]);
-const[nehShow,setNehShow]=useState(false); // mobile: the card is hidden until the header's NEH score is tapped
-const nehMini=nehSlim&&!nehOpen&&!(mobile&&nehShow);
-const nehClose=e=>{e.stopPropagation();if(mobile)setNehShow(false);else setNehOpen(false)};
+const[nehShow,setNehShow]=useState(false); // the card is hidden until the header's NEH score is clicked
+const nehMini=nehSlim&&!nehOpen&&!nehShow;
+const nehClose=e=>{e.stopPropagation();setNehShow(false)};
 useEffect(()=>{const el=globeWrap.current;if(!el)return;const ro=new ResizeObserver(([e])=>setGsize({w:Math.round(e.contentRect.width),h:Math.round(e.contentRect.height)}));ro.observe(el);return()=>ro.disconnect()},[]);
 
 useEffect(()=>{if(!globeEl.current)return;const c=globeEl.current.controls();c.autoRotate=!REDUCED_MOTION;c.autoRotateSpeed=0.12;c.enableDamping=true;c.dampingFactor=0.08;
@@ -1352,7 +1387,7 @@ globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:la-
 // picking a market somewhere else closes a stale country list
 useEffect(()=>{if(selected&&country&&selected.country!==country)setCountry(null)},[selected?.id]);
 
-const filtered=useMemo(()=>markets.filter(m=>{if(srcFilter!=='all'&&m.source!==srcFilter)return false;if(search&&!m.question.toLowerCase().includes(search.toLowerCase()))return false;if(catFilter!=='All'&&m.category!==catFilter)return false;return true}),[markets,search,catFilter,srcFilter]);
+const filtered=useMemo(()=>bets.filter(m=>{if(srcFilter!=='all'&&m.source!==srcFilter)return false;if(search&&!m.question.toLowerCase().includes(search.toLowerCase()))return false;if(catFilter!=='All'&&m.category!==catFilter)return false;return true}),[bets,search,catFilter,srcFilter]);
 const stats=useMemo(()=>{const u=markets.filter(isUSD);return{total:markets.length,volume:u.reduce((s,m)=>s+m.volume,0),vol24:u.reduce((s,m)=>s+(m.vol24||0),0)}},[markets]);
 const neh=useMemo(()=>nehIndex(markets),[markets]);
 const nehPrev=useMemo(()=>nehIndex(markets.map(m=>({...m,probability:Math.min(1,Math.max(0,m.probability-(m.change24||0)))}))).score,[markets]);
@@ -1414,7 +1449,7 @@ if(news.length===0){const r=[...head,{text:'Loading live news…'}];r.placeholde
 return[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.source+': '+n.title,href:n.url}))];
 },[news,dc,pizzaSim,neh.score,movers,geoWhales]);
 const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
-const hot=useMemo(()=>hotspots(markets),[markets]);
+const hot=useMemo(()=>hotspots(bets),[bets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
 const hotLabels=useMemo(()=>[{lat:PENTAGON.lat,lng:PENTAGON.lng,text:'PENTAGON',pentagon:true},...hot.slice(0,6).filter(h=>h.country!=='USA').map(h=>({lat:h.lat,lng:h.lng,text:h.country.toUpperCase()}))],[hot.slice(0,6).map(h=>h.country).join()]);
 // Hotspot shading: heat relative to the hottest country. Polygon accessors are keyed on the
@@ -1491,7 +1526,7 @@ const onCardUp=e=>{const d=drag.current;drag.current=null;if(!d||!d.on)return;d.
   if(Math.abs(dx)<=80){setCard(d.el,0,true);return}
   if(REDUCED_MOTION){stepMarket(dx<0?1:-1);return}
   const side=dx<0?-1:1;setCard(d.el,side*Math.max(window.innerWidth,600),true);d.el.style.opacity='0';setTimeout(()=>stepMarket(-side),170)};
-const countryMarkets=useMemo(()=>country?markets.filter(m=>m.country===country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[country,markets]);
+const countryMarkets=useMemo(()=>country?bets.filter(m=>m.country===country).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||volOf(b)-volOf(a)):[],[country,bets]);
 // Mobile: a 30-row list buried the globe, so it starts with the 3 busiest and grows 5 at a time
 const[countryN,setCountryN]=useState(3);
 useEffect(()=>setCountryN(3),[country]);
@@ -1504,33 +1539,48 @@ const similar=useMemo(()=>selected?similarMarkets(selected,markets):[],[selected
 // Top Bets: the busiest real-money markets on Polymarket and Kalshi, and the biggest single trades.
 // Only markets placed on the globe: the Gamma "top volume" pull also brings esports and crypto
 const onGlobe=m=>m.lat!=null&&(m.source==='polymarket'||m.source==='kalshi');
-const topBets=useMemo(()=>markets.filter(m=>onGlobe(m)&&(betSrc==='all'||m.source===betSrc)).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||(b.volume||0)-(a.volume||0)).slice(0,12),[markets,betSrc]);
+const topBets=useMemo(()=>bets.filter(m=>onGlobe(m)&&(betSrc==='all'||m.source===betSrc)).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||(b.volume||0)-(a.volume||0)).slice(0,12),[bets,betSrc]);
 const tradeSrc=t=>t.who==='Kalshi'?'kalshi':'polymarket';
-const bigBets=useMemo(()=>{const ok=new Set(markets.filter(onGlobe).map(m=>m.conditionId).filter(Boolean));return trades.filter(t=>ok.has(t.conditionId)&&(betSrc==='all'||tradeSrc(t)===betSrc)).sort((a,b)=>b.usd-a.usd).slice(0,8)},[trades,markets,betSrc]);
+const bigBets=useMemo(()=>{const ok=new Set(bets.filter(onGlobe).map(m=>m.conditionId).filter(Boolean));return trades.filter(t=>ok.has(t.conditionId)&&(betSrc==='all'||tradeSrc(t)===betSrc)).sort((a,b)=>b.usd-a.usd).slice(0,8)},[trades,bets,betSrc]);
 const openTrade=t=>{const m=marketsRef.current.find(x=>x.conditionId&&x.conditionId===t.conditionId);if(m)setSelected(m);else if(t.url)window.open(t.url,'_blank','noopener')};
 
 return(
 <div className="app">
 <Boundary name="Header" className="header"><header className="header">
-<div className="logo"><span className="logo-icon">⚡</span><div><h1>ConnecTHOR</h1><div className="logo-sub">Pentagon Pizza Index · Market Intel</div></div></div>
+<div className="logo"><span className="logo-icon">⚡</span><h1>ConnecTHOR</h1></div>
 <div className="stats">
-<HoverInfo noTouch style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
-<div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
-<div className="info-pitch">Pentagon-area pizza rush as a crisis early warning.</div>
-<div className="info-hint">How busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.{pizza?.source!=='live'?' Currently simulated, not real data.':''} Click to open the Pizza Watch; ON/OFF shows it on the globe.</div>
-</>}>
-<div className={`dc-pill${layers.pizza?'':' off'}`} role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={layers.pizza?{'--dc':DOUGHCON[dc].color,color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}:undefined}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}<button className={`dc-sw${layers.pizza?' on':''}`} aria-pressed={layers.pizza} aria-label="Show DOUGHCON on the globe" title={layers.pizza?'Hide on globe':'Show on globe'} onClick={e=>{e.stopPropagation();toggleLayer('pizza')}} onKeyDown={e=>e.stopPropagation()}>{layers.pizza?'ON':'OFF'}</button></div>
+<HoverInfo noTouch style={{borderColor:nl.c+'88'}} card={<NehCard c={nl.c}/>}>
+<div className="stat neh-tap" role="button" tabIndex={0} onClick={()=>setNehShow(v=>!v)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setNehShow(v=>!v)}}} aria-expanded={nehShow}><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index{nehShow?' ▴':' ▾'}</div></div>
 </HoverInfo>
-<HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir}/>}>
-<button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>⚡ MJÖLNIR {mjolnir?<span className="mono">{mjScore}</span>:<span className="mj-off">OFF</span>}{mjolnir&&<span className="sim-tag">DEMO</span>}</button>
-</HoverInfo>
-<div className={`stat${mobile?' neh-tap':''}`} onClick={mobile?()=>setNehShow(v=>!v):undefined} aria-expanded={mobile?nehShow:undefined}><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index{mobile?(nehShow?' ▴':' ▾'):''}</div></div>
 <div className="stat stat-markets"><div className="stat-val">{stats.total}</div><div className="stat-lbl">Markets</div></div>
 <div className="stat"><div className="stat-val" style={{display:'flex',alignItems:'center',gap:6,justifyContent:'center',color:wsStatus==='live'?'var(--green)':'var(--muted)'}}><span className="dot" style={{background:wsStatus==='live'?'var(--green)':'var(--faint)',animation:wsStatus==='live'?undefined:'none'}}></span>{wsStatus==='live'?'LIVE':wsStatus==='connecting'?'…':'OFF'}</div><div className="stat-lbl">Price stream</div></div>
 <div className="stat" title={`All-time volume on real-money markets: ${fmtVol(stats.volume)}`}><div className="stat-val">{fmtVol(stats.vol24||stats.volume)}</div><div className="stat-lbl">{stats.vol24?'24h Volume':'Volume'}</div></div>
 <Clock/>
-</div>
 <input className="search" type="text" placeholder="Search markets..." value={search} onChange={e=>setSearch(e.target.value)}/>
+</div>
+<div className="mods">
+<HoverInfo tone="tyr" label="What is Tyr?" card={<TyrCard on={tyr}/>}>
+<button className={`mj-pill tyr-pill${tyr?' on':''}`} onClick={()=>setTyr(v=>!v)} aria-pressed={tyr}>⚔️ TYR {tyr?<span className="mono">{warN}</span>:<span className="mj-off">OFF</span>}</button>
+</HoverInfo>
+<HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir}/>}>
+<button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>🔨 MJÖLNIR {mjolnir?<span className="mono">{mjScore}</span>:<span className="mj-off">OFF</span>}{mjolnir&&<span className="sim-tag">DEMO</span>}</button>
+</HoverInfo>
+{layers.pizza&&<HoverInfo noTouch style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
+<div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
+<div className="info-pitch">Pentagon-area pizza rush as a crisis early warning.</div>
+<div className="info-hint">How busy pizza places near the Pentagon are versus normal for this hour. 5 = normal, 1 = maximum.{pizza?.source!=='live'?' Currently simulated, not real data.':''} Click to open the Pizza Watch. Switch it off under Get more tools.</div>
+</>}>
+<div className="dc-pill" role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
+</HoverInfo>}
+<div className="tools" ref={toolsRef}>
+<button className={`mj-pill tools-btn${toolsOpen?' open':''}`} onClick={()=>setToolsOpen(o=>!o)} aria-expanded={toolsOpen} aria-haspopup="menu">🛡️ Get more tools <span aria-hidden="true">{toolsOpen?'▴':'▾'}</span></button>
+{toolsOpen&&<div className="tools-menu" role="menu">
+<button role="menuitemcheckbox" aria-checked={layers.pizza} className="tool" onClick={()=>{toggleLayer('pizza');setToolsOpen(false)}}><span className="tool-ico">🍕</span><span className="tool-txt"><b>DOUGHCON</b><small>Pentagon pizza rush as a crisis early warning</small></span><span className={`tool-st${layers.pizza?' on':''}`}>{layers.pizza?'ON':'OFF'}</span></button>
+<button role="menuitem" className="tool" disabled><span className="tool-ico">🐍</span><span className="tool-txt"><b>Loki</b><small>Coming soon</small></span><span className="tool-st">SOON</span></button>
+<button role="menuitem" className="tool" disabled><span className="tool-ico">🪽</span><span className="tool-txt"><b>Valkyries</b><small>Coming soon</small></span><span className="tool-st">SOON</span></button>
+</div>}
+</div>
+</div>
 </header></Boundary>
 
 <Boundary name="Top bets" className="left"><aside className={`left ${betsOpen?'open':''}`}>
@@ -1556,9 +1606,9 @@ return(
 <div className={`badge-api ${dataSource==='live'?'':'sample'}`}><span className="dot" style={{width:6,height:6,background:dataSource==='live'?'var(--green)':'var(--yellow)'}}></span>{dataSource==='live'?'Live · '+Object.keys(venues).filter(k=>venues[k]).map(srcName).join(', '):'Sample markets'} · {fmtTime(lastUpd)}{wsStatus==='live'?' · streaming':''}</div>
 
 <div className={`neh${nehMini?' slim':''}${nehShow?' show':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
-<div className="dc-kicker" onClick={e=>{if(mobile||(nehSlim&&!nehMini))nehClose(e)}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
+<div className="dc-kicker" onClick={e=>{if(!nehMini)nehClose(e)}}><span className="neh-full">NOTHING EVER HAPPENS INDEX</span><span className="neh-short">NEH</span><span className="info" title="Volume-weighted odds of escalation across real-money conflict markets (ceasefire/peace markets counted inverted). 0 = nothing ever happens, 100 = it's happening.">ⓘ</span></div>
 <div className="neh-row"><span><span className="neh-score mono" style={{color:nl.c}}>{neh.score}</span>{neh.score!==nehPrev&&<span className="mono neh-delta" style={{fontSize:11,marginLeft:6,color:'var(--muted)'}}>{neh.score>nehPrev?'▲':'▼'}{Math.abs(neh.score-nehPrev)} 24h</span>}</span><span className="neh-label" style={{color:nl.c}}>{nl.t}</span></div>
-<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini)nehClose(e)}}>{mobile?'✕':nehMini?'▾':nehSlim?'▴':''}</span>
+<span className="neh-chev" aria-hidden="true" onClick={e=>{if(!nehMini)nehClose(e)}}>{nehMini?'▾':'✕'}</span>
 <div className="meter" role="meter" aria-valuenow={neh.score} aria-valuemin="0" aria-valuemax="100"><div className="meter-mark" style={{left:neh.score+'%'}}></div></div>
 <div className="dc-legend"><span>Nothing happens</span><span>It's happening</span></div>
 <div className="neh-drivers">{neh.drivers.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{m.question}</span><span className="mono">{fmtProb(m.probability)}</span></div>)}</div>
@@ -1606,7 +1656,7 @@ return(
 
 {boltSig&&!selected&&!country&&(()=>{const x=boltSig,K=MJ_KIND[x.kind];return(
 <div className="detail mj-detail">
-<div className="detail-top"><div className="src" style={{color:K.c}}>⚡ MJÖLNIR · {K.t} <span className="sim-tag">DEMO</span></div><div className="mono shop-meta">signal {x.score}/100</div></div>
+<div className="detail-top"><div className="src" style={{color:K.c}}>🔨 MJÖLNIR · {K.t} <span className="sim-tag">DEMO</span></div><div className="mono shop-meta">signal {x.score}/100</div></div>
 <div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>
 <div className="mj-cols">
 <div className="mj-col"><div className="dc-kicker">BETTING MARKET</div><div className="mj-q">{x.q}</div><div className="mj-big mono">{fmtProb(x.p)} <span style={{color:x.d>0?'var(--red)':'var(--green)'}}>{fmtChg(x.d)} pts 24h</span></div></div>
@@ -1691,7 +1741,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>))}
 </div>)}
 {tab==='markets'&&(<>
-<div className="tabs"><button className={`tab ${srcFilter==='all'?'active':''}`} onClick={()=>setSrcFilter('all')}>All {markets.length}</button>{Object.keys(SOURCES).filter(k=>srcCounts[k]).map(k=><button key={k} className={`tab ${srcFilter===k?'active':''}`} onClick={()=>setSrcFilter(k)}>{srcName(k)} {srcCounts[k]}</button>)}</div>
+<div className="tabs"><button className={`tab ${srcFilter==='all'?'active':''}`} onClick={()=>setSrcFilter('all')}>All {bets.length}</button>{Object.keys(SOURCES).filter(k=>srcCounts[k]).map(k=><button key={k} className={`tab ${srcFilter===k?'active':''}`} onClick={()=>setSrcFilter(k)}>{srcName(k)} {srcCounts[k]}</button>)}</div>
 <div className="tabs">{cats.map(c=><button key={c} className={`tab ${catFilter===c?'active':''}`} onClick={()=>setCatFilter(c)}>{c}</button>)}</div>
 {filtered.slice(0,40).map(m=>(
 <div key={m.id} className={`card ${selected?.id===m.id?'sel':''}`} onClick={()=>setSelected(m)}>
