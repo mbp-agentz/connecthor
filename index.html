@@ -59,6 +59,62 @@
     .tool-txt small{font-size:11px;color:var(--muted)}
     .tool-st{font-size:10px;font-weight:800;letter-spacing:.05em;padding:1px 6px;border-radius:4px;color:var(--muted);background:rgba(148,163,184,0.15)}
     .tool-st.on{color:#0b1220;background:#3b82f6}
+    .tools-menu .info-wrap{display:flex}
+    .tools-menu .info-wrap>.tool{flex:1}
+    .info-pop.loki{border-color:rgba(74,222,128,0.5)}
+    .info-pop.valk{border-color:rgba(251,191,36,0.5)}
+    .info-pop.heim{border-color:rgba(96,165,250,0.5)}
+    .mj-pill.valk-pill.on{color:#fde68a;border:1px solid rgba(251,191,36,0.75);background:rgba(251,191,36,0.12);animation:none}
+    .valk-h{color:#fbbf24}
+    .valk-card{border-color:rgba(251,191,36,0.4)}
+    .valk-side{color:#fbbf24;border-color:rgba(251,191,36,0.55)}
+    .valk-new{color:#fbbf24}
+    .valk-wallets{display:flex;flex-direction:column;gap:2px}
+    .valk-w{display:grid;grid-template-columns:18px 1fr auto;column-gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;color:inherit;font-size:12px}
+    .valk-w:hover{background:rgba(251,191,36,0.08)}
+    .valk-rank{color:var(--faint)}
+    .valk-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .valk-pnl{color:var(--green);font-weight:700}
+    .valk-meta{grid-column:2/4;font-size:11px;color:var(--muted)}
+    .valk-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .valk-cal{display:flex;flex-direction:column;gap:8px}
+    .valk-bin{display:grid;grid-template-columns:96px 1fr;column-gap:10px;row-gap:2px;align-items:center;font-size:11px}
+    .valk-bin-l{color:var(--muted);grid-row:span 2}
+    .valk-track{position:relative;height:8px;border-radius:4px;background:var(--track)}
+    .valk-hit{display:block;height:100%;border-radius:4px;background:#fbbf24}
+    .valk-mark{position:absolute;top:-3px;width:2px;height:14px;margin-left:-1px;background:#f1f5f9;border-radius:1px}
+    .valk-bin-r{color:var(--text)}
+    .valk-bin-r small{color:var(--muted);font-family:inherit}
+    .valk-score{margin-top:4px}
+    .mj-pill.loki-pill.on{color:#bbf7d0;border:1px solid rgba(74,222,128,0.75);background:rgba(74,222,128,0.12);animation:none}
+    .loki-h{font-size:11px;font-weight:800;letter-spacing:.06em;color:#4ade80;margin-top:4px}
+    .loki-q{font-size:12px;font-weight:600;color:var(--text);line-height:1.35}
+    .loki-bet{font-size:12px;margin-top:6px}
+    .loki-lead{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+    .loki-lead a{color:#cbd5e1}
+    .loki-src{color:var(--faint)}
+    .loki-card{border-color:rgba(74,222,128,0.4)}
+    .loki-vol{display:block;text-decoration:none;color:inherit;border-color:var(--border)}
+    .loki-vol .bet-bar{margin-top:8px}
+    a.heim-ch{text-decoration:none;color:var(--muted)}
+    .heim-ch.loki-on{background:rgba(74,222,128,0.22)}
+    .mj-pill.heim-pill.on{color:#bfdbfe;border:1px solid rgba(96,165,250,0.75);background:rgba(96,165,250,0.12);animation:none}
+    .heim-body{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+    .heim-intro{font-size:12px;color:var(--muted);line-height:1.45}
+    .heim-global{display:flex;flex-direction:column;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    .heim-g{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+    .heim-g span{color:var(--muted)}
+    .heim-card{border:1px solid;border-radius:10px;padding:10px;background:var(--card2);cursor:pointer}
+    .heim-card:hover{background:rgba(96,165,250,0.08)}
+    .heim-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
+    .heim-lvl{font-size:10px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border:1px solid;border-radius:4px;white-space:nowrap}
+    .heim-chs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .heim-ch{font-size:11px;padding:2px 8px;border-radius:999px;color:var(--faint);background:rgba(148,163,184,0.08)}
+    .heim-ch.on{color:var(--text);background:rgba(96,165,250,0.22)}
+    .heim-q{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.35}
+    .heim-empty{font-size:13px;color:var(--muted);text-align:center;padding:20px 0}
+    .heim-foot{font-size:11px;color:var(--faint);line-height:1.5;border-top:1px solid var(--border);padding-top:8px}
+    @media(min-width:1101px){.mods .tools-menu .info-pop{top:-6px;left:calc(100% + 14px)}.tools-menu .info-pop::before{top:0;bottom:0;left:-14px;right:auto;width:14px;height:auto}} /* card opens beside the menu, not over the next item */
     @media(min-width:1101px){.mods .info-pop{left:0;transform:none}} /* the tools row starts at the left edge: a centred card would hang off-screen */
     .mods{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px;align-items:center} /* Mjölnir/Tyr get their own row under the stats */
     .stat{text-align:center}
@@ -832,6 +888,41 @@ async function fetchCoverage(){
   const pts=(d.timeline?.[0]?.data||[]).map(x=>{const m=String(x.date).match(/^(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?/);return m?{t:Date.UTC(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)),v:num(x.value)}:null}).filter(Boolean);
   return pts.length>2?pts:null;
 }
+// ============ LOKI ============
+// tools/loki.mjs runs hourly in GitHub Actions and force-pushes loki.json to the loki-data branch:
+// a static file on raw.githubusercontent.com (CORS *), so visitors cost no Pages Function calls
+const LOKI_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/loki.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/loki-data/loki.json';
+async function fetchLoki(){const r=await fetch(LOKI_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Loki HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.flags)||!Array.isArray(d.volume))throw new Error('bad Loki data');return d}
+// Valkyries: same pattern, tools/valkyries.mjs every 6 h → valkyries-data branch
+const VALK_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/valkyries.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/valkyries-data/valkyries.json';
+async function fetchValk(){const r=await fetch(VALK_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Valkyries HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.wallets)||!d.calibration)throw new Error('bad Valkyries data');return d}
+const VALK_VENUES={all:'All',pm:'Polymarket',ks:'Kalshi'},VALK_TOPICS={all:'All',war:'War',elections:'Elections',diplomacy:'Diplomacy',other:'Other'};
+const fmtLead=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');
+const pct=x=>Math.round(x*100)+'%';
+const volColor=s=>s>=60?'#ef4444':s>=40?'#f59e0b':'#4ade80';
+// ============ HEIMDALL (early warning) ============
+// Only feeds the page already loads (aircraft, news, odds, GDELT, pizza): no extra /api calls
+const HEIM_R=800; // km around a capital that counts as "near"
+const ISR_RE=/^(K35[RE]|KC\d|R135|E3[TC]F|E6|E7|P8|Q4|U2|EP3|E8)/; // tankers, spy and patrol planes: what flies before a strike
+const HOME_AIR=new Set(['USA','UK','Germany','France','Canada','Australia','Japan']); // big home bases: their tankers fly every day, so only emergencies count
+const NEWS_SKIP=new Set(['bitcoin','fed']); // market keys that aren't places in a headline ("federal", crypto news)
+const HEIM_PLACES=(()=>{const m=new Map();for(const[k,v]of Object.entries(LOCS)){if(v.c==='NATO'||v.c==='EU')continue;const p=m.get(v.c)||{country:v.c,lat:v.lat,lng:v.lng,keys:[]};if(!NEWS_SKIP.has(k))p.keys.push(k);m.set(v.c,p)}return[...m.values()]})();
+const HEIM_LVL=[null,{name:'SIGNAL',color:'#60a5fa'},{name:'WATCH',color:'#f59e0b'},{name:'ALERT',color:'#ef4444'}];
+const kmBetween=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+function heimdall(markets,news,air){
+  const now=Date.now(),recent=(news||[]).filter(n=>{const t=new Date(n.time).getTime();return isFinite(t)&&now-t<432e5}).map(n=>' '+String(n.title||'').toLowerCase()+' ');
+  return HEIM_PLACES.map(p=>{
+    const war=markets.filter(m=>m.country===p.country&&isUSD(m)&&isWar(m)&&(m.volume||0)>=1e4&&!((daysLeft(m.endDate)??99)<3)); // "…on November 11?" markets swing 20 pts a day by design
+    const mv=war.reduce((b,m)=>Math.abs(m.change24||0)>Math.abs(b?b.change24||0:0)?m:b,null);
+    const odds={lit:!!mv&&Math.abs(mv.change24)>=0.05,move:mv?mv.change24||0:0,m:mv};
+    const hl=recent.filter(t=>p.keys.some(k=>t.includes(k))).length;
+    let isr=0,emg=0,near=0;
+    if(air)for(const a of air){if(kmBetween(p.lat,p.lng,a.lat,a.lng)>HEIM_R)continue;near++;if(ISR_RE.test(a.type))isr++;if(/^7[567]00$/.test(a.squawk))emg++}
+    const home=HOME_AIR.has(p.country),ac={lit:emg>0||(!home&&isr>=2),isr,emg,near,home,none:!air};
+    const n=[ac.lit,hl>=3,odds.lit].filter(Boolean).length;
+    return{...p,odds,news:{lit:hl>=3,n:hl},air:ac,n,score:n*1000+hl*10+Math.abs(odds.move)*100+isr};
+  }).filter(x=>x.n>0).sort((a,b)=>b.score-a.score);
+}
 // ============ DAY / NIGHT ============
 // Pinned textures (three-globe example images): city lights for night, Blue Marble for day
 const TEX='https://unpkg.com/three-globe@2.45.6/example/img/';
@@ -1013,6 +1104,16 @@ function TyrCard({on}){const[more,setMore]=useState(false);return<>
   <button className="mj-more-btn tyr-more-btn" onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
   {more&&<div className="mj-more">Switching Tyr on adds every war and conflict bet we track from Polymarket, Kalshi, Manifold and PredictIt: invasions, missile strikes, nuclear tests, ceasefires and peace deals. They appear as dots on the globe, in the country lists, in Top Bets and the biggest live trades on them. The countries with conflict markets are shaded amber to red by how much money is at stake and how likely escalation is. The button's counter shows how many are live.</div>}
 </>}
+function ToolCard({ico,name,color,pitch,more,on,hint}){const[open,setOpen]=useState(false);return<>
+  <div className="dc-kicker" style={{color}}>{ico} {name}</div>
+  <div className="info-pitch">{pitch}</div>
+  <div className="info-hint">{hint||`Off by default. Concept preview: ${on?'switched on, but':'switching on'} shows no data yet.`}</div>
+  <button className="mj-more-btn" style={{color}} onClick={e=>{e.stopPropagation();setOpen(v=>!v)}} aria-expanded={open}>{open?'Read less ▴':'Read more ▾'}</button>
+  {open&&<div className="mj-more">{more}</div>}
+</>}
+const LOKI_MORE="Every hour, Loki reads the large trades on the 40 busiest geopolitical Polymarket markets, with wallet and timestamp, and lines them up against our news feeds and GDELT. Bets of $5K or more placed shortly before the first matching headline, at odds that have since moved their way, are flagged with their head start and the wallet's age. A second check scores staged-looking volume: wallets trading back and forth, or a few wallets making up most of it.";
+const VALK_MORE="Every six hours, the Valkyries score Polymarket wallets on the geopolitical markets resolved in the last 120 days: profit, hit rate and how early they got in. You see what the top 20 hold now, as gold rings on the globe. A second view checks the markets themselves on Polymarket and Kalshi: of the events priced at about 70% a week before the close, how many happened? That tells you how far to trust today's odds.";
+const HEIM_MORE="Heimdall watches every channel at once and blows the horn when several move together in the same country. It combines military aircraft from adsb.lol, news coverage from GDELT, the odds on our conflict markets and the Pentagon pizza index, and later airspace closures (NOTAMs) and tanker traffic (AIS). Each signal has a threshold that marks unusual activity. One spike is noise; three at once are an alert. The globe shows which countries light up on several channels.";
 function MjCard({on}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
   <div className="dc-kicker" style={{color:'#67e8f9'}}>🔨 MJÖLNIR</div>
   <div className="info-pitch">Flags anomalies: money moving before the news.</div>
@@ -1289,7 +1390,7 @@ const[mjolnir,setMjolnir]=useState(false); // test version: off on every visit
 const[toolsOpen,setToolsOpen]=useState(false),toolsRef=useRef(null); // "More tools" dropdown
 useEffect(()=>{if(!toolsOpen)return;const close=e=>{if(e.type==='keydown'?e.key==='Escape':!toolsRef.current?.contains(e.target))setToolsOpen(false)};
   document.addEventListener('pointerdown',close);document.addEventListener('keydown',close);return()=>{document.removeEventListener('pointerdown',close);document.removeEventListener('keydown',close)}},[toolsOpen]);
-const[tyr,setTyr]=useState(false); // war bets are hidden until Tyr is switched on (off on every visit)
+const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
 const bets=useMemo(()=>tyr?markets:markets.filter(m=>!isWar(m)),[markets,tyr]);
 const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
 useEffect(()=>{if(!tyr){setSelected(m=>m&&isWar(m)?null:m)}},[tyr]); // switching Tyr off closes an open war market
@@ -1298,7 +1399,7 @@ const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
 useEffect(()=>{const k=e=>{
 if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
-if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Pulse trades on the globe where their market sits; whales pulse bigger and longer (and get an arc)
 const pulseTrades=list=>{const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
@@ -1422,11 +1523,33 @@ const[boltTick,setBoltTick]=useState(0);
 useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
 const boltPaths=useMemo(()=>{const out=[];signals.forEach((x,k)=>x.assets.forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
   const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
+const heimList=useMemo(()=>heim?heimdall(markets,news,air):[],[heim,markets,news,air]);
+const heimKey=heimList.filter(h=>h.n>=2).map(h=>h.country+h.n).join('|');
+// rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
+const heimRings=useMemo(()=>heimList.filter(h=>h.n>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.n>=3?6:4,propagationSpeed:h.n>=3?2:1.2,repeatPeriod:(h.n>=3?900:1600)+k*150,color:HEIM_LVL[h.n].color})),[heimKey]);
+const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
+// one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
+const onlyDrawer=keep=>{if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
+useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
+useEffect(()=>{if(!valk)return;let off=false;const load=async()=>{try{const d=await fetchValk();if(!off){setValkData(d);setValkErr(false)}}catch(e){console.log('Valkyries unavailable:',e.message);if(!off)setValkErr(true)}};
+  load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[valk]);
+const toggleValk=()=>{const on=!valk;setValk(on);setValkOpen(on);if(on)setToolsOpen(false)};
+const valkKey=valk&&valkData?valkData.picks.slice(0,8).map(p=>p.id).join('|'):'';
+const valkRings=useMemo(()=>{if(!valkKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(valkKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:3,propagationSpeed:1,repeatPeriod:1900+k*190,color:'#fbbf24'}))},[valkKey,markets.length]);
+// Loki's scan changes hourly; checking every 15 min is plenty
+useEffect(()=>{if(!loki)return;let off=false;const load=async()=>{try{const d=await fetchLoki();if(!off){setLokiData(d);setLokiErr(false)}}catch(e){console.log('Loki unavailable:',e.message);if(!off)setLokiErr(true)}};
+  load();const i=setInterval(()=>{if(!document.hidden)load()},900000);return()=>{off=true;clearInterval(i)}},[loki]);
+const toggleLoki=()=>{const on=!loki;setLoki(on);setLokiOpen(on);if(on)setToolsOpen(false)};
+const lokiKey=loki&&lokiData?lokiData.flags.map(f=>f.id).join('|'):'';
+const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(lokiKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:3.2,propagationSpeed:1.4,repeatPeriod:1500+k*170,color:'#4ade80'}))},[lokiKey,markets.length]);
+const lokiGo=f=>{const m=bets.find(x=>x.conditionId===f.id);if(m){if(mobile){setLokiOpen(false);setValkOpen(false)}setSelected(m)}else window.open(f.url,'_blank','noopener')}; // war markets stay hidden while Tyr is off
+const toggleHeim=()=>{const on=!heim;setHeim(on);setHeimOpen(on);if(on)setToolsOpen(false)};
+const heimGo=h=>{try{globeEl.current&&globeEl.current.pointOfView({lat:h.lat-8,lng:h.lng,altitude:1.7},REDUCED_MOTION?0:1000)}catch(e){}if(mobile)setHeimOpen(false);if(bets.some(m=>m.country===h.country))openCountry(h.country)};
 const mjRings=useMemo(()=>signals.flatMap((x,k)=>[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300+k*170,color:'#22d3ee'},...x.assets.map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]),[sigKey]);
 const sigById=useMemo(()=>new Map(signals.map(x=>[x.id,x])),[signals]);
 const boltSig=bolt?sigById.get(bolt):null;
 const mjScore=signals.length?Math.round(signals.reduce((t,x)=>t+x.score,0)/signals.length):0;
-const rings=useMemo(()=>[...hlRing,...focusRing,...mjRings,...(layers.markets?baseRings.slice(0,-1):[]),...(layers.pizza?baseRings.slice(-1):[]),...(layers.trades?pulses:[])],[hlRing,focusRing,mjRings,baseRings,pulses,layers.markets,layers.trades,layers.pizza]);
+const rings=useMemo(()=>[...hlRing,...focusRing,...mjRings,...heimRings,...lokiRings,...valkRings,...(layers.markets?baseRings.slice(0,-1):[]),...(layers.pizza?baseRings.slice(-1):[]),...(layers.trades?pulses:[])],[hlRing,focusRing,mjRings,heimRings,lokiRings,valkRings,baseRings,pulses,layers.markets,layers.trades,layers.pizza]);
 const shopPoints=useMemo(()=>(pizza?.shops||[]).map(s=>({...s,isShop:true,source:pizza.source})),[pizza]);
 // Reuse the same point objects so the globe updates colours/heights in place instead of re-growing every marker on each price tick
 const pointCache=useRef(new Map());
@@ -1576,12 +1699,28 @@ return(
 </>}>
 <div className="dc-pill" role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
 </HoverInfo>}
+{loki&&<HoverInfo tone="loki" label="About Loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on hint="On · click to open the panel. Switch off under More tools." pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>}>
+<button className="mj-pill loki-pill on" onClick={()=>setLokiOpen(o=>!o)} aria-expanded={lokiOpen}>🐍 LOKI <span className="mj-off">{lokiData?`${lokiData.flags.length} EARLY`:lokiErr?'N/A':'…'}</span></button>
+</HoverInfo>}
+{valk&&<HoverInfo tone="valk" label="About Valkyries" card={<ToolCard ico="🪽" name="VALKYRIES" color="#fbbf24" on hint="On · click to open the panel. Switch off under More tools." pitch="Follows proven winners and how accurate markets are." more={VALK_MORE}/>}>
+<button className="mj-pill valk-pill on" onClick={()=>setValkOpen(o=>!o)} aria-expanded={valkOpen}>🪽 VALKYRIES <span className="mj-off">{valkData?`${valkData.picks.length} PICKS`:valkErr?'N/A':'…'}</span></button>
+</HoverInfo>}
+{heim&&<HoverInfo tone="heim" label="About Heimdall" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on hint="On · click to open the panel. Switch off under More tools." pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>}>
+<button className="mj-pill heim-pill on" onClick={()=>setHeimOpen(o=>!o)} aria-expanded={heimOpen}>📯 HEIMDALL <span className="mj-off">{heimList.length?(()=>{const top=heimList[0].n;return`${heimList.filter(h=>h.n===top).length} ${HEIM_LVL[top].name}`})():'QUIET'}</span></button>
+</HoverInfo>}
 <div className="tools" ref={toolsRef}>
 <button className={`mj-pill tools-btn${toolsOpen?' open':''}`} onClick={()=>setToolsOpen(o=>!o)} aria-expanded={toolsOpen} aria-haspopup="menu">🛡️ MORE TOOLS <span aria-hidden="true">{toolsOpen?'▴':'▾'}</span></button>
 {toolsOpen&&<div className="tools-menu" role="menu">
 <button role="menuitemcheckbox" aria-checked={layers.pizza} className="tool" onClick={()=>{toggleLayer('pizza');setToolsOpen(false)}}><span className="tool-ico">🍕</span><span className="tool-txt"><b>DOUGHCON</b><small>Pentagon pizza rush as a crisis early warning</small></span><span className={`tool-st${layers.pizza?' on':''}`}>{layers.pizza?'ON':'OFF'}</span></button>
-<button role="menuitem" className="tool" disabled><span className="tool-ico">🐍</span><span className="tool-txt"><b>LOKI</b><small>Coming soon</small></span><span className="tool-st">SOON</span></button>
-<button role="menuitem" className="tool" disabled><span className="tool-ico">🪽</span><span className="tool-txt"><b>VALKYRIES</b><small>Coming soon</small></span><span className="tool-st">SOON</span></button>
+<HoverInfo tone="loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on={loki} hint="Off by default. Live: an hourly scan of Polymarket trades and the news." pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>} label="About Loki">
+<button role="menuitemcheckbox" aria-checked={loki} className="tool" onClick={toggleLoki}><span className="tool-ico">🐍</span><span className="tool-txt"><b>LOKI</b><small>Early bets and fake volume</small></span><span className={`tool-st${loki?' on':''}`}>{loki?'ON':'OFF'}</span></button>
+</HoverInfo>
+<HoverInfo tone="valk" card={<ToolCard ico="🪽" name="VALKYRIES" color="#fbbf24" on={valk} hint="Off by default. Live: rescored every six hours." pitch="Follows proven winners and how accurate markets are." more={VALK_MORE}/>} label="About Valkyries">
+<button role="menuitemcheckbox" aria-checked={valk} className="tool" onClick={toggleValk}><span className="tool-ico">🪽</span><span className="tool-txt"><b>VALKYRIES</b><small>Smart money and track records</small></span><span className={`tool-st${valk?' on':''}`}>{valk?'ON':'OFF'}</span></button>
+</HoverInfo>
+<HoverInfo tone="heim" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on={heim} hint="Off by default. Live: uses only data the page already loads." pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>} label="About Heimdall">
+<button role="menuitemcheckbox" aria-checked={heim} className="tool" onClick={toggleHeim}><span className="tool-ico">📯</span><span className="tool-txt"><b>HEIMDALL</b><small>Early warning across all signals</small></span><span className={`tool-st${heim?' on':''}`}>{heim?'ON':'OFF'}</span></button>
+</HoverInfo>
 </div>}
 </div>
 </div>
@@ -1779,6 +1918,77 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="panel-hd"><span className="panel-title">🍕 Pentagon Pizza Watch</span><span style={{display:'flex',gap:8,alignItems:'center'}}><span className={`badge ${pizza?.source==='live'?'':'warn'}`}>{pizza?.source==='live'?'LIVE':'SIMULATED'}</span><button className="detail-close" onClick={()=>setPizzaOpen(false)} aria-label="Close">✕</button></span></div>
 <div className="scroll"><PizzaPanel pizza={pizza} history={pizzaHist}/></div>
 </div></Boundary>}
+
+{lokiOpen&&loki&&<Boundary name="Loki panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Loki: early bets and fake volume">
+<div className="panel-hd"><span className="panel-title">🐍 Loki · Early bets &amp; fake volume</span><button className="detail-close" onClick={()=>setLokiOpen(false)} aria-label="Close">✕</button></div>
+<div className="scroll heim-body">
+<div className="heim-intro">Big bets placed shortly before the first matching headline, and markets where the volume looks staged. Patterns worth a look, not proof of wrongdoing.</div>
+{!lokiData?<div className="heim-empty">{lokiErr?"Loki's hourly scan isn't available right now. Try again later.":'Loading…'}</div>:<>
+<div className="heim-global"><div className="heim-g"><span>Last scan</span><b>{fmtTime(lokiData.updated)} · {lokiData.checked} markets · {lokiData.headlines} headlines</b></div></div>
+<div className="loki-h">🕵️ EARLY BETS · LAST 24 H</div>
+{lokiData.flags.length?lokiData.flags.map(f=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className="heim-card loki-card" role="button" tabIndex={0} onClick={()=>lokiGo(f)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(f)}}>
+<div className="loki-q">{f.question}</div>
+<div className="loki-bet"><b className="mono">{fmtVol(f.usd)}</b> {f.side==='SELL'?'sold':'bought'} {f.outcome} at {fmtCents(f.price)} → now <b className="mono">{fmtCents(f.now)}</b></div>
+<div className="loki-lead">⏱ {fmtLead(f.leadMin)} before <a href={f.headline.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.headline.title}</a> <span className="loki-src">· {f.headline.source}</span></div>
+<div className="heim-chs"><span className={`heim-ch${w&&w.isNew?' on loki-on':''}`}>{w&&w.isNew?'🆕 new wallet':'👤 wallet'} · {w?(w.more?'500+ trades':`${w.acts} trades${w.ageDays!=null?`, ${w.ageDays} d old`:''}`):'unknown'}</span><a className="heim-ch" href={`https://polymarket.com/profile/${f.wallet}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.who} ↗</a><span className="heim-ch">{fmtTime(f.time)}</span></div>
+</div>}):<div className="heim-empty">No early bets in the last 24 hours.</div>}
+<div className="loki-h">🧪 SUSPICIOUS VOLUME</div>
+{(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?v.map(x=><a key={x.id} className="heim-card loki-vol" href={x.url} target="_blank" rel="noopener noreferrer">
+<div className="heim-top"><span className="loki-q">{x.question}</span><span className="heim-lvl" style={{color:volColor(x.score),borderColor:volColor(x.score)+'88'}}>{x.score}/100</span></div>
+<div className="bet-bar"><span style={{width:x.score+'%',background:volColor(x.score)}}></span></div>
+<div className="heim-chs"><span className="heim-ch">🔁 round trips {pct(x.roundTrip)}</span><span className="heim-ch">🐋 top 3 wallets {pct(x.top3)}</span><span className="heim-ch">{x.trades} trades · {fmtVol(x.usd)}</span></div>
+</a>):<div className="heim-empty">No market's volume looks staged right now.</div>})()}
+</>}
+<div className="heim-foot">How it's measured, every hour: the 40 busiest geopolitical Polymarket markets, their trades of the last 24 hours, and the headlines of our five news feeds plus GDELT. 🕵️ An early bet is a trade of $5K or more, at 90¢ or less, placed 5 min to 12 h before the first headline naming the market's country and topic (with no such headline in the 6 h before), and the price has since moved 3 points or more its way. 🆕 New wallet: under 7 days old or 5 trades or fewer. 🔁 Round trips: volume from wallets that bought and sold the same side. Kalshi trades are anonymous, so Loki covers Polymarket only.</div>
+</div></div></Boundary>}
+{valkOpen&&valk&&<Boundary name="Valkyries panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Valkyries: smart money and track record">
+<div className="panel-hd"><span className="panel-title">🪽 Valkyries · Smart money &amp; track record</span><button className="detail-close" onClick={()=>setValkOpen(false)} aria-label="Close">✕</button></div>
+<div className="scroll heim-body">
+<div className="heim-intro">Who has called geopolitics right lately, what they hold now, and how far market odds can be trusted.</div>
+{!valkData?<div className="heim-empty">{valkErr?"The Valkyries' scan isn't available right now. Try again later.":'Loading…'}</div>:<>
+<div className="heim-global"><div className="heim-g"><span>Last scan</span><b>{fmtTime(valkData.updated)} · {valkData.resolvedChecked} resolved markets</b></div></div>
+<div className="loki-h valk-h">🪽 WHAT THE TOP {valkData.wallets.length} HOLD NOW</div>
+{valkData.picks.length?valkData.picks.map(p=><div key={p.id+p.outcome} className="heim-card valk-card" role="button" tabIndex={0} onClick={()=>lokiGo(p)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(p)}}>
+<div className="heim-top"><span className="loki-q">{p.question}</span><span className="heim-lvl valk-side">{p.outcome}</span></div>
+<div className="loki-bet"><b>{p.wallets} of {valkData.wallets.length}</b> wallets · <b className="mono">{fmtVol(p.value)}</b> · avg entry {fmtCents(p.avg)} → now <b className="mono">{fmtCents(p.now)}</b>{p.recent?<span className="valk-new"> · {p.recent} new this week</span>:null}</div>
+</div>):<div className="heim-empty">The top wallets hold no open geopolitical positions right now.</div>}
+<div className="loki-h valk-h">🏆 TOP WALLETS · RESOLVED GEOPOLITICS, 120 DAYS</div>
+<div className="valk-wallets">{valkData.wallets.slice(0,10).map((w,i)=><a key={w.wallet} className="valk-w" href={`https://polymarket.com/profile/${w.wallet}`} target="_blank" rel="noopener noreferrer">
+<span className="valk-rank mono">{i+1}</span><span className="valk-name">{w.who}</span><span className="mono valk-pnl">+{fmtVol(w.pnl)}</span><span className="valk-meta">{pct(w.hitRate)} hit · {w.markets} mkts · {w.leadDays} d early</span></a>)}</div>
+<div className="loki-h valk-h">📊 TRACK RECORD · PRICE A WEEK BEFORE THE CLOSE</div>
+<div className="chips valk-chips">{Object.entries(VALK_VENUES).map(([k,v])=><button key={k} className={`chip-btn ${valkVenue===k?'on':''}`} onClick={()=>setValkVenue(k)}>{v}</button>)}</div>
+<div className="chips valk-chips">{Object.entries(VALK_TOPICS).map(([k,v])=><button key={k} className={`chip-btn ${valkTopic===k?'on':''}`} onClick={()=>setValkTopic(k)}>{v}</button>)}</div>
+{(()=>{const c=valkData.calibration[valkVenue]?.[valkTopic];if(!c)return<div className="heim-empty">No resolved markets in this group yet.</div>;return<>
+<div className="valk-cal">{c.bins.map(b=><div key={b.lo} className="valk-bin">
+<div className="valk-bin-l">Priced {Math.round(b.lo*100)}–{Math.round(b.hi*100)}%</div>
+{b.n?<><div className="valk-track"><span className="valk-hit" style={{width:Math.round(b.hit*100)+'%'}}></span><span className="valk-mark" style={{left:Math.round(b.p*100)+'%'}} title={`priced ${pct(b.p)}`}></span></div>
+<div className="valk-bin-r mono">{pct(b.hit)} <small>happened · n={b.n}</small></div></>:<div className="valk-bin-r"><small>no markets</small></div>}
+</div>)}</div>
+<div className="heim-g valk-score"><span>Brier score (0 = perfect, 0.25 = coin flip)</span><b className="mono">{c.brier.toFixed(3)} · n={c.n}</b></div>
+{c.n<20&&<div className="heim-intro">Only {c.n} resolved market{c.n===1?'':'s'} here so far: too few to judge. The archive grows with every scan.</div>}
+</>})()}
+</>}
+<div className="heim-foot">How it's measured, every six hours: 🏆 every trade at 5–85¢ on the 80 biggest geopolitical Polymarket markets resolved in the last 120 days is scored at resolution; wallets need 3+ markets and $5K+ staked, ranked by profit. "Hit" is the share of money on the right side, "early" the average days before the close. 🪽 Their current positions on open geopolitical markets. 📊 Each resolved Polymarket and Kalshi market's price a week before the close (halfway for short ones): the bar is how often those events happened, the white mark what the market priced in. The archive grows with every scan and keeps a year.</div>
+</div></div></Boundary>}
+{heimOpen&&heim&&<Boundary name="Heimdall panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Heimdall early warning">
+<div className="panel-hd"><span className="panel-title">📯 Heimdall · Early warning</span><button className="detail-close" onClick={()=>setHeimOpen(false)} aria-label="Close">✕</button></div>
+<div className="scroll heim-body">
+<div className="heim-intro">Countries where independent signals spike at the same time. One is noise, two is worth watching, three is an alert.</div>
+<div className="heim-global">
+<div className="heim-g"><span>🌐 War news worldwide (GDELT)</span><b style={{color:heimCov?.lit?'#f59e0b':undefined}}>{heimCov?`${heimCov.ratio>=1?'+':'−'}${Math.abs(Math.round((heimCov.ratio-1)*100))}% vs 7-day avg`:'not loaded'}</b></div>
+<div className="heim-g"><span>🍕 Pentagon pizza</span><b style={{color:DOUGHCON[dc].color}}>DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</b></div>
+</div>
+{heimList.length?heimList.map(h=>{const L=HEIM_LVL[h.n];return<div key={h.country} className="heim-card" style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
+<div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/3</span></div>
+<div className="heim-chs">
+<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>
+<span className={`heim-ch${h.news.lit?' on':''}`}>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</span>
+<span className={`heim-ch${h.odds.lit?' on':''}`}>📈 {h.odds.m?`${fmtChg(h.odds.move)} pts in 24h`:'no war market'}</span>
+</div>
+{h.odds.lit&&<div className="heim-q">{h.odds.m.question}</div>}
+</div>}):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
+<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
+</div></div></Boundary>}
 
 <Boundary name="Ticker" className="ticker"><div className="ticker">
 <span className="ticker-lbl"><span className="livedot"></span>BREAKING</span>

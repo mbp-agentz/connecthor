@@ -1,3 +1,7 @@
 # local Cloudflare dev (wrangler pages dev)
 .wrangler/
 node_modules/
+
+# Loki output (published to the loki-data branch by .github/workflows/loki.yml)
+loki.json
+valkyries.json

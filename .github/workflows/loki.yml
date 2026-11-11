@@ -1,0 +1,43 @@
+# Loki: hourly scan of geopolitical Polymarket markets for early bets (big trades placed shortly
+# before the first matching headline) and staged-looking volume. tools/loki.mjs writes loki.json,
+# which is force-pushed as the only file on the orphan branch loki-data. The page reads it from
+# raw.githubusercontent.com, so visitors cost no Pages Function calls.
+name: Loki data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: loki
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scan markets, trades and news
+        run: node tools/loki.mjs "$RUNNER_TEMP/loki/loki.json"
+
+      - name: Publish to the loki-data branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/loki"
+          git init -q -b loki-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loki.json
+          git commit -q -m "Loki data $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" loki-data

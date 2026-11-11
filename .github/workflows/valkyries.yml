@@ -1,0 +1,45 @@
+# Valkyries: every 6 hours, rank Polymarket wallets by their record on resolved geopolitical
+# markets, list what the best ones hold now, and grow an archive of resolved Polymarket and Kalshi
+# markets (price a week before the close vs outcome) for the calibration view. tools/valkyries.mjs
+# reads the previous valkyries.json so the archive keeps growing, then the result is force-pushed
+# as the only file on the orphan branch valkyries-data. The page reads it from
+# raw.githubusercontent.com, so visitors cost no Pages Function calls.
+name: Valkyries data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: valkyries
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Score wallets, picks and the track record
+        run: node tools/valkyries.mjs "$RUNNER_TEMP/valk/valkyries.json" "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/valkyries-data/valkyries.json"
+
+      - name: Publish to the valkyries-data branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/valk"
+          git init -q -b valkyries-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add valkyries.json
+          git commit -q -m "Valkyries data $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" valkyries-data
