@@ -5,6 +5,7 @@
 // Usage: node tools/loki.mjs [out.json]
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { inflateRawSync } from 'node:zlib';
 
 const OUT = process.argv[2] || 'loki.json', PREV = process.argv[3] || OUT; // previous file keeps the GDELT curve when GDELT refuses
 const UA = 'ConnecTHOR-Loki/1.0 (+https://github.com/mbp-agentz/connecthor)';
@@ -28,7 +29,7 @@ async function getJSON(url, tries = 3) {
   for (let i = 0; ; i++) {
     try {
       const r = await fetch(url, { headers: { 'user-agent': UA, accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
-      if (r.status === 429 && i < tries - 1) { await sleep(/gdelt/.test(url) ? 6000 : 2000 * (i + 1)); continue; } // GDELT: one call per 5 s
+      if (r.status === 429 && i < tries - 1) { await sleep(/gdelt/.test(url) ? 6000 : 2000 * (i + 1)); continue; } // GDELT's DOC API: one call per 5 s
       if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`);
       return await r.json();
     } catch (e) { if (i >= tries - 1) throw e; await sleep(1500 * (i + 1)); }
@@ -89,22 +90,40 @@ async function gdelt() {
   return (d.articles || []).map(a => { const m = String(a.seendate).match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/); return { title: a.title || '', url: a.url, source: (a.domain || 'News').replace(/^www\./, ''), t: m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : NaN } }).filter(n => n.title && isFinite(n.t));
 }
 
-// The page's "war coverage" curve (share of world news about military conflict, 7 days). Fetched
-// here once an hour because GDELT allows one request per 5 s per IP and often takes 10-20 s:
-// from visitors' browsers or Cloudflare's shared IPs it mostly fails
-const COV_Q = '(airstrike OR missile OR "military strike" OR invasion OR "armed conflict" OR shelling)'; // = GDELT_Q in index.html
-async function coverage() {
-  const d = await getJSON(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(COV_Q)}&mode=timelinevol&timespan=7d&timelinesmooth=3&format=json`, 2);
-  const pts = (d.timeline?.[0]?.data || []).map(x => { const m = String(x.date).match(/^(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?/); return m ? { t: Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)), v: num(x.value) } : null }).filter(Boolean);
-  if (pts.length < 3) throw new Error('empty timeline');
-  return { updated: new Date().toISOString(), pts };
+// The page's "war coverage" curve, from GDELT's raw 15-minute event files. The DOC API
+// (api.gdeltproject.org) allows one request per 5 s per IP and answered 429 to visitors, Cloudflare
+// and GitHub's runners alike; the raw files on data.gdeltproject.org have no such limit.
+// One file per hour (the :00 one): the share of events coded assault, fight or mass violence
+// (CAMEO root 18-20). Hours already counted are kept from the previous run, so a normal run
+// downloads one ~90 KB file; the first run backfills 7 days (168 files).
+function unzipOne(buf) {
+  const eocd = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])), cd = buf.readUInt32LE(eocd + 16);
+  const method = buf.readUInt16LE(cd + 10), size = buf.readUInt32LE(cd + 20), lho = buf.readUInt32LE(cd + 42);
+  const start = lho + 30 + buf.readUInt16LE(lho + 26) + buf.readUInt16LE(lho + 28), data = buf.subarray(start, start + size);
+  return (method === 0 ? data : inflateRawSync(data)).toString('utf8');
 }
-// GDELT twice in a row would trip its 5 s limit: articles first, then the curve after a pause
-async function gdeltAll() {
-  const arts = await gdelt().catch(e => (console.warn('GDELT articles', e.message), []));
-  await sleep(6000);
-  const cov = await coverage().catch(e => (console.warn('GDELT coverage', e.message), null));
-  return [arts, cov];
+const HOUR = 36e5, stamp = t => new Date(t).toISOString().replace(/[-:T]/g, '').slice(0, 10) + '0000';
+async function hourCount(t) {
+  const r = await fetch(`https://data.gdeltproject.org/gdeltv2/${stamp(t)}.export.CSV.zip`, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(30000) });
+  if (!r.ok) throw new Error(`GDELT file ${stamp(t)} HTTP ${r.status}`);
+  let n = 0, c = 0;
+  for (const line of unzipOne(Buffer.from(await r.arrayBuffer())).split('\n')) {
+    if (!line) continue; n++;
+    const root = (line.split('\t')[28] || '').slice(0, 2); // EventRootCode
+    if (root === '18' || root === '19' || root === '20') c++;
+  }
+  return { t, n, c };
+}
+async function coverage(prev) {
+  const last = Math.floor((Date.now() - 20 * 60e3) / HOUR) * HOUR; // the :00 file is up ~15 min later
+  const have = new Map((prev?.coverage?.hours || []).filter(h => h.t > last - 168 * HOUR).map(h => [h.t, h]));
+  const want = []; for (let t = last - 167 * HOUR; t <= last; t += HOUR) if (!have.has(t)) want.push(t);
+  for (const h of await pool(want, 6, hourCount)) if (h && h.n) have.set(h.t, h);
+  const hours = [...have.values()].sort((a, b) => a.t - b.t);
+  if (hours.length < 24) throw new Error(`only ${hours.length} GDELT hours`);
+  // 3-hour rolling share in percent (one hour alone is noisy: ~1,500 events)
+  const pts = hours.map((h, i) => { const w = hours.slice(Math.max(0, i - 2), i + 1), n = w.reduce((a, x) => a + x.n, 0), c = w.reduce((a, x) => a + x.c, 0); return { t: h.t, v: +(c / n * 100).toFixed(2) } });
+  return { updated: new Date().toISOString(), source: 'GDELT events, CAMEO 18-20', hours, pts };
 }
 async function loadPrev() {
   try {
@@ -160,8 +179,8 @@ async function walletInfo(w) {
 
 const short = w => w.slice(0, 6) + '…' + w.slice(-4);
 async function main() {
-  const [prev, ms, [arts, cov], ...news] = await Promise.all([loadPrev(), markets(), gdeltAll(), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), [])))]);
-  news.push(arts);
+  const prev = await loadPrev();
+  const [ms, cov, ...news] = await Promise.all([markets(), coverage(prev).catch(e => (console.warn('GDELT coverage', e.message), null)), gdelt().catch(e => (console.warn('GDELT articles', e.message), [])), ...FEEDS.map(f => rss(f).catch(e => (console.warn(e.message), [])))]);
   const heads = news.flat().sort((a, b) => a.t - b.t);
   console.log(`${ms.length} markets, ${heads.length} headlines`);
   const all = await pool(ms, 4, trades);
