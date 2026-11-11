@@ -64,6 +64,12 @@
     .info-pop.loki{border-color:rgba(74,222,128,0.5)}
     .info-pop.valk{border-color:rgba(251,191,36,0.5)}
     .info-pop.heim{border-color:rgba(96,165,250,0.5)}
+    .mj-pill.loki-pill:hover{border-color:rgba(74,222,128,0.6)}
+    .mj-pill.valk-pill:hover{border-color:rgba(251,191,36,0.6)}
+    .mj-pill.heim-pill:hover{border-color:rgba(96,165,250,0.6)}
+    .drawer-acts{display:flex;align-items:center;gap:8px}
+    .tool-off{background:transparent;border:1px solid var(--border);color:var(--muted);font:inherit;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;cursor:pointer}
+    .tool-off:hover{color:var(--text);border-color:rgba(148,163,184,0.7)}
     .mj-pill.valk-pill.on{color:#fde68a;border:1px solid rgba(251,191,36,0.75);background:rgba(251,191,36,0.12);animation:none}
     .valk-h{color:#fbbf24}
     .valk-card{border-color:rgba(251,191,36,0.4)}
@@ -1695,6 +1701,15 @@ return(
 <HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir}/>}>
 <button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>🔨 MJÖLNIR {mjolnir?<span className="mono">{mjScore}</span>:<span className="mj-off">OFF</span>}{mjolnir&&<span className="sim-tag">DEMO</span>}</button>
 </HoverInfo>
+<HoverInfo tone="loki" label="About Loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on={loki} hint={loki?"On · click to open the panel. Switch it off there.":"Off by default. Click to switch on. Live: an hourly scan of Polymarket trades and the news."} pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>}>
+<button className={`mj-pill loki-pill${loki?' on':''}`} onClick={loki?()=>setLokiOpen(o=>!o):toggleLoki} aria-pressed={loki} aria-expanded={loki&&lokiOpen}>🐍 LOKI {loki?<span className="mj-off">{lokiData?`${lokiData.flags.length} EARLY`:lokiErr?'N/A':'…'}</span>:<span className="mj-off">OFF</span>}</button>
+</HoverInfo>
+<HoverInfo tone="valk" label="About Valkyries" card={<ToolCard ico="🪽" name="VALKYRIES" color="#fbbf24" on={valk} hint={valk?"On · click to open the panel. Switch it off there.":"Off by default. Click to switch on. Live: rescored every six hours."} pitch="Follows proven winners and how accurate markets are." more={VALK_MORE}/>}>
+<button className={`mj-pill valk-pill${valk?' on':''}`} onClick={valk?()=>setValkOpen(o=>!o):toggleValk} aria-pressed={valk} aria-expanded={valk&&valkOpen}>🪽 VALKYRIES {valk?<span className="mj-off">{valkData?`${valkData.picks.length} PICKS`:valkErr?'N/A':'…'}</span>:<span className="mj-off">OFF</span>}</button>
+</HoverInfo>
+<HoverInfo tone="heim" label="About Heimdall" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on={heim} hint={heim?"On · click to open the panel. Switch it off there.":"Off by default. Click to switch on. Live: uses only data the page already loads."} pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>}>
+<button className={`mj-pill heim-pill${heim?' on':''}`} onClick={heim?()=>setHeimOpen(o=>!o):toggleHeim} aria-pressed={heim} aria-expanded={heim&&heimOpen}>📯 HEIMDALL {heim?<span className="mj-off">{heimList.length?(()=>{const top=heimList[0].n;return`${heimList.filter(h=>h.n===top).length} ${HEIM_LVL[top].name}`})():'QUIET'}</span>:<span className="mj-off">OFF</span>}</button>
+</HoverInfo>
 {layers.pizza&&<HoverInfo noTouch style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
 <div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
 <div className="info-pitch">Pentagon-area pizza rush as a crisis early warning.</div>
@@ -1702,28 +1717,10 @@ return(
 </>}>
 <div className="dc-pill" role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
 </HoverInfo>}
-{loki&&<HoverInfo tone="loki" label="About Loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on hint="On · click to open the panel. Switch off under More tools." pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>}>
-<button className="mj-pill loki-pill on" onClick={()=>setLokiOpen(o=>!o)} aria-expanded={lokiOpen}>🐍 LOKI <span className="mj-off">{lokiData?`${lokiData.flags.length} EARLY`:lokiErr?'N/A':'…'}</span></button>
-</HoverInfo>}
-{valk&&<HoverInfo tone="valk" label="About Valkyries" card={<ToolCard ico="🪽" name="VALKYRIES" color="#fbbf24" on hint="On · click to open the panel. Switch off under More tools." pitch="Follows proven winners and how accurate markets are." more={VALK_MORE}/>}>
-<button className="mj-pill valk-pill on" onClick={()=>setValkOpen(o=>!o)} aria-expanded={valkOpen}>🪽 VALKYRIES <span className="mj-off">{valkData?`${valkData.picks.length} PICKS`:valkErr?'N/A':'…'}</span></button>
-</HoverInfo>}
-{heim&&<HoverInfo tone="heim" label="About Heimdall" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on hint="On · click to open the panel. Switch off under More tools." pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>}>
-<button className="mj-pill heim-pill on" onClick={()=>setHeimOpen(o=>!o)} aria-expanded={heimOpen}>📯 HEIMDALL <span className="mj-off">{heimList.length?(()=>{const top=heimList[0].n;return`${heimList.filter(h=>h.n===top).length} ${HEIM_LVL[top].name}`})():'QUIET'}</span></button>
-</HoverInfo>}
 <div className="tools" ref={toolsRef}>
 <button className={`mj-pill tools-btn${toolsOpen?' open':''}`} onClick={()=>setToolsOpen(o=>!o)} aria-expanded={toolsOpen} aria-haspopup="menu">🛡️ MORE TOOLS <span aria-hidden="true">{toolsOpen?'▴':'▾'}</span></button>
 {toolsOpen&&<div className="tools-menu" role="menu">
 <button role="menuitemcheckbox" aria-checked={layers.pizza} className="tool" onClick={()=>{toggleLayer('pizza');setToolsOpen(false)}}><span className="tool-ico">🍕</span><span className="tool-txt"><b>DOUGHCON</b><small>Pentagon pizza rush as a crisis early warning</small></span><span className={`tool-st${layers.pizza?' on':''}`}>{layers.pizza?'ON':'OFF'}</span></button>
-<HoverInfo tone="loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on={loki} hint="Off by default. Live: an hourly scan of Polymarket trades and the news." pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>} label="About Loki">
-<button role="menuitemcheckbox" aria-checked={loki} className="tool" onClick={toggleLoki}><span className="tool-ico">🐍</span><span className="tool-txt"><b>LOKI</b><small>Early bets and fake volume</small></span><span className={`tool-st${loki?' on':''}`}>{loki?'ON':'OFF'}</span></button>
-</HoverInfo>
-<HoverInfo tone="valk" card={<ToolCard ico="🪽" name="VALKYRIES" color="#fbbf24" on={valk} hint="Off by default. Live: rescored every six hours." pitch="Follows proven winners and how accurate markets are." more={VALK_MORE}/>} label="About Valkyries">
-<button role="menuitemcheckbox" aria-checked={valk} className="tool" onClick={toggleValk}><span className="tool-ico">🪽</span><span className="tool-txt"><b>VALKYRIES</b><small>Smart money and track records</small></span><span className={`tool-st${valk?' on':''}`}>{valk?'ON':'OFF'}</span></button>
-</HoverInfo>
-<HoverInfo tone="heim" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on={heim} hint="Off by default. Live: uses only data the page already loads." pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>} label="About Heimdall">
-<button role="menuitemcheckbox" aria-checked={heim} className="tool" onClick={toggleHeim}><span className="tool-ico">📯</span><span className="tool-txt"><b>HEIMDALL</b><small>Early warning across all signals</small></span><span className={`tool-st${heim?' on':''}`}>{heim?'ON':'OFF'}</span></button>
-</HoverInfo>
 </div>}
 </div>
 </div>
@@ -1923,7 +1920,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div></Boundary>}
 
 {lokiOpen&&loki&&<Boundary name="Loki panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Loki: early bets and fake volume">
-<div className="panel-hd"><span className="panel-title">🐍 Loki · Early bets &amp; fake volume</span><button className="detail-close" onClick={()=>setLokiOpen(false)} aria-label="Close">✕</button></div>
+<div className="panel-hd"><span className="panel-title">🐍 Loki · Early bets &amp; fake volume</span><span className="drawer-acts"><button className="tool-off" onClick={toggleLoki}>Switch off</button><button className="detail-close" onClick={()=>setLokiOpen(false)} aria-label="Close">✕</button></span></div>
 <div className="scroll heim-body">
 <div className="heim-intro">Big bets placed shortly before the first matching headline, and markets where the volume looks staged. Patterns worth a look, not proof of wrongdoing.</div>
 {!lokiData?<div className="heim-empty">{lokiErr?"Loki's hourly scan isn't available right now. Try again later.":'Loading…'}</div>:<>
@@ -1945,7 +1942,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-foot">How it's measured, every hour: the 40 busiest geopolitical Polymarket markets, their trades of the last 24 hours, and the headlines of our five news feeds plus GDELT. 🕵️ An early bet is a trade of $5K or more, at 90¢ or less, placed 5 min to 12 h before the first headline naming the market's country and topic (with no such headline in the 6 h before), and the price has since moved 3 points or more its way. 🆕 New wallet: under 7 days old or 5 trades or fewer. 🔁 Round trips: volume from wallets that bought and sold the same side. Kalshi trades are anonymous, so Loki covers Polymarket only.</div>
 </div></div></Boundary>}
 {valkOpen&&valk&&<Boundary name="Valkyries panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Valkyries: smart money and track record">
-<div className="panel-hd"><span className="panel-title">🪽 Valkyries · Smart money &amp; track record</span><button className="detail-close" onClick={()=>setValkOpen(false)} aria-label="Close">✕</button></div>
+<div className="panel-hd"><span className="panel-title">🪽 Valkyries · Smart money &amp; track record</span><span className="drawer-acts"><button className="tool-off" onClick={toggleValk}>Switch off</button><button className="detail-close" onClick={()=>setValkOpen(false)} aria-label="Close">✕</button></span></div>
 <div className="scroll heim-body">
 <div className="heim-intro">Who has called geopolitics right lately, what they hold now, and how far market odds can be trusted.</div>
 {!valkData?<div className="heim-empty">{valkErr?"The Valkyries' scan isn't available right now. Try again later.":'Loading…'}</div>:<>
@@ -1974,7 +1971,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-foot">How it's measured, every six hours: 🏆 every trade at 5–85¢ on the 80 biggest geopolitical Polymarket markets resolved in the last 120 days is scored at resolution; wallets need 3+ markets and $5K+ staked, ranked by profit. "Hit" is the share of money on the right side, "early" the average days before the close. 🪽 Their current positions on open geopolitical markets. 📊 Each resolved Polymarket and Kalshi market's price a week before the close (halfway for short ones): the bar is how often those events happened, the white mark what the market priced in. The archive grows with every scan and keeps a year.</div>
 </div></div></Boundary>}
 {heimOpen&&heim&&<Boundary name="Heimdall panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Heimdall early warning">
-<div className="panel-hd"><span className="panel-title">📯 Heimdall · Early warning</span><button className="detail-close" onClick={()=>setHeimOpen(false)} aria-label="Close">✕</button></div>
+<div className="panel-hd"><span className="panel-title">📯 Heimdall · Early warning</span><span className="drawer-acts"><button className="tool-off" onClick={toggleHeim}>Switch off</button><button className="detail-close" onClick={()=>setHeimOpen(false)} aria-label="Close">✕</button></span></div>
 <div className="scroll heim-body">
 <div className="heim-intro">Countries where independent signals spike at the same time. One is noise, two is worth watching, three is an alert.</div>
 <div className="heim-global">
