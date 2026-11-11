@@ -42,6 +42,7 @@
     .logo{display:flex;align-items:center;gap:10px;min-width:0}
     .logo-icon{font-size:26px}
     .logo h1{font-size:19px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+    .tagline{font-size:12px;color:var(--muted);font-style:italic;letter-spacing:0.03em;white-space:nowrap;padding-left:10px;border-left:1px solid var(--border)}
     .stats{display:flex;gap:18px;align-items:center}
     .header{flex-wrap:wrap;row-gap:8px}
     .dc-pill{display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;border:1px solid;font-weight:800;font-size:13px;letter-spacing:0.05em;white-space:nowrap;cursor:pointer;transition:color .8s,border-color .8s,background .8s}
@@ -1550,7 +1551,7 @@ const openTrade=t=>{const m=marketsRef.current.find(x=>x.conditionId&&x.conditio
 return(
 <div className="app">
 <Boundary name="Header" className="header"><header className="header">
-<div className="logo"><span className="logo-icon">⚡</span><h1>ConnecTHOR</h1></div>
+<div className="logo"><span className="logo-icon">⚡</span><h1>ConnecTHOR</h1><span className="tagline">The world, de-noised</span></div>
 <div className="stats">
 <HoverInfo noTouch style={{borderColor:nl.c+'88'}} card={<NehCard c={nl.c}/>}>
 <div className="stat neh-tap" role="button" tabIndex={0} onClick={()=>setNehShow(v=>!v)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setNehShow(v=>!v)}}} aria-expanded={nehShow}><div className="stat-val mono" style={{color:nl.c}}>{neh.score}</div><div className="stat-lbl">NEH Index{nehShow?' ▴':' ▾'}</div></div>

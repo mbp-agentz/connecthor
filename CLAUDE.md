@@ -85,7 +85,7 @@ Data-shape notes from the same check: Kalshi markets now only carry `*_dollars` 
 - **Polymarket Data API v1 is retired (410).** `fetchTrades` uses `/v2/trades` (`{data}`, snake_case, `condition_id` = at most 20 ids) for the 20 busiest tracked markets; the first batch and every Trades-layer switch-on replay the last 15 minutes as pulses.
 - 2026-11-09: Top Bets replaces the Pizza Watch in the left column; Pizza Watch is a drawer opened from DOUGHCON. `LOCS` key `xi` is now `' xi '` (it matched "Xipto" and put an esports market on China); other short keys (`fed`, `modi`) can still match inside words.
 - The Pizza layer (`LAYER_DEFAULTS.pizza`) is off by default; visitors with a saved `ct-layers` keep their own setting.
-- 2026-11-11: header reworked: subtitle removed, Tyr war filter, Mjölnir icon 🔨, DOUGHCON moved into "More tools" (with Loki/Valkyries placeholders), NEH card opens only from the header score, NEH/Tyr hover cards with Read more.
+- 2026-11-11: header reworked: subtitle removed (now the `.tagline` "The world, de-noised" next to the logo), Tyr war filter, Mjölnir icon 🔨, DOUGHCON moved into "More tools" (with Loki/Valkyries placeholders), NEH card opens only from the header score, NEH/Tyr hover cards with Read more.
 - Tried and reverted on request: a DOUGHCON pin on the globe, Mjölnir hammer-strike and double-pulse animations.
 
 ### Earlier (2026-10-25)
