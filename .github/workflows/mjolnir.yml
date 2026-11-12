@@ -1,0 +1,46 @@
+# Mjölnir: hourly comparison of geopolitical Polymarket odds with the stocks, commodities and
+# currencies most exposed to the same risk (Yahoo Finance, else Twelve Data) and crypto (Coinbase, else Kraken).
+# tools/mjolnir.mjs writes mjolnir.json, force-pushed as the only file on the orphan branch
+# mjolnir-data. The page reads it from raw.githubusercontent.com, so visitors cost no Pages Function calls.
+name: Mjolnir data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mjolnir
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Optional: free Twelve Data key, used only when Yahoo fails (US listings + FX)
+      - name: Compare odds with market prices
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+        run: node tools/mjolnir.mjs "$RUNNER_TEMP/mjolnir/mjolnir.json"
+
+      - name: Publish to the mjolnir-data branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/mjolnir"
+          git init -q -b mjolnir-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mjolnir.json
+          git commit -q -m "Mjolnir data $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" mjolnir-data
