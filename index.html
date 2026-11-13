@@ -51,6 +51,21 @@
     .mj-calm{border:1px solid rgba(34,211,238,0.3);border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:12px;line-height:1.5;background:rgba(34,211,238,0.05)}
     .mj-calm-row{margin-top:5px}
     .mj-ex-btn{font:inherit;font-size:11px;margin-top:8px;padding:5px 10px;border-radius:8px;border:1px solid #22d3ee;background:transparent;color:#67e8f9;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+    .mj-pill.ins-pill:hover{border-color:rgba(192,132,252,0.6)}
+    .mj-pill.ins-pill.on{color:#e9d5ff;border:1px solid rgba(192,132,252,0.75);background:rgba(192,132,252,0.12);animation:none}
+    .pro-tag{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;background:#c084fc;color:#1e1b4b;margin-left:5px;vertical-align:middle}
+    .ins-acts{display:flex;gap:6px;align-items:center}
+    .ins-follow{font:inherit;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid rgba(192,132,252,0.5);background:transparent;color:#d8b4fe;cursor:pointer;white-space:nowrap}
+    .ins-follow.on{background:rgba(192,132,252,0.18);color:#f3e8ff;border-color:#c084fc}
+    .ins-alert{border-color:rgba(192,132,252,0.35);background:rgba(192,132,252,0.05)}
+    .ins-form{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .ins-form input,.ins-form select{font:inherit;font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(15,23,42,0.8);color:var(--text,#e2e8f0)}
+    .ins-form input{flex:1 1 180px;min-width:0}
+    .ins-tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+    .ins-tag{font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid rgba(192,132,252,0.4);color:#d8b4fe}
+    .ins-row{font-size:12px;margin-top:3px;line-height:1.45}
+    .ins-best{display:block;font-size:11px;margin-top:6px;color:#cbd5e1;text-decoration:none;border-top:1px solid var(--border);padding-top:6px}
+    .ins-best:hover{color:#e9d5ff}
     .tf-chip.base{cursor:default;opacity:.85}
     .tf-base{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;border:1px solid currentColor}
     .tf-count{margin-left:5px;font-size:9px;opacity:.65}
@@ -77,6 +92,7 @@
     .info-pop.loki{border-color:rgba(74,222,128,0.5)}
     .info-pop.valk{border-color:rgba(251,191,36,0.5)}
     .info-pop.heim{border-color:rgba(96,165,250,0.5)}
+    .info-pop.ins{border-color:rgba(192,132,252,0.5)}
     .mj-pill.loki-pill:hover{border-color:rgba(74,222,128,0.6)}
     .mj-pill.valk-pill:hover{border-color:rgba(251,191,36,0.6)}
     .mj-pill.heim-pill:hover{border-color:rgba(96,165,250,0.6)}
@@ -1012,6 +1028,20 @@ async function fetchLoki(){const r=await fetch(LOKI_URL,{cache:'no-cache'});if(!
 // Valkyries: same pattern, tools/valkyries.mjs every 6 h → valkyries-data branch
 const VALK_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/valkyries.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/valkyries-data/valkyries.json';
 async function fetchValk(){const r=await fetch(VALK_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Valkyries HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.wallets)||!d.calibration)throw new Error('bad Valkyries data');return d}
+// ============ INSIGHTS (subscriber draft) ============
+// Wallet profiles from tools/profiles.mjs. Subscriber-only, so the data never goes on a public branch:
+// localhost reads /profiles.json (gitignored); elsewhere /api/pro/profiles, which doesn't exist yet
+// (it will check the login), so the panel says the feature is coming.
+const INS_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/profiles.json':'/api/pro/profiles';
+async function fetchIns(){const r=await fetch(INS_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Insights HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.profiles))throw new Error('bad Insights data');return d}
+const INS_VIEWS=[['skill','✅ Proven skill'],['winners','💰 Biggest winners'],['all','🧬 All profiles'],['follow','🔔 Following']];
+// Follow + email alerts: UI preview only. Followed wallets and the alert settings stay in this browser
+// (localStorage); nothing is sent. Planned: followers in D1, an Action polls each followed wallet's
+// Data API v2/activity, and a new bet since the last check sends an email (Resend) to its followers.
+const INS_ALERT_DEFAULT={email:'',mode:'instant',min:500,on:false};
+const INS_MORE="Insights rebuilds every bet on the busiest resolved geopolitical Polymarket markets into positions and profiles each wallet: profit, hit rate against the price it paid, preferred odds, timing, holding style, topics and places. The key test separates skill from luck: a wallet's edge must hold across separate events (deadline ladders count once), be unlikely to be chance, and have made money. Kalshi is left out: its trades are anonymous.";
+const fmtUsd=n=>(n<0?'−$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const TOPIC_N={war:'War',elections:'Elections',diplomacy:'Diplomacy',other:'Other'};
 const VALK_VENUES={all:'All',pm:'Polymarket',ks:'Kalshi'},VALK_TOPICS={all:'All',war:'War',elections:'Elections',diplomacy:'Diplomacy',other:'Other'};
 const fmtLead=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');
 const pct=x=>Math.round(x*100)+'%';
@@ -1551,6 +1581,11 @@ const[mjolnir,setMjolnir]=useState(false); // off on every visit
 const[toolsOpen,setToolsOpen]=useState(false),toolsRef=useRef(null); // "More tools" dropdown
 useEffect(()=>{if(!toolsOpen)return;const close=e=>{if(e.type==='keydown'?e.key==='Escape':!toolsRef.current?.contains(e.target))setToolsOpen(false)};
   document.addEventListener('pointerdown',close);document.addEventListener('keydown',close);return()=>{document.removeEventListener('pointerdown',close);document.removeEventListener('keydown',close)}},[toolsOpen]);
+const[insFollow,setInsFollow]=useState(()=>{try{return JSON.parse(localStorage.getItem('ct-ins-follow')||'[]')}catch(e){return[]}});
+const toggleFollow=w=>setInsFollow(f=>{const n=f.includes(w)?f.filter(x=>x!==w):[...f,w];try{localStorage.setItem('ct-ins-follow',JSON.stringify(n))}catch(e){}return n});
+const[insAlert,setInsAlert]=useState(()=>loadPref('ct-ins-alert',INS_ALERT_DEFAULT));const[insSaved,setInsSaved]=useState(false);
+const saveInsAlert=x=>{const n={...insAlert,...x};setInsAlert(n);savePref('ct-ins-alert',n);setInsSaved(false)};
+const[ins,setIns]=useState(false),[insOpen,setInsOpen]=useState(false),[insData,setInsData]=useState(null),[insErr,setInsErr]=useState(false),[insView,setInsView]=useState('skill');
 const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
 const bets=useMemo(()=>tyr?markets:markets.filter(m=>!isWar(m)),[markets,tyr]);
 const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
@@ -1563,7 +1598,7 @@ const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
 useEffect(()=>{const k=e=>{
 if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
-if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false);setMjOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false);setMjOpen(false);setInsOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Pulse trades on the globe where their market sits; whales pulse bigger and longer (and get an arc)
 const pulseTrades=list=>{const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
@@ -1715,8 +1750,11 @@ const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:(h.lvl>=3?900:1600)+k*150,color:HEIM_LVL[h.lvl].color})),[heimKey]);
 const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
 // one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
-const onlyDrawer=keep=>{if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
-useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
+const onlyDrawer=keep=>{if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
+useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(insOpen)onlyDrawer('ins')},[insOpen]);
+useEffect(()=>{if(!ins||insData)return;let off=false;fetchIns().then(d=>{if(!off){setInsData(d);setInsErr(false)}}).catch(e=>{console.log('Insights unavailable:',e.message);if(!off)setInsErr(true)});return()=>{off=true}},[ins]);
+const toggleIns=()=>{const on=!ins;setIns(on);setInsOpen(on);if(on)setToolsOpen(false)};
+const insList=useMemo(()=>{if(!insData)return[];const ps=insData.profiles;return insView==='follow'?ps.filter(p=>insFollow.includes(p.wallet)):insView==='skill'?ps.filter(p=>p.skill).sort((a,b)=>b.z-a.z):insView==='winners'?ps.filter(p=>p.pnl>0).sort((a,b)=>b.pnl-a.pnl).slice(0,20):ps.slice().sort((a,b)=>b.z-a.z)},[insData,insView,insFollow]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
 useEffect(()=>{if(!valk)return;let off=false;const load=async()=>{try{const d=await fetchValk();if(!off){setValkData(d);setValkErr(false)}}catch(e){console.log('Valkyries unavailable:',e.message);if(!off)setValkErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[valk]);
 const toggleValk=()=>{const on=!valk;setValk(on);setValkOpen(on);if(on)setToolsOpen(false)};
@@ -1909,10 +1947,14 @@ return(
 </>}>
 <div className="dc-pill" role="button" tabIndex={0} aria-expanded={pizzaOpen} onClick={()=>setPizzaOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPizzaOpen(o=>!o)}}} style={{color:DOUGHCON[dc].color,borderColor:DOUGHCON[dc].color+'88',background:DOUGHCON[dc].color+'14'}}>🍕 DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</div>
 </HoverInfo>}
+{ins&&<HoverInfo tone="ins" label="About Insights" card={<ToolCard ico="💡" name="INSIGHTS" color="#c084fc" on={ins} hint={ins?"On · click to open the panel. Switch it off there.":"For subscribers (preview). Click to switch on."} pitch="Profiles the bettors who really call geopolitics right." more={INS_MORE}/>}>
+<button className={`mj-pill ins-pill${ins?' on':''}`} onClick={ins?()=>setInsOpen(o=>!o):toggleIns} aria-pressed={ins} aria-expanded={ins&&insOpen}>💡 INSIGHTS {ins?<span className="mj-off">{insData?`${insData.skilled} PROVEN`:insErr?'SOON':'…'}{insFollow.length>0&&<span className="tf-count">🔔{insFollow.length}</span>}</span>:<span className="mj-off">OFF</span>}<span className="pro-tag">PRO</span></button>
+</HoverInfo>}
 <div className="tools" ref={toolsRef}>
 <button className={`mj-pill tools-btn${toolsOpen?' open':''}`} onClick={()=>setToolsOpen(o=>!o)} aria-expanded={toolsOpen} aria-haspopup="menu">🛡️ MORE TOOLS <span aria-hidden="true">{toolsOpen?'▴':'▾'}</span></button>
 {toolsOpen&&<div className="tools-menu" role="menu">
 <button role="menuitemcheckbox" aria-checked={layers.pizza} className="tool" onClick={()=>{toggleLayer('pizza');setToolsOpen(false)}}><span className="tool-ico">🍕</span><span className="tool-txt"><b>DOUGHCON</b><small>Pentagon pizza rush as a crisis early warning</small></span><span className={`tool-st${layers.pizza?' on':''}`}>{layers.pizza?'ON':'OFF'}</span></button>
+<button role="menuitemcheckbox" aria-checked={ins} className="tool" onClick={()=>{toggleIns();setToolsOpen(false)}}><span className="tool-ico">💡</span><span className="tool-txt"><b>INSIGHTS <span className="pro-tag">PRO</span></b><small>Profiles of the bettors who call geopolitics right</small></span><span className={`tool-st${ins?' on':''}`}>{ins?'ON':'OFF'}</span></button>
 </div>}
 </div>
 </div>
@@ -2162,6 +2204,41 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </>})()}
 </>}
 <div className="heim-foot">How it's measured, every six hours: 🏆 every trade at 5–85¢ on the 80 biggest geopolitical Polymarket markets resolved in the last 120 days is scored at resolution; wallets need 3+ markets and $5K+ staked, ranked by profit. "Hit" is the share of money on the right side, "early" the average days before the close. 🪽 Their current positions on open geopolitical markets. 📊 Each resolved Polymarket and Kalshi market's price a week before the close (halfway for short ones): the bar is how often those events happened, the white mark what the market priced in. The archive grows with every scan and keeps a year.</div>
+</div></div></Boundary>}
+{insOpen&&ins&&<Boundary name="Insights panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Insights: wallet profiles">
+<div className="panel-hd"><span className="panel-title">💡 Insights · Wallet profiles <span className="pro-tag">PRO</span></span><span className="drawer-acts"><button className="tool-off" onClick={toggleIns}>Switch off</button><button className="detail-close" onClick={()=>setInsOpen(false)} aria-label="Close">✕</button></span></div>
+<div className="scroll heim-body">
+<div className="heim-intro">How the bettors behind geopolitical Polymarket markets actually bet, and which of them have an edge that holds up beyond luck. Wallets are shown by their short address only.</div>
+{insErr?<div className="mj-calm"><b>Insights is a subscriber feature, coming soon.</b> Profiles of the bettors who call geopolitics right: record, edge beyond luck, preferred odds, timing and topics.</div>
+:!insData?<div className="heim-empty">Loading profiles…</div>:<>
+<div className="heim-global"><div className="heim-g"><span>Scanned</span><b>{insData.markets} resolved markets · {insData.trades.toLocaleString('en-US')} trades · {insData.wallets.toLocaleString('en-US')} wallets</b></div>
+<div className="heim-g"><span>Enough bets for a profile</span><b>{insData.profiled.toLocaleString('en-US')}</b></div>
+<div className="heim-g"><span>Edge beyond luck</span><b style={{color:'#c084fc'}}>{insData.skilled}</b></div></div>
+<div className="tf-chips" style={{margin:'0 0 10px'}}>{INS_VIEWS.map(([k,l])=><button key={k} className={`tf-chip${insView===k?' on':''}`} title={k==='follow'?'Wallets you follow':undefined} style={insView===k?{borderColor:'#c084fc',color:'#c084fc'}:undefined} aria-pressed={insView===k} onClick={()=>setInsView(k)}>{l}{k==='follow'&&insFollow.length>0&&<span className="tf-count">{insFollow.length}</span>}</button>)}</div>
+{insView==='follow'&&<div className="mj-calm ins-alert">
+<div><b>🔔 Email alerts</b> <span className="sim-tag">PREVIEW</span> <span className="muted">· a ping when a wallet you follow places a new bet</span></div>
+<div className="ins-form">
+<input type="email" placeholder="you@example.com" value={insAlert.email} onChange={e=>saveInsAlert({email:e.target.value})} aria-label="Email for alerts"/>
+<select value={insAlert.mode} onChange={e=>saveInsAlert({mode:e.target.value})} aria-label="How often"><option value="instant">Every new bet</option><option value="daily">Daily digest</option></select>
+<select value={insAlert.min} onChange={e=>saveInsAlert({min:+e.target.value})} aria-label="Minimum bet size"><option value={100}>bets ≥ $100</option><option value={500}>bets ≥ $500</option><option value={5000}>bets ≥ $5,000</option></select>
+<button className="mj-ex-btn" style={{marginTop:0}} onClick={()=>{saveInsAlert({on:true});setInsSaved(true)}}>Turn on alerts</button>
+</div>
+{insSaved||insAlert.on?<div className="shop-meta" style={{color:'#d8b4fe',marginTop:6}}>Saved in this browser for {insFollow.length} wallet{insFollow.length===1?'':'s'}{insAlert.email?` · ${insAlert.email}`:''}. Preview only: emails start with the subscriber launch, nothing is sent yet.</div>
+:<div className="shop-meta" style={{marginTop:6}}>Preview only: nothing is sent yet. Your settings stay in this browser.</div>}
+</div>}
+{insView==='winners'&&<div className="shop-meta" style={{marginBottom:8}}>Biggest profits. Most of these can't be told apart from luck yet: too few separate events.</div>}
+{insList.length?insList.map(p=><div key={p.wallet} className="heim-card ins-card">
+<div className="heim-top"><b>{p.name||p.short}</b><span className="ins-acts"><button className={`ins-follow${insFollow.includes(p.wallet)?' on':''}`} onClick={()=>toggleFollow(p.wallet)} aria-pressed={insFollow.includes(p.wallet)}>{insFollow.includes(p.wallet)?'🔔 Following':'＋ Follow'}</button><span className="heim-lvl" style={p.skill?{color:'#c084fc',borderColor:'#c084fc88'}:{color:'#94a3b8',borderColor:'#94a3b866'}}>{p.skill?'✅ PROVEN SKILL':'⚠️ COULD BE LUCK'}</span></span></div>
+<div className="shop-meta mono">{p.short}</div>
+<div className="ins-tags">{p.tags.map(t=><span key={t} className="ins-tag">{t}</span>)}</div>
+<div className="ins-row"><b style={{color:p.pnl>=0?'var(--green)':'var(--red)'}}>{p.pnl>=0?'+':''}{fmtUsd(p.pnl)}</b> on {fmtUsd(p.staked)} ({p.roi>=0?'+':''}{Math.round(p.roi*100)}%) · {p.events} events, {p.bets} bets</div>
+<div className="ins-row">Won {Math.round(p.hit*100)}% at an average {Math.round(p.avgPaid*100)}¢ · edge {p.edge>=0?'+':''}{Math.round(p.edge*100)} pts · {p.z.toFixed(1)}σ beyond luck</div>
+<div className="ins-row">Enters ~{p.leadDays} days before the close · sells {Math.round(p.soldEarly*100)}% early · median stake {fmtUsd(p.medianStake)}</div>
+<div className="ins-row muted">{p.topics.slice(0,2).map(t=>`${TOPIC_N[t.k]||t.k} ${Math.round(t.share*100)}%`).join(' · ')} | {p.places.slice(0,2).map(t=>`${t.k} ${Math.round(t.share*100)}%`).join(' · ')}</div>
+{p.best[0]&&<a className="ins-best" href={p.best[0].url} target="_blank" rel="noopener noreferrer">Best call: {p.best[0].q} → <b>{p.best[0].outcome}</b> at {Math.round(p.best[0].paid*100)}¢, {p.best[0].pnl>=0?'+':''}{fmtUsd(p.best[0].pnl)}, {p.best[0].leadDays} d before the close</a>}
+</div>):<div className="heim-empty">{insView==='follow'?'You follow no wallet yet. Tap ＋ Follow on a profile to get a ping when it places a new bet.':'No wallet in this view.'}</div>}
+<div className="heim-foot">How it's measured: every trade of $100+ on the {insData.markets} busiest geopolitical Polymarket markets resolved in the last 180 days, rebuilt into positions (buys, sales before the close, payout at resolution). Edge = how often a wallet's bets won minus the price it paid. "Proven skill" needs that edge over 8+ separate events (a deadline ladder counts once), at least 2σ beyond what luck would give, and a profit. Market makers (both sides of most markets) are left out. Updated {fmtTime(insData.updated)}.</div>
+</>}
 </div></div></Boundary>}
 {mjOpen&&mjolnir&&<Boundary name="Mjölnir panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Mjölnir: odds against markets">
 <div className="panel-hd"><span className="panel-title">🔨 Mjölnir · Odds vs. markets</span><span className="drawer-acts"><button className="tool-off" onClick={toggleMj}>Switch off</button><button className="detail-close" onClick={()=>setMjOpen(false)} aria-label="Close">✕</button></span></div>
