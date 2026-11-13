@@ -31,7 +31,7 @@ jobs:
       - name: Compare odds with market prices
         env:
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
-        run: node tools/mjolnir.mjs "$RUNNER_TEMP/mjolnir/mjolnir.json"
+        run: node tools/mjolnir.mjs "$RUNNER_TEMP/mjolnir/mjolnir.json" "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/mjolnir-data/mjolnir.json"
 
       - name: Publish to the mjolnir-data branch
         env:
