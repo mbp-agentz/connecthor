@@ -652,6 +652,10 @@ const fmtCents=p=>(p*100).toFixed(p<0.01||p>0.99?1:0)+'¢';
 // ============ WHEN? (deadline ladders) ============
 // "…by March 31?" events hold one market per deadline. The page keeps one market per event, so the
 // whole ladder is stored on it: the step between two deadlines is the chance the event falls in that window.
+// PARKED (2026-11-14): the owner took When? out of the view to rethink it later. The ladder is still stored
+// on every market (m.ladder) and LadderChart/ladderTag still work; WHEN_UI=true brings back the ⏳ When layer
+// button, the globe labels, the country-list tag and the card curve.
+const WHEN_UI=false;
 const DEADLINE_RE=/\b(by|before)\b/i;
 function mkLadder(rows){
   const now=Date.now(),r=rows.filter(x=>isFinite(x.end)&&x.end>now&&x.p>0&&x.p<1).sort((a,b)=>a.end-b.end);
@@ -1772,7 +1776,7 @@ const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(bets),[bets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
 // ⏳ When layer: per country the busiest market with a deadline ladder, labelled with its likeliest window
-const whenByCountry=useMemo(()=>{if(!layers.when)return[];const m=new Map();for(const x of filtered){if(!x.ladder||x.lat==null||!ladderTag(x.ladder))continue;const b=m.get(x.country);if(!b||volOf(x)>volOf(b))m.set(x.country,x)}return[...m.values()]},[layers.when,shownKey]);
+const whenByCountry=useMemo(()=>{if(!WHEN_UI||!layers.when)return[];const m=new Map();for(const x of filtered){if(!x.ladder||x.lat==null||!ladderTag(x.ladder))continue;const b=m.get(x.country);if(!b||volOf(x)>volOf(b))m.set(x.country,x)}return[...m.values()]},[layers.when,shownKey]);
 const whenKey=whenByCountry.map(x=>x.country+ladderTag(x.ladder)).join('|');
 const hotLabels=useMemo(()=>[{lat:PENTAGON.lat,lng:PENTAGON.lng,text:'PENTAGON',pentagon:true},...hot.slice(0,6).filter(h=>h.country!=='USA').map(h=>({lat:h.lat,lng:h.lng,text:h.country.toUpperCase()})),
   ...whenByCountry.map(x=>{const l=LOCS_BY_C.get(x.country)||x;return{lat:l.lat-2.2,lng:l.lng,text:ladderTag(x.ladder).replace('⏳ ','WHEN ').toUpperCase(),when:true}})],[hot.slice(0,6).map(h=>h.country).join(),whenKey]);
@@ -1972,7 +1976,7 @@ return(
 {(selected.bid>0||selected.liquidity>0||selected.endDate)&&<div className="shop-meta" style={{marginTop:8}}>{[selected.bid>0&&`Bid ${fmtCents(selected.bid)} · Ask ${fmtCents(selected.ask)}`,selected.liquidity>0&&`Liquidity ${fmtMoney(selected.liquidity,selected.source)}`].filter(Boolean).join(' · ')}{selected.endDate&&<>{(selected.bid>0||selected.liquidity>0)?' · ':''}{fmtLeft(selected.endDate)}</>}</div>}
 {selected.links?.length>0&&<div className="shop-meta" style={{marginTop:4}}>Connects {selected.country} ↔ {selected.links.map(l=>l.country).join(', ')}</div>}
 {(selected.tokenYes||selected.seriesTicker)&&<PriceChart data={history&&(history.length?[...history,{t:Date.now(),p:selected.probability}]:history)}/>}
-{layers.when&&selected.ladder&&<Boundary name="When chart"><LadderChart ladder={selected.ladder} source={selected.source}/></Boundary>}
+{WHEN_UI&&layers.when&&selected.ladder&&<Boundary name="When chart"><LadderChart ladder={selected.ladder} source={selected.source}/></Boundary>}
 {similar.length>0&&<div style={{marginTop:12,borderTop:'1px solid var(--border)',paddingTop:8}}><div className="dc-kicker" style={{marginBottom:4}}>SAME QUESTION ELSEWHERE</div>{similar.map(({m})=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {srcName(m.source)} · {m.question}</span><span className="mono" style={{color:Math.abs(m.probability-selected.probability)>=0.05?'var(--yellow)':undefined}}>{fmtProb(m.probability)}{Math.abs(m.probability-selected.probability)>=0.01?' ('+(m.probability>selected.probability?'+':'−')+Math.round(Math.abs(m.probability-selected.probability)*100)+')':''}</span></div>)}</div>}
 {selected.country&&countIn(selected.country)>1&&<div className="detail-more" onClick={()=>openCountry(selected.country)}>{country===selected.country?'← Back to':'All'} {countIn(selected.country)} markets in {selected.country}</div>}
 {selected.url&&<a href={selected.url} target="_blank" rel="noopener noreferrer" className="detail-link">View on {srcName(selected.source)} →</a>}
@@ -1982,7 +1986,7 @@ return(
 <div className="detail">
 <div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>
 {pct!=null&&<div className="shop-meta" style={{marginTop:-6,marginBottom:8}}>Escalation odds <b style={{color:nehLabel(pct).c}}>{pct}%</b> · {nehLabel(pct).t}{h.vol24?' · '+fmtVol(h.vol24)+' traded 24h':''}</div>}
-<div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{layers.when&&ladderTag(m.ladder)&&<span className="ladder-tag">{ladderTag(m.ladder)}</span>}{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
+<div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{WHEN_UI&&layers.when&&ladderTag(m.ladder)&&<span className="ladder-tag">{ladderTag(m.ladder)}</span>}{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
 {mobile&&countryMarkets.length>countryN&&<button className="more-btn" onClick={()=>setCountryN(n=>n+5)}>Show {Math.min(5,countryMarkets.length-countryN)} more · {countryN} of {countryMarkets.length}</button>}
 </div>)})()}
 
@@ -2016,7 +2020,7 @@ return(
 </div>)})}
 </div>}
 <div className="layers" role="group" aria-label="Globe layers">
-{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]].map(([k,l,c,n])=>(
+{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],...(WHEN_UI?[['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]]:[])].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':k==='when'?'When does the market expect it? For questions traded with several deadlines ("by Dec 31", "by Mar 31"…): the likeliest window on the globe, in the country list and as a curve in the market card.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
