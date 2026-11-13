@@ -355,6 +355,7 @@
     .news-rel{display:block;font-size:10px;color:var(--muted);margin-top:5px;cursor:pointer}
     .news-rel:hover{color:var(--blue)}
     .info{cursor:help;color:var(--faint);font-size:10px;margin-left:4px}
+    .ticker-item.alert{color:#fca5a5;font-weight:700}
     .ticker-item a,.ticker-item .lnk{color:inherit;text-decoration:none;cursor:pointer}
     .ticker-item a:hover,.ticker-item .lnk:hover{color:var(--blue)}
     @media(prefers-reduced-motion:reduce){.dot,.spot-dot,.livedot,.mj-pill.on,.pizza-drawer{animation:none!important}.app,.spotlight,.detail,.detail.enter-left,.detail.enter-right{animation:none}}
@@ -1205,11 +1206,12 @@ const TICKER_PX_PER_S=REDUCED_MOTION?18:30;
 function Ticker({items}){
   const[shown,setShown]=useState(items);const latest=useRef(items);latest.current=items;
   const ref=useRef(null);const[dur,setDur]=useState(120);
-  useEffect(()=>{if(shown.placeholder&&!items.placeholder)setShown(items)},[items]);
+  // content swaps between loops so it never jumps, except when a new breaking alert arrives
+  useEffect(()=>{if((shown.placeholder&&!items.placeholder)||(items.alertKey&&items.alertKey!==shown.alertKey))setShown(items)},[items]);
   React.useLayoutEffect(()=>{const w=ref.current?ref.current.scrollWidth/2:0;if(w)setDur(Math.max(30,w/TICKER_PX_PER_S))},[shown]);
   const row=[...shown,...shown];
   return(<div ref={ref} className="ticker-scroll" style={{animationDuration:dur+'s'}} onAnimationIteration={()=>setShown(latest.current)}>
-    {row.map((t,i)=><span key={i} className="ticker-item">{t.href?<a href={t.href} target="_blank" rel="noopener noreferrer">{t.text}</a>:t.onClick?<span className="lnk" onClick={t.onClick}>{t.text}</span>:t.text}</span>)}
+    {row.map((t,i)=><span key={i} className={`ticker-item${t.cls?' '+t.cls:''}`}>{t.href?<a href={t.href} target="_blank" rel="noopener noreferrer">{t.text}</a>:t.onClick?<span className="lnk" onClick={t.onClick}>{t.text}</span>:t.text}</span>)}
   </div>);
 }
 
@@ -1678,16 +1680,18 @@ const[boltTick,setBoltTick]=useState(0);
 useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
 const boltPaths=useMemo(()=>{const out=[];flashes.forEach((x,k)=>x.assets.filter(a=>(a.k||'stock')==='stock').forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
   const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
-// travel warnings + Wikipedia every 3 h in the Action; fetched on switch-on, then every 30 min
+// travel warnings + Wikipedia every 3 h in the Action; fetched on load, then every 30 min
 const[heimData,setHeimData]=useState(null);
 const[heimCh,setHeimCh]=useState(()=>loadPref('ct-heim-ch',HEIM_CH_DEFAULT));
 const toggleHeimCh=k=>setHeimCh(c=>{const n={...c,[k]:!c[k]};savePref('ct-heim-ch',n);return n});
-useEffect(()=>{if(!heim)return;let off=false;const load=async()=>{try{const d=await fetchHeim();if(!off)setHeimData(d)}catch(e){console.log('Heimdall data unavailable:',e.message)}};
-  load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[heim]);
-// FAA airport status through /api/faa (no CORS upstream; edge-cached 3 min), only while Heimdall is on
+// read for every visitor (a static file, no Function call): raised travel warnings go into the ticker
+useEffect(()=>{let off=false;const load=async()=>{try{const d=await fetchHeim();if(!off)setHeimData(d)}catch(e){console.log('Heimdall data unavailable:',e.message)}};
+  load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[]);
+// FAA airport status through /api/faa (no CORS upstream; edge-cached 3 min). Loaded for every visitor,
+// every 10 min (~6 Function calls an hour per open tab), because a nationwide stop goes into the ticker
 const[faaData,setFaaData]=useState(null);
-useEffect(()=>{if(!heim||!apiUp)return;let off=false;const load=async()=>{if(document.hidden)return;try{const r=await fetch('/api/faa');if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(!off&&Array.isArray(d.stops))setFaaData(d)}catch(e){console.log('FAA status unavailable:',e.message)}};
-  load();const i=setInterval(load,300000);return()=>{off=true;clearInterval(i)}},[heim]);
+useEffect(()=>{if(!apiUp)return;let off=false;const load=async()=>{if(document.hidden)return;try{const r=await fetch('/api/faa');if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(!off&&Array.isArray(d.stops))setFaaData(d)}catch(e){console.log('FAA status unavailable:',e.message)}};
+  load();const i=setInterval(load,600000);return()=>{off=true;clearInterval(i)}},[]);
 const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh,faaData):[],[heim,markets,news,air,heimData,heimCh,faaData]);
 const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 // rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
@@ -1736,13 +1740,21 @@ const pickPoint=d=>{if(!tapOK())return;if(d.isShop||d.isAir){if(d.isAir)window.o
   if(mjolnir&&mobileRef.current){const x=signals.find(y=>y.country===m.country);if(x){openBolt(x.id);return}}
   if(mobileRef.current&&m.country&&marketsRef.current.filter(x=>x.country===m.country).length>1){openCountry(m.country);return}
   setSelected(m)};
+// Breaking alerts lead the ticker: a US ground stop (FAA) and raised travel warnings / evacuation calls
+const alerts=useMemo(()=>{const a=[];
+  if(faaData&&(faaData.national||faaData.stops.length>=3)){const ap=faaData.stops.map(x=>x.split(' · ')[0]);a.push({key:'faa'+(faaData.national?'N':'')+ap.length,cls:'alert',text:`🛑 ${faaData.national?'FAA: nationwide ground stop in the US':'FAA: ground stops at '+ap.length+' US airports'} · ${ap.slice(0,6).join(', ')}${faaData.equip.length?` · equipment outages at ${faaData.equip.length} more`:''}`,href:'https://nasstatus.faa.gov/'})}
+  for(const c of (heimData&&heimData.countries)||[]){const off=c.official;if(!off||!off.strong)continue;for(const it of off.items||[]){if(!it.raisedAt&&!(it.depart&&Date.now()-it.date<72*36e5))continue;
+    a.push({key:'tw'+c.country+it.src+it.level,cls:'alert',text:`🏛️ ${{US:'US',DE:'Germany',UK:'UK'}[it.src]||it.src} ${it.raisedAt?'raises its travel warning for '+c.country+' to level '+it.level:'calls on citizens to leave '+c.country}`,href:it.url})}}
+  return a},[faaData,heimData]);
+const alertKey=alerts.map(x=>x.key).join('|');
 const tickerItems=useMemo(()=>{
-const head=[{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}${pizzaSim?' (simulated)':''}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
+const head=[...alerts,{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}${pizzaSim?' (simulated)':''}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
 ...movers.slice(0,3).map(m=>({text:`${m.change24>0?'📈':'📉'} ${m.question} ${fmtProb(m.probability)} (${fmtChg(m.change24)} 24h)`,onClick:()=>setSelected(m)})),
 ...geoWhales.map(t=>({text:`🐋 ${fmtVol(t.usd)} ${t.side} ${t.outcome} — ${t.title}`,href:t.url}))];
-if(news.length===0){const r=[...head,{text:'Loading live news…'}];r.placeholder=true;return r}
-return[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.source+': '+n.title,href:n.url}))];
-},[news,dc,pizzaSim,neh.score,movers,geoWhales]);
+let r;if(news.length===0){r=[...head,{text:'Loading live news…'}];r.placeholder=true}
+else r=[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.source+': '+n.title,href:n.url}))];
+r.alertKey=alertKey;return r;
+},[news,dc,pizzaSim,neh.score,movers,geoWhales,alertKey]);
 const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(bets),[bets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
