@@ -1,0 +1,43 @@
+# Insights: wallet profiles from resolved geopolitical Polymarket markets (tools/profiles.mjs), once a day.
+# The full profiles are for subscribers, so they are NOT published: this job publishes only the public
+# teaser (counts + two sample profiles) as the only file on the orphan branch insights-data. The full file
+# stays in the runner and is discarded (private storage comes with the subscriber login).
+name: Insights teaser
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: insights
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build profiles (full file stays private) and the public teaser
+        run: node tools/profiles.mjs "$RUNNER_TEMP/private/profiles.json" "$RUNNER_TEMP/insights/insights-preview.json"
+
+      - name: Publish only the teaser to the insights-data branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/insights"
+          git init -q -b insights-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add insights-preview.json
+          git commit -q -m "Insights teaser $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" insights-data
