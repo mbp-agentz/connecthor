@@ -1264,7 +1264,20 @@ function MjCard({on,data,demo,n}){const[more,setMore]=useState(false);const act=
 </>}
 // Catches a crash in one part of the page, shows the error there, and keeps the rest running
 // The 3D globe needs WebGL; Brave/Chrome without graphics acceleration can't create a context
-const HAS_WEBGL=(()=>{try{const c=document.createElement('canvas');return!!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}})();
+const checkWebGL=()=>{try{const c=document.createElement('canvas');return!!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')))}catch(e){return false}};
+const HAS_WEBGL=checkWebGL();
+// Browsers also switch WebGL off by themselves after a few GPU crashes, until they restart, so the notice names
+// this browser's own setting and offers a retry (a reload, since the 3D/2D choice is made at load)
+const WEBGL_HINT=(()=>{const ua=navigator.userAgent;
+  if(navigator.brave)return<>In Brave: <b>Settings → System → Use graphics acceleration when available</b>, then restart Brave. <b>brave://gpu</b> shows whether WebGL is blocked.</>;
+  if(/Edg\//.test(ua))return<>In Edge: <b>Settings → System and performance → Use graphics acceleration when available</b>, then restart Edge. <b>edge://gpu</b> shows whether WebGL is blocked.</>;
+  if(/Firefox\//.test(ua))return<>In Firefox: <b>Settings → General → Performance</b>, allow hardware acceleration, then restart Firefox. <b>about:support</b> shows the WebGL state.</>;
+  if(/Safari\//.test(ua)&&!/Chrome|Chromium|CriOS/.test(ua))return<>Safari has WebGL on by default: quit and reopen Safari, and check that Low Power Mode isn't limiting graphics.</>;
+  return<>In Chrome: <b>Settings → System → Use graphics acceleration when available</b>, then restart Chrome. <b>chrome://gpu</b> shows whether WebGL is blocked.</>})();
+function WebGLNotice(){const[still,setStill]=useState(false);
+  return<div className="note" style={{position:'absolute',left:12,top:56,right:12,zIndex:40,color:'#94a3b8',background:'rgba(10,15,26,0.88)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 11px'}}>2D view: your browser has WebGL (3D graphics) switched off right now, so the 3D globe can't run. Browsers also do this on their own after a graphics crash, until they restart. {WEBGL_HINT}
+    <div style={{marginTop:8,display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}><button className="mj-ex-btn" style={{marginTop:0}} onClick={()=>{if(checkWebGL())location.reload();else setStill(true)}}>↻ Try 3D again</button>
+    {still&&<span style={{color:'#fbbf24'}}>Still off in this browser. Change the setting above or restart the browser, then try again.</span>}</div></div>}
 
 // 2D fallback: equirectangular map with the same markets
 function FlatMap({w,h,countries,points,arcs,selected,onSelect,onCountry,dcColor,heat,heatKey}){
@@ -2007,7 +2020,7 @@ return(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':k==='when'?'When does the market expect it? For questions traded with several deadlines ("by Dec 31", "by Mar 31"…): the likeliest window on the globe, in the country list and as a curve in the market card.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
-<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} onCountry={openCountry} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
+<Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} onCountry={openCountry} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><WebGLNotice/></>}
 {gsize.w>0&&HAS_WEBGL&&<Globe ref={globeEl} width={gsize.w} height={gsize.h} globeImageUrl={globeView==='night'?NIGHT_TEX:DAY_TEX} bumpImageUrl={TEX+'earth-topology.png'} backgroundImageUrl={TEX+'night-sky.png'}
 polygonsData={countries.features||[]} polygonCapColor={polyCap} polygonSideColor={polySide} polygonStrokeColor={()=>'rgba(100,180,255,0.25)'} polygonAltitude={polyAlt} polygonLabel={polyLabel} onPolygonClick={onPolyClick} onGlobeClick={onGlobeTap} onGlobeReady={()=>setGlobeReady(true)} polygonsTransitionDuration={REDUCED_MOTION?0:1200}
 onZoom={onZoom} pointsData={globePoints} pointLat="lat" pointLng="lng" pointResolution={24}

@@ -43,7 +43,7 @@ A single-page "situation monitor" inspired by PizzINT (pizzint.watch). A 3D glob
 | App state, effects, render | `function App()` | |
 
 ## Rules that matter (learned the hard way)
-- **WebGL may be missing** (Brave without graphics acceleration). `HAS_WEBGL` switches to the 2D `FlatMap`. Never render `<Globe>` unguarded: an uncaught WebGL error blanks the whole page.
+- **WebGL may be missing** (graphics acceleration off, or the browser blocked WebGL after GPU crashes until it restarts). `HAS_WEBGL` (`checkWebGL()`) switches to the 2D `FlatMap`; `WebGLNotice` names this browser's setting (`WEBGL_HINT`: Brave, Edge, Firefox, Safari, else Chrome) and has **↻ Try 3D again** (re-checks, reloads if WebGL is back). Never render `<Globe>` unguarded: an uncaught WebGL error blanks the whole page.
 - **Keep globe data objects stable.** Arcs and rings are memoised on `shownKey` (the set of shown market IDs), and points are reused via `pointCache`. Recreating them on every price tick restarts their animations and makes markers re-grow.
 - **The ticker swaps content only between loops** (`onAnimationIteration`) at `TICKER_PX_PER_S`. Never bind its duration or text straight to live data, or it jumps mid-scroll. The one exception: a new breaking alert (`alerts`, `alertKey`) replaces the content at once. Alerts lead the ticker in red: an FAA ground stop (`faaData`, now loaded for every visitor every 10 min) and US/DE/UK travel warnings raised or calling for departure (`heimData`, now read for every visitor; static file).
 - **App state named `history`** (price history) shadows `window.history`. Use `window.history` explicitly.
