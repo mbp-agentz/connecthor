@@ -42,6 +42,7 @@ export async function onRequest(ctx) {
   const url = new URL(request.url);
   const [route, ...rest] = url.pathname.replace(/^\/api\/?/, '').split('/');
   if (route === 'news') return cached(ctx, 300, news);
+  if (route === 'faa') return cached(ctx, 180, faa, url.origin + '/api/faa');
   // Every uncached call spends one BestTime credit per venue, so the cache key ignores the query
   // string (no ?x=1 cache-busting) and lives an hour: BestTime refreshes live data hourly anyway.
   if (route === 'pizza') return cached(ctx, 3600, () => pizza(ctx.env), url.origin + '/api/pizza');
@@ -88,6 +89,24 @@ async function forward(bases, tail) {
     }
   }
   return json({ error: 'upstream failed: ' + last }, status);
+}
+
+// ---- FAA: US airport status (official, no key, but no CORS), as compact JSON ----
+// Ground stops show up as delay entries whose reason says STOP ("TM INITIATIVES:STOP:NAS GS" = a stop
+// ordered for the whole National Airspace System), equipment outages as "EQ:…". Several of either at once
+// is the signal (the 2023 and 2026 nationwide stops looked like that); weather and volume delays aren't.
+async function faa() {
+  const res = await fetch('https://nasstatus.faa.gov/api/airport-status-information', { headers: { 'user-agent': UA, accept: 'application/xml' }, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) return json({ error: 'FAA HTTP ' + res.status }, 502);
+  const xml = await res.text(), items = [];
+  for (const [, block] of xml.matchAll(/<Delay_type>([\s\S]*?)<\/Delay_type>/g)) {
+    const type = tag(block, 'Name');
+    if (/closure/i.test(type)) continue; // planned closures (NOTAMs for airshows, GA rules) are routine
+    for (const [, a, why] of block.matchAll(/<ARPT>([A-Z0-9]+)<\/ARPT>[\s\S]*?<Reason>([\s\S]*?)<\/Reason>/g)) items.push({ arpt: a, why: decode(why), type });
+  }
+  const stops = items.filter(x => /stop/i.test(x.why) || /ground stop/i.test(x.type)), equip = items.filter(x => /\bEQ\b/i.test(x.why) && !stops.includes(x));
+  const nas = stops.filter(x => /\bNAS\b/i.test(x.why)).length;
+  return json({ updated: tag(xml, 'Update_Time'), stops: stops.map(x => x.arpt + ' · ' + x.why), equip: equip.map(x => x.arpt), delays: items.length, national: nas >= 2 || stops.length + equip.length >= 6 });
 }
 
 // ---- news: fetch the RSS feeds and merge them into one list ----

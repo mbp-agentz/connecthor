@@ -1038,7 +1038,7 @@ const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(
 const kmBetween=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
 // Combo bets ("Democrats sweep the House and Senate and Israel and Hamas not agree…") move on several things at once
 const isCombo=m=>(String(m.question).match(/\band\b/gi)||[]).length>=3||/\b(parlay|combo)\b/i.test(m.question);
-function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT){
+function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT,faa=null){
   const slow=new Map(((hd&&hd.countries)||[]).map(x=>[x.country,x]));
   const now=Date.now(),recent=(news||[]).filter(n=>{const t=new Date(n.time).getTime();return isFinite(t)&&now-t<432e5}).map(n=>' '+String(n.title||'').toLowerCase()+' ');
   return HEIM_PLACES.map(p=>{
@@ -1048,14 +1048,17 @@ function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT){
     const hl=recent.filter(t=>p.keys.some(k=>t.includes(k))).length;
     let isr=0,emg=0,near=0;
     if(air)for(const a of air){if(kmBetween(p.lat,p.lng,a.lat,a.lng)>HEIM_R)continue;near++;if(ISR_RE.test(a.type))isr++;if(/^7[567]00$/.test(a.squawk))emg++}
-    const home=HOME_AIR.has(p.country),ac={lit:ch.air&&(emg>0||(!home&&isr>=2)),isr,emg,near,home,none:!air};
+    const home=HOME_AIR.has(p.country);
+    // US airspace: FAA ground stops / equipment outages (nationwide stop = at least WATCH on its own)
+    const fa=p.country==='USA'&&faa&&(faa.national||faa.stops.length>=3)?faa:null;
+    const ac={lit:ch.air&&(emg>0||(!home&&isr>=2)||!!fa),isr,emg,near,home,none:!air,faa:p.country==='USA'?faa:null,faaHit:!!fa};
     // Wikipedia attention joins the news channel (same question: is the world looking here?)
     const sl=slow.get(p.country),wiki=sl&&sl.wiki,off=sl?sl.official:null;
     const nw={lit:(ch.news&&hl>=3)||(ch.wiki&&!!(wiki&&wiki.lit)),n:hl,wiki};
     const official={lit:ch.official&&!!(off&&off.lit),strong:ch.official&&!!(off&&off.strong),why:off?off.why:[],items:off?off.items:[],none:!hd};
     const n=[ac.lit,nw.lit,odds.lit,official.lit].filter(Boolean).length;
     // a raised warning level or an evacuation call is enough on its own to watch
-    const lvl=Math.min(3,official.strong?Math.max(n,2):n);
+    const lvl=Math.min(3,official.strong||(ch.air&&fa&&fa.national)?Math.max(n,2):n);
     return{...p,odds,news:nw,air:ac,official,n,k:heimChN(ch),lvl,score:lvl*1e4+n*1000+hl*10+Math.abs(odds.move)*100+isr+(wiki?wiki.ratio:0)};
   }).filter(x=>x.n>0).sort((a,b)=>b.score-a.score);
 }
@@ -1249,7 +1252,7 @@ function ToolCard({ico,name,color,pitch,more,on,hint}){const[open,setOpen]=useSt
 </>}
 const LOKI_MORE="Every hour, Loki reads the large trades on the 40 busiest geopolitical Polymarket markets, with wallet and timestamp, and lines them up against our news feeds and GDELT. Bets of $5K or more placed shortly before the first matching headline, at odds that have since moved their way, are flagged with their head start and the wallet's age. A second check scores staged-looking volume: wallets trading back and forth, or a few wallets making up most of it.";
 const VALK_MORE="Every six hours, the Valkyries score Polymarket wallets on the geopolitical markets resolved in the last 120 days: profit, hit rate and how early they got in. You see what the top 20 hold now, as gold rings on the globe. A second view checks the markets themselves on Polymarket and Kalshi: of the events priced at about 70% a week before the close, how many happened? That tells you how far to trust today's odds.";
-const HEIM_MORE="Heimdall watches four channels per country and blows the horn when several move together: tankers and spy planes near the capital (adsb.lol), headlines plus Wikipedia attention, sharp moves in real-money war markets, and official travel warnings from the US, German and UK foreign ministries. Each channel has a threshold for unusual activity. One spike is noise, two are worth watching, three are an alert. A raised warning or an evacuation call is worth watching on its own.";
+const HEIM_MORE="Heimdall watches four channels per country and blows the horn when several move together: tankers and spy planes near the capital (adsb.lol) or US ground stops (FAA), headlines plus Wikipedia attention, sharp moves in real-money war markets, and official travel warnings from the US, German and UK foreign ministries. One spike is noise, two are worth watching, three are an alert. A raised warning or an evacuation call is worth watching on its own.";
 function MjCard({on,data,demo,n}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
   <div className="dc-kicker" style={{color:'#67e8f9'}}>🔨 MJÖLNIR</div>
   <div className="info-pitch">Flags anomalies: money moving before the news.</div>
@@ -1681,7 +1684,11 @@ const[heimCh,setHeimCh]=useState(()=>loadPref('ct-heim-ch',HEIM_CH_DEFAULT));
 const toggleHeimCh=k=>setHeimCh(c=>{const n={...c,[k]:!c[k]};savePref('ct-heim-ch',n);return n});
 useEffect(()=>{if(!heim)return;let off=false;const load=async()=>{try{const d=await fetchHeim();if(!off)setHeimData(d)}catch(e){console.log('Heimdall data unavailable:',e.message)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[heim]);
-const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh):[],[heim,markets,news,air,heimData,heimCh]);
+// FAA airport status through /api/faa (no CORS upstream; edge-cached 3 min), only while Heimdall is on
+const[faaData,setFaaData]=useState(null);
+useEffect(()=>{if(!heim||!apiUp)return;let off=false;const load=async()=>{if(document.hidden)return;try{const r=await fetch('/api/faa');if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(!off&&Array.isArray(d.stops))setFaaData(d)}catch(e){console.log('FAA status unavailable:',e.message)}};
+  load();const i=setInterval(load,300000);return()=>{off=true;clearInterval(i)}},[heim]);
+const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh,faaData):[],[heim,markets,news,air,heimData,heimCh,faaData]);
 const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 // rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
 const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:(h.lvl>=3?900:1600)+k*150,color:HEIM_LVL[h.lvl].color})),[heimKey]);
@@ -2159,14 +2166,15 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {heimList.length?heimList.map(h=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className="heim-card" style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
 <div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/{h.k}</span></div>
 <div className="heim-chs">
-{heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
+{heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.faaHit?(h.air.faa.national?'FAA: nationwide ground stop':'FAA: ground stops')+` · ${h.air.faa.stops.length} stop${h.air.faa.stops.length===1?'':'s'}, ${h.air.faa.equip.length} equipment outage${h.air.faa.equip.length===1?'':'s'}`:h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
 {(heimCh.news||heimCh.wiki)&&<span className={`heim-ch${h.news.lit?' on':''}`}>{heimCh.news&&<>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</>}{heimCh.news&&heimCh.wiki&&h.news.wiki&&' · '}{heimCh.wiki&&h.news.wiki&&<>📖 {h.news.wiki.ratio>=1.5?`${h.news.wiki.ratio.toFixed(1)}× usual on Wikipedia`:`${fmtK(h.news.wiki.v)} wiki views`}</>}</span>}
 {heimCh.odds&&<span className={`heim-ch${h.odds.lit?' on':''}`}>📈 {h.odds.m?`${fmtChg(h.odds.move)} pts in 24h`:'no war market'}</span>}
 {heimCh.official&&<span className={`heim-ch${h.official.lit?' on':''}`}>🏛️ {h.official.none?'travel warnings not loaded':h.official.lit?h.official.why.join(' · '):h.official.items.length?'warnings '+h.official.items.map(x=>x.src+' '+x.level).join(' · '):'no travel warning'}</span>}
 </div>
+{h.air.faaHit&&<div className="heim-q">FAA airports: {h.air.faa.stops.slice(0,4).join(' · ')}{h.air.faa.equip.length?` · equipment: ${h.air.faa.equip.slice(0,6).join(', ')}`:''}</div>}
 {h.odds.lit&&h.odds.m&&<div className="heim-q">{h.odds.m.question}</div>}
 </div>}):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
-<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings and Wikipedia are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
+<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only); for the USA also FAA ground stops (three or more airports, or a nationwide stop, which is worth watching on its own). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings and Wikipedia are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
 </div></div></Boundary>}
 
 <Boundary name="Ticker" className="ticker"><div className="ticker">
