@@ -49,6 +49,9 @@
     .tf-chip.on{background:rgba(148,163,184,0.08)}
     .tf-new{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;background:#fbbf24;color:#0f172a}
     .mj-calm{border:1px solid rgba(34,211,238,0.3);border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:12px;line-height:1.5;background:rgba(34,211,238,0.05)}
+    .loki-calm{border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.05)}
+    .loki-calm a{color:#bbf7d0}
+    .loki-ex-btn{border-color:#4ade80;color:#bbf7d0}
     .mj-calm-row{margin-top:5px}
     .mj-ex-btn{font:inherit;font-size:11px;margin-top:8px;padding:5px 10px;border-radius:8px;border:1px solid #22d3ee;background:transparent;color:#67e8f9;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
     .mj-pill.ins-pill:hover{border-color:rgba(192,132,252,0.6)}
@@ -1053,6 +1056,9 @@ const INS_MORE="Insights rebuilds every bet on the busiest resolved geopolitical
 const fmtUsd=n=>(n<0?'−$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
 const TOPIC_N={war:'War',elections:'Elections',diplomacy:'Diplomacy',other:'Other'};
 const VALK_VENUES={all:'All',pm:'Polymarket',ks:'Kalshi'},VALK_TOPICS={all:'All',war:'War',elections:'Elections',diplomacy:'Diplomacy',other:'Other'};
+// "Show example" on a quiet day: one made-up early bet, labelled DEMO, shown only in the panel
+const LOKI_DEMO={demo:true,id:'demo',wallet:'0xdemo',who:'Demo-Wallet',question:'Will Israel strike Iranian nuclear sites by December 31?',side:'BUY',outcome:'Yes',usd:12400,price:0.18,now:0.41,leadMin:194,
+  headline:{title:'Israeli jets reported over western Iraq heading east (example headline)',source:'Example News',url:'#'},walletInfo:{isNew:true,acts:3,ageDays:2}};
 const fmtLead=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');
 const pct=x=>Math.round(x*100)+'%';
 const volColor=s=>s>=60?'#ef4444':s>=40?'#f59e0b':'#4ade80';
@@ -1596,6 +1602,7 @@ const toggleFollow=w=>setInsFollow(f=>{const n=f.includes(w)?f.filter(x=>x!==w):
 const[insAlert,setInsAlert]=useState(()=>loadPref('ct-ins-alert',INS_ALERT_DEFAULT));const[insSaved,setInsSaved]=useState(false);
 const saveInsAlert=x=>{const n={...insAlert,...x};setInsAlert(n);savePref('ct-ins-alert',n);setInsSaved(false)};
 const[ins,setIns]=useState(false),[insOpen,setInsOpen]=useState(false),[insData,setInsData]=useState(null),[insErr,setInsErr]=useState(false),[insView,setInsView]=useState('skill');
+const[lokiEx,setLokiEx]=useState(false);
 const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
 const bets=useMemo(()=>tyr?markets:markets.filter(m=>!isWar(m)),[markets,tyr]);
 const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
@@ -1776,7 +1783,7 @@ useEffect(()=>{if(!mjolnir)return;let off=false;const load=async()=>{try{const d
 // Loki's scan changes hourly; checking every 15 min is plenty
 useEffect(()=>{if(!loki)return;let off=false;const load=async()=>{try{const d=await fetchLoki();if(!off){setLokiData(d);setLokiErr(false)}}catch(e){console.log('Loki unavailable:',e.message);if(!off)setLokiErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},900000);return()=>{off=true;clearInterval(i)}},[loki]);
-const toggleLoki=()=>{const on=!loki;setLoki(on);setLokiOpen(on);if(on)setToolsOpen(false)};
+const toggleLoki=()=>{const on=!loki;setLokiEx(false);setLoki(on);setLokiOpen(on);if(on)setToolsOpen(false)};
 const lokiKey=loki&&lokiData?lokiData.flags.map(f=>f.id).join('|'):'';
 const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(lokiKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:3.2,propagationSpeed:1.4,repeatPeriod:1500+k*170,color:'#4ade80'}))},[lokiKey,markets.length]);
 const lokiGo=f=>{const m=bets.find(x=>x.conditionId===f.id);if(m){if(mobile){setLokiOpen(false);setValkOpen(false)}setSelected(m)}else window.open(f.url,'_blank','noopener')}; // war markets stay hidden while Tyr is off
@@ -2170,12 +2177,20 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-intro">Big bets placed shortly before the first matching headline, and markets where the volume looks staged. Patterns worth a look, not proof of wrongdoing.</div>
 {!lokiData?<div className="heim-empty">{lokiErr?"Loki's hourly scan isn't available right now. Try again later.":'Loading…'}</div>:<>
 <div className="heim-global"><div className="heim-g"><span>Last scan</span><b>{fmtTime(lokiData.updated)} · {lokiData.checked} markets · {lokiData.headlines} headlines</b></div></div>
+{!lokiEx&&!lokiData.flags.length&&!lokiData.volume.some(x=>x.score>=25)&&<div className="mj-calm loki-calm">
+<div><b>Nothing suspicious right now.</b> Loki flags a bet of $5K+ placed 5 min to 12 h before the first matching headline, or a market whose volume looks staged. Most days are quiet.</div>
+{lokiData.near&&<div className="mj-calm-row">Closest call: <a href={lokiData.near.url} target="_blank" rel="noopener noreferrer">{fmtVol(lokiData.near.usd)} on <b>{lokiData.near.outcome}</b> at {fmtCents(lokiData.near.price)}</a>, {fmtLead(lokiData.near.leadMin)} before “{lokiData.near.headline.title}” <span className="muted">· passed {lokiData.near.passed} of {lokiData.near.of} rules, missed: {lokiData.near.missed.join(', ')}</span></div>}
+{lokiData.volume[0]&&<div className="mj-calm-row">Highest volume score: <b>{lokiData.volume[0].score}/100</b> <span className="muted">({lokiData.volume[0].question}; shown from 25)</span></div>}
+<div className="mj-calm-row">{lokiData.recent&&lokiData.recent.length?<>Last real flag: <b>{lokiData.recent[0].kind==='early'?`early bet, ${fmtVol(lokiData.recent[0].usd)} at ${fmtCents(lokiData.recent[0].price)}, ${fmtLead(lokiData.recent[0].leadMin)} before the news`:`staged-looking volume, ${lokiData.recent[0].score}/100`}</b> · {lokiData.recent[0].question} · {new Date(lokiData.recent[0].at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</>:<span className="muted">No flag recorded yet since the log started.</span>}</div>
+<button className="mj-ex-btn loki-ex-btn" onClick={()=>setLokiEx(true)}>▶ Show example <span className="sim-tag">DEMO</span></button>
+</div>}
+{lokiEx&&<div className="mj-calm loki-calm"><b>Example</b> with demo data: what an early bet looks like. <button className="mj-ex-btn loki-ex-btn" style={{marginTop:0}} onClick={()=>setLokiEx(false)}>■ End example</button></div>}
 <div className="loki-h">🕵️ EARLY BETS · LAST 24 H</div>
-{lokiData.flags.length?lokiData.flags.map(f=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className="heim-card loki-card" role="button" tabIndex={0} onClick={()=>lokiGo(f)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(f)}}>
-<div className="loki-q">{f.question}</div>
+{(lokiEx?[LOKI_DEMO]:lokiData.flags).length?(lokiEx?[LOKI_DEMO]:lokiData.flags).map(f=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className="heim-card loki-card" role="button" tabIndex={0} onClick={()=>{if(!f.demo)lokiGo(f)}} onKeyDown={e=>{if(e.key==='Enter'&&!f.demo)lokiGo(f)}}>
+<div className="loki-q">{f.demo&&<span className="sim-tag" style={{marginRight:6}}>DEMO</span>}{f.question}</div>
 <div className="loki-bet"><b className="mono">{fmtVol(f.usd)}</b> {f.side==='SELL'?'sold':'bought'} {f.outcome} at {fmtCents(f.price)} → now <b className="mono">{fmtCents(f.now)}</b></div>
-<div className="loki-lead">⏱ {fmtLead(f.leadMin)} before <a href={f.headline.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.headline.title}</a> <span className="loki-src">· {f.headline.source}</span></div>
-<div className="heim-chs"><span className={`heim-ch${w&&w.isNew?' on loki-on':''}`}>{w&&w.isNew?'🆕 new wallet':'👤 wallet'} · {w?(w.more?'500+ trades':`${w.acts} trades${w.ageDays!=null?`, ${w.ageDays} d old`:''}`):'unknown'}</span><a className="heim-ch" href={`https://polymarket.com/profile/${f.wallet}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.who} ↗</a><span className="heim-ch">{fmtTime(f.time)}</span></div>
+<div className="loki-lead">⏱ {fmtLead(f.leadMin)} before <a href={f.demo?undefined:f.headline.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.headline.title}</a> <span className="loki-src">· {f.headline.source}</span></div>
+<div className="heim-chs"><span className={`heim-ch${w&&w.isNew?' on loki-on':''}`}>{w&&w.isNew?'🆕 new wallet':'👤 wallet'} · {w?(w.more?'500+ trades':`${w.acts} trades${w.ageDays!=null?`, ${w.ageDays} d old`:''}`):'unknown'}</span>{f.demo?<span className="heim-ch">{f.who}</span>:<a className="heim-ch" href={`https://polymarket.com/profile/${f.wallet}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.who} ↗</a>}<span className="heim-ch">{fmtTime(f.time)}</span></div>
 </div>}):<div className="heim-empty">No early bets in the last 24 hours.</div>}
 <div className="loki-h">🧪 SUSPICIOUS VOLUME</div>
 {(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?v.map(x=><a key={x.id} className="heim-card loki-vol" href={x.url} target="_blank" rel="noopener noreferrer">

@@ -215,13 +215,27 @@ async function main() {
   // a failed GDELT call keeps the last good curve for up to a day
   const coverageOut = cov || (prev?.coverage && Date.now() - Date.parse(prev.coverage.updated) < 864e5 ? prev.coverage : null);
   console.log(`GDELT coverage: ${cov ? 'fresh' : coverageOut ? 'kept from last run' : 'none'}`);
-  const out = { updated: new Date().toISOString(), windowHours: 24, checked: ms.length, headlines: heads.length, coverage: coverageOut, flags: [], volume: [] };
+  const out = { updated: new Date().toISOString(), windowHours: 24, checked: ms.length, headlines: heads.length, coverage: coverageOut, flags: [], volume: [], near: null };
+  // Closest call on a quiet day: the $1K+ trade before a matching headline (within 24 h) that passes the most
+  // of the five early-bet rules, so the panel can show how close Loki came and which rule held it back
+  const RULES = [['size', '$5K+'], ['lead', '5 min–12 h before the news'], ['quiet', 'no such news in the 6 h before'], ['paid', 'paid 90¢ or less'], ['gain', 'price moved 3+ pts its way']];
+  let near = null;
   ms.forEach((m, i) => {
     const ts = all[i]; if (!ts) return;
     const fv = fakeVolume(ts);
     if (fv) out.volume.push({ id: m.id, question: m.question, url: m.url, country: m.country, ...fv });
     const mine = heads.filter(h => m.mt.test(h.title));
     for (const t of ts) {
+      if (t.usd >= 1000) {
+        const h = mine.find(x => x.t >= t.t && x.t <= t.t + 24 * 36e5);
+        if (h) {
+          const cur = m.prices[t.oi] ?? null, g = cur == null ? null : t.side === 'SELL' ? t.price - cur : cur - t.price, pd = t.side === 'SELL' ? 1 - t.price : t.price;
+          const ok = { size: t.usd >= BIG, lead: h.t - t.t >= LEAD_MIN && h.t - t.t <= LEAD_MAX, quiet: !mine.some(x => x.t < t.t && x.t > t.t - QUIET), paid: pd <= MAX_PAID, gain: g != null && g >= MIN_GAIN };
+          const n = Object.values(ok).filter(Boolean).length;
+          if (n < 5 && (!near || n > near.passed || (n === near.passed && t.usd > near.usd)))
+            near = { question: m.question, url: m.url, country: m.country, side: t.side, outcome: t.outcome, usd: Math.round(t.usd), price: +t.price.toFixed(3), time: new Date(t.t).toISOString(), leadMin: Math.round((h.t - t.t) / 60e3), headline: { title: h.title, source: h.source, url: h.url }, passed: n, of: 5, missed: RULES.filter(([k]) => !ok[k]).map(([, l]) => l) };
+        }
+      }
       if (t.usd < BIG) continue;
       const hit = mine.find(h => h.t >= t.t + LEAD_MIN && h.t <= t.t + LEAD_MAX);
       if (!hit || mine.some(h => h.t < t.t && h.t > t.t - QUIET)) continue; // news was already out
@@ -239,6 +253,13 @@ async function main() {
   for (const f of out.flags) f.walletInfo = byW.get(f.wallet) || null;
   out.flags.sort((a, b) => b.usd * (b.walletInfo?.isNew ? 2 : 1) - a.usd * (a.walletInfo?.isNew ? 2 : 1));
   out.volume = out.volume.sort((a, b) => b.score - a.score).slice(0, 15);
+  out.near = near;
+  // Log of past findings (early bets, volume 25+), newest first, kept 60 days: "last real flag" on quiet days
+  const log = (prev?.recent || []).filter(r => Date.now() - Date.parse(r.at) < 60 * 864e5);
+  const add = r => { const k = r.kind + r.id + (r.wallet || ''); const i = log.findIndex(x => x.kind + x.id + (x.wallet || '') === k); if (i >= 0) log[i] = { ...log[i], ...r, at: log[i].at }; else log.push(r) };
+  for (const f of out.flags) add({ kind: 'early', id: f.id, wallet: f.wallet, question: f.question, url: f.url, country: f.country, usd: f.usd, price: f.price, leadMin: f.leadMin, at: f.time });
+  for (const v of out.volume.filter(v => v.score >= 25)) add({ kind: 'volume', id: v.id, question: v.question, url: v.url, country: v.country, score: v.score, at: out.updated });
+  out.recent = log.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 10);
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, JSON.stringify(out));
   console.log(`${out.flags.length} early bets, top volume score ${out.volume[0]?.score ?? '-'} → ${OUT}`);
