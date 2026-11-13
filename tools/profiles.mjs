@@ -4,11 +4,13 @@
 // record, edge over the price it paid and whether that edge is more than luck, preferred odds,
 // timing, holding style, topics and places. Kalshi has no per-account data (trades are anonymous).
 // The output is for paying users: never publish it to a public branch (the repo is public).
-// Usage: node tools/profiles.mjs out.json
+// A second, public teaser file (counts + two sample profiles) is what visitors without a subscription see;
+// the Action publishes only that one (insights-data branch) and throws the full file away.
+// Usage: node tools/profiles.mjs out.json [teaser.json]
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const OUT = process.argv[2] || 'profiles.json';
+const OUT = process.argv[2] || 'profiles.json', TEASER = process.argv[3] || '';
 const UA = 'ConnecTHOR-Profiles/1.0 (+https://github.com/mbp-agentz/connecthor)';
 const GAMMA = 'https://gamma-api.polymarket.com', DATA = 'https://data-api.polymarket.com';
 const DAY = 864e5, NOW = Date.now();
@@ -142,6 +144,14 @@ async function main() {
   const ranked = all.sort((a, b) => b.z - a.z || b.pnl - a.pnl);
   mkdirSync(dirname(OUT) || '.', { recursive: true });
   writeFileSync(OUT, JSON.stringify({ updated: new Date(NOW).toISOString(), markets: markets.length, trades: trades.reduce((t, x) => t + (x ? x.length : 0), 0), wallets: byW.size, profiled: all.length, skilled: all.filter(p => p.skill).length, profiles: [...new Map([...ranked.slice(0, 50), ...all.filter(p => p.pnl > 0).sort((a, b) => b.pnl - a.pnl).slice(0, 30)].map(p => [p.wallet, p])).values()] }, null, 1));
+  if (TEASER) {
+    // samples: the strongest proven wallet and the biggest winner (marked "could be luck"), nothing else
+    const sk = ranked.find(p => p.skill), win = all.filter(p => p.pnl > 0 && (!sk || p.wallet !== sk.wallet)).sort((a, b) => b.pnl - a.pnl)[0];
+    const samples = [sk, win].filter(Boolean);
+    mkdirSync(dirname(TEASER) || '.', { recursive: true });
+    writeFileSync(TEASER, JSON.stringify({ updated: new Date(NOW).toISOString(), preview: true, markets: markets.length, trades: trades.reduce((t, x) => t + (x ? x.length : 0), 0), wallets: byW.size, profiled: all.length, skilled: all.filter(p => p.skill).length, locked: Math.max(0, Math.min(all.length, 80) - samples.length), profiles: samples }));
+    console.log(`wrote teaser ${TEASER}: ${samples.length} samples`);
+  }
   console.log(`wrote ${OUT}: ${byW.size} wallets, ${all.length} with ${MIN_BETS}+ bets, ${all.filter(p => p.skill).length} with a likely real edge`);
 }
 main().catch(e => { console.error(e); process.exit(1) });

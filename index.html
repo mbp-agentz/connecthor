@@ -54,6 +54,11 @@
     .mj-pill.ins-pill:hover{border-color:rgba(192,132,252,0.6)}
     .mj-pill.ins-pill.on{color:#e9d5ff;border:1px solid rgba(192,132,252,0.75);background:rgba(192,132,252,0.12);animation:none}
     .pro-tag{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;background:#c084fc;color:#1e1b4b;margin-left:5px;vertical-align:middle}
+    .ins-locked{position:relative;margin-top:2px}
+    .ins-ghost{filter:blur(4px);opacity:.55;pointer-events:none;user-select:none}
+    .ins-cta{position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);text-align:center;padding:14px 12px;border-radius:12px;border:1px solid rgba(192,132,252,0.55);background:rgba(15,10,30,0.92);font-size:13px;line-height:1.5}
+    .ins-cta .mj-ex-btn{border-color:#c084fc;color:#e9d5ff}
+    .ins-cta .mj-ex-btn:disabled{opacity:.75;cursor:default}
     .ins-acts{display:flex;gap:6px;align-items:center}
     .ins-follow{font:inherit;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid rgba(192,132,252,0.5);background:transparent;color:#d8b4fe;cursor:pointer;white-space:nowrap}
     .ins-follow.on{background:rgba(192,132,252,0.18);color:#f3e8ff;border-color:#c084fc}
@@ -1032,8 +1037,13 @@ async function fetchValk(){const r=await fetch(VALK_URL,{cache:'no-cache'});if(!
 // Wallet profiles from tools/profiles.mjs. Subscriber-only, so the data never goes on a public branch:
 // localhost reads /profiles.json (gitignored); elsewhere /api/pro/profiles, which doesn't exist yet
 // (it will check the login), so the panel says the feature is coming.
-const INS_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/profiles.json':'/api/pro/profiles';
-async function fetchIns(){const r=await fetch(INS_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Insights HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.profiles))throw new Error('bad Insights data');return d}
+const INS_LOCAL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname),INS_FORCE_PREVIEW=/[?&]preview\b/.test(location.search);
+const INS_URL=INS_LOCAL?'/profiles.json':'/api/pro/profiles';
+// Public teaser (counts + two sample profiles), built daily by the Insights Action on the insights-data branch
+const INS_PREVIEW_URL=INS_LOCAL?'/insights-preview.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/insights-data/insights-preview.json';
+const getIns=async u=>{const r=await fetch(u,{cache:'no-cache'});if(!r.ok)throw new Error('Insights HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.profiles))throw new Error('bad Insights data');return d};
+// full profiles for subscribers (localhost: the local file), else the teaser; ?preview shows the teaser locally
+async function fetchIns(){if(!INS_FORCE_PREVIEW)try{return await getIns(INS_URL)}catch(e){console.log('Full insights not available, using the preview:',e.message)}return getIns(INS_PREVIEW_URL)}
 const INS_VIEWS=[['skill','✅ Proven skill'],['winners','💰 Biggest winners'],['all','🧬 All profiles'],['follow','🔔 Following']];
 // Follow + email alerts: UI preview only. Followed wallets and the alert settings stay in this browser
 // (localStorage); nothing is sent. Planned: followers in D1, an Action polls each followed wallet's
@@ -1754,7 +1764,7 @@ const onlyDrawer=keep=>{if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOp
 useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(insOpen)onlyDrawer('ins')},[insOpen]);
 useEffect(()=>{if(!ins||insData)return;let off=false;fetchIns().then(d=>{if(!off){setInsData(d);setInsErr(false)}}).catch(e=>{console.log('Insights unavailable:',e.message);if(!off)setInsErr(true)});return()=>{off=true}},[ins]);
 const toggleIns=()=>{const on=!ins;setIns(on);setInsOpen(on);if(on)setToolsOpen(false)};
-const insList=useMemo(()=>{if(!insData)return[];const ps=insData.profiles;return insView==='follow'?ps.filter(p=>insFollow.includes(p.wallet)):insView==='skill'?ps.filter(p=>p.skill).sort((a,b)=>b.z-a.z):insView==='winners'?ps.filter(p=>p.pnl>0).sort((a,b)=>b.pnl-a.pnl).slice(0,20):ps.slice().sort((a,b)=>b.z-a.z)},[insData,insView,insFollow]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
+const insList=useMemo(()=>{if(!insData)return[];const ps=insData.profiles;if(insData.preview)return ps;return insView==='follow'?ps.filter(p=>insFollow.includes(p.wallet)):insView==='skill'?ps.filter(p=>p.skill).sort((a,b)=>b.z-a.z):insView==='winners'?ps.filter(p=>p.pnl>0).sort((a,b)=>b.pnl-a.pnl).slice(0,20):ps.slice().sort((a,b)=>b.z-a.z)},[insData,insView,insFollow]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
 useEffect(()=>{if(!valk)return;let off=false;const load=async()=>{try{const d=await fetchValk();if(!off){setValkData(d);setValkErr(false)}}catch(e){console.log('Valkyries unavailable:',e.message);if(!off)setValkErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[valk]);
 const toggleValk=()=>{const on=!valk;setValk(on);setValkOpen(on);if(on)setToolsOpen(false)};
@@ -2214,8 +2224,9 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-global"><div className="heim-g"><span>Scanned</span><b>{insData.markets} resolved markets · {insData.trades.toLocaleString('en-US')} trades · {insData.wallets.toLocaleString('en-US')} wallets</b></div>
 <div className="heim-g"><span>Enough bets for a profile</span><b>{insData.profiled.toLocaleString('en-US')}</b></div>
 <div className="heim-g"><span>Edge beyond luck</span><b style={{color:'#c084fc'}}>{insData.skilled}</b></div></div>
-<div className="tf-chips" style={{margin:'0 0 10px'}}>{INS_VIEWS.map(([k,l])=><button key={k} className={`tf-chip${insView===k?' on':''}`} title={k==='follow'?'Wallets you follow':undefined} style={insView===k?{borderColor:'#c084fc',color:'#c084fc'}:undefined} aria-pressed={insView===k} onClick={()=>setInsView(k)}>{l}{k==='follow'&&insFollow.length>0&&<span className="tf-count">{insFollow.length}</span>}</button>)}</div>
-{insView==='follow'&&<div className="mj-calm ins-alert">
+{!insData.preview&&<div className="tf-chips" style={{margin:'0 0 10px'}}>{INS_VIEWS.map(([k,l])=><button key={k} className={`tf-chip${insView===k?' on':''}`} title={k==='follow'?'Wallets you follow':undefined} style={insView===k?{borderColor:'#c084fc',color:'#c084fc'}:undefined} aria-pressed={insView===k} onClick={()=>setInsView(k)}>{l}{k==='follow'&&insFollow.length>0&&<span className="tf-count">{insFollow.length}</span>}</button>)}</div>}
+{insData.preview&&<div className="shop-meta" style={{marginBottom:8}}>Preview: two sample profiles, the strongest proven wallet and the biggest winner. Subscribers get every profile, the following list and email alerts.</div>}
+{!insData.preview&&insView==='follow'&&<div className="mj-calm ins-alert">
 <div><b>🔔 Email alerts</b> <span className="sim-tag">PREVIEW</span> <span className="muted">· a ping when a wallet you follow places a new bet</span></div>
 <div className="ins-form">
 <input type="email" placeholder="you@example.com" value={insAlert.email} onChange={e=>saveInsAlert({email:e.target.value})} aria-label="Email for alerts"/>
@@ -2226,9 +2237,9 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {insSaved||insAlert.on?<div className="shop-meta" style={{color:'#d8b4fe',marginTop:6}}>Saved in this browser for {insFollow.length} wallet{insFollow.length===1?'':'s'}{insAlert.email?` · ${insAlert.email}`:''}. Preview only: emails start with the subscriber launch, nothing is sent yet.</div>
 :<div className="shop-meta" style={{marginTop:6}}>Preview only: nothing is sent yet. Your settings stay in this browser.</div>}
 </div>}
-{insView==='winners'&&<div className="shop-meta" style={{marginBottom:8}}>Biggest profits. Most of these can't be told apart from luck yet: too few separate events.</div>}
+{!insData.preview&&insView==='winners'&&<div className="shop-meta" style={{marginBottom:8}}>Biggest profits. Most of these can't be told apart from luck yet: too few separate events.</div>}
 {insList.length?insList.map(p=><div key={p.wallet} className="heim-card ins-card">
-<div className="heim-top"><b>{p.name||p.short}</b><span className="ins-acts"><button className={`ins-follow${insFollow.includes(p.wallet)?' on':''}`} onClick={()=>toggleFollow(p.wallet)} aria-pressed={insFollow.includes(p.wallet)}>{insFollow.includes(p.wallet)?'🔔 Following':'＋ Follow'}</button><span className="heim-lvl" style={p.skill?{color:'#c084fc',borderColor:'#c084fc88'}:{color:'#94a3b8',borderColor:'#94a3b866'}}>{p.skill?'✅ PROVEN SKILL':'⚠️ COULD BE LUCK'}</span></span></div>
+<div className="heim-top"><b>{p.name||p.short}</b><span className="ins-acts">{insData.preview?<span className="ins-follow" title="Following and email alerts are for subscribers">🔒 Follow</span>:<button className={`ins-follow${insFollow.includes(p.wallet)?' on':''}`} onClick={()=>toggleFollow(p.wallet)} aria-pressed={insFollow.includes(p.wallet)}>{insFollow.includes(p.wallet)?'🔔 Following':'＋ Follow'}</button>}<span className="heim-lvl" style={p.skill?{color:'#c084fc',borderColor:'#c084fc88'}:{color:'#94a3b8',borderColor:'#94a3b866'}}>{p.skill?'✅ PROVEN SKILL':'⚠️ COULD BE LUCK'}</span></span></div>
 <div className="shop-meta mono">{p.short}</div>
 <div className="ins-tags">{p.tags.map(t=><span key={t} className="ins-tag">{t}</span>)}</div>
 <div className="ins-row"><b style={{color:p.pnl>=0?'var(--green)':'var(--red)'}}>{p.pnl>=0?'+':''}{fmtUsd(p.pnl)}</b> on {fmtUsd(p.staked)} ({p.roi>=0?'+':''}{Math.round(p.roi*100)}%) · {p.events} events, {p.bets} bets</div>
@@ -2236,7 +2247,12 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="ins-row">Enters ~{p.leadDays} days before the close · sells {Math.round(p.soldEarly*100)}% early · median stake {fmtUsd(p.medianStake)}</div>
 <div className="ins-row muted">{p.topics.slice(0,2).map(t=>`${TOPIC_N[t.k]||t.k} ${Math.round(t.share*100)}%`).join(' · ')} | {p.places.slice(0,2).map(t=>`${t.k} ${Math.round(t.share*100)}%`).join(' · ')}</div>
 {p.best[0]&&<a className="ins-best" href={p.best[0].url} target="_blank" rel="noopener noreferrer">Best call: {p.best[0].q} → <b>{p.best[0].outcome}</b> at {Math.round(p.best[0].paid*100)}¢, {p.best[0].pnl>=0?'+':''}{fmtUsd(p.best[0].pnl)}, {p.best[0].leadDays} d before the close</a>}
-</div>):<div className="heim-empty">{insView==='follow'?'You follow no wallet yet. Tap ＋ Follow on a profile to get a ping when it places a new bet.':'No wallet in this view.'}</div>}
+</div>)
+:<div className="heim-empty">{insView==='follow'?'You follow no wallet yet. Tap ＋ Follow on a profile to get a ping when it places a new bet.':'No wallet in this view.'}</div>}
+{insData.preview&&<div className="ins-locked">
+{[0,1,2].map(i=><div key={i} className="heim-card ins-card ins-ghost" aria-hidden="true"><div className="heim-top"><b>████████-██████</b><span className="heim-lvl">██████</span></div><div className="ins-row">+$██,███ on $██,███ (+██%) · ██ events</div><div className="ins-row">Won ██% at an average ██¢ · edge +██ pts</div><div className="ins-row">Enters ~█ days before the close · sells ██% early</div></div>)}
+<div className="ins-cta"><div>🔒 <b>{insData.locked} more profiles</b>, {insData.skilled} with proven skill, plus following and email alerts</div><button className="mj-ex-btn" style={{marginTop:8}} disabled title="Subscriptions open soon">Subscribe · coming soon</button></div>
+</div>}
 <div className="heim-foot">How it's measured: every trade of $100+ on the {insData.markets} busiest geopolitical Polymarket markets resolved in the last 180 days, rebuilt into positions (buys, sales before the close, payout at resolution). Edge = how often a wallet's bets won minus the price it paid. "Proven skill" needs that edge over 8+ separate events (a deadline ladder counts once), at least 2σ beyond what luck would give, and a profit. Market makers (both sides of most markets) are left out. Updated {fmtTime(insData.updated)}.</div>
 </>}
 </div></div></Boundary>}
