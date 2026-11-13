@@ -6,10 +6,10 @@
 // day, 8 a minute, US listings + FX only, so foreign names fall back to a US-listed proxy or drop
 // out). Stooq sits behind a bot check now. Crypto: Coinbase Exchange, else Kraken (both public, no key).
 // Usage: node tools/mjolnir.mjs [out.json]
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-const OUT = process.argv[2] || 'mjolnir.json';
+const OUT = process.argv[2] || 'mjolnir.json', PREV = process.argv[3] || OUT; // previous file carries the list of past lightning
 const UA = 'Mozilla/5.0 (compatible; ConnecTHOR-Mjolnir/1.0; +https://github.com/mbp-agentz/connecthor)';
 const GAMMA = 'https://gamma-api.polymarket.com', CLOB = 'https://clob.polymarket.com';
 const H = 3600e3, DAY = 24 * H;
@@ -37,6 +37,12 @@ const THEMES = [
 const BTC = { cb: 'BTC-USD', kr: 'XBTUSD', n: 'Bitcoin', x: 'crypto', k: 'crypto', s: -1 };
 const GOLD = { cb: 'PAXG-USD', kr: 'PAXGUSD', n: 'Gold token (PAXG)', x: 'crypto', k: 'crypto', s: 1 };
 const CRYPTO = { iran: [BTC, GOLD], israel: [BTC, GOLD], taiwan: [BTC, GOLD], ukraine: [BTC, GOLD], venezuela: [BTC], nk: [BTC], yemen: [BTC] };
+// Fear gauges: what options traders pay for protection. They jump on real fear even when prices
+// hardly move yet, so they sharpen the price side. Cboe indices on Yahoo; no Twelve Data proxy.
+const OVX = { sym: '^OVX', n: 'Oil volatility (OVX)', x: 'cboe', k: 'vol', s: 1 };
+const GVZ = { sym: '^GVZ', n: 'Gold volatility (GVZ)', x: 'cboe', k: 'vol', s: 1 };
+const VIX = { sym: '^VIX', n: 'Stock volatility (VIX)', x: 'cboe', k: 'vol', s: 1 };
+const VOL = { iran: [OVX], israel: [GVZ], taiwan: [VIX], ukraine: [GVZ], venezuela: [OVX], nk: [VIX], yemen: [OVX] };
 // "Yes" on these questions means less risk (a ceasefire holds, a deal is signed)
 const CALM_RE = /ceasefire|peace|truce|deal|agreement|normaliz|recogni|release|withdraw/i;
 const MIN_VOL = 20000; // a thinner market moves on a single trade
@@ -161,43 +167,56 @@ function judge(th, m, os, assets, now) {
   const ref = at(os, now - DAY), d = m.p - ref, risk = CALM_RE.test(m.q) ? -1 : 1;
   const sdOdds = Math.max(0.015, 0.08 * Math.sqrt(m.p * (1 - m.p))); // a normal day's odds move: ~4 pts near 50 %, less near the ends
   const oz = d * risk / sdOdds;
-  const live = assets.filter(a => a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
-  // price side = weighted mean of what traded: stocks count fully, crypto half (it swings on its own news)
-  const mean = xs => xs.length ? xs.reduce((t, a) => t + a.z, 0) / xs.length : null;
-  const W = a => a.k === 'crypto' ? 0.5 : 1, wsum = live.reduce((t, a) => t + W(a), 0);
-  const az = wsum ? live.reduce((t, a) => t + W(a) * a.z, 0) / wsum : null;
-  const sz = mean(live.filter(a => a.k !== 'crypto')), cz = mean(live.filter(a => a.k === 'crypto'));
-  const r2 = v => v == null ? null : +v.toFixed(2);
-  const base = { id: 'mj-' + th.id, country: th.country, q: m.q, url: m.url, marketId: m.id, p: +m.p.toFixed(3), d: +d.toFixed(3), oz: r2(oz), az: r2(az), sz: r2(sz), cz: r2(cz),
-    assets: assets.map(({ half, sd, ...a }) => a) };
-  if (az == null) return { ...base, kind: 'closed', score: 0, lead: 'Markets closed', why: `${assets.map(a => a.n).join(' and ')} have not traded for most of the last 24 hours, so there is nothing to compare the odds with.` };
-  const who = lead.k === 'crypto' ? 'crypto traders' : 'the stock market';
-  const A = Math.abs(oz), B = Math.abs(az);
+  const mean = xs => xs.length ? +(xs.reduce((t, a) => t + a.z, 0) / xs.length).toFixed(2) : null, live = k => assets.filter(a => a.open && a.k === k);
+  const x = { id: 'mj-' + th.id, country: th.country, q: m.q, url: m.url, marketId: m.id, p: +m.p.toFixed(3), d: +d.toFixed(3), oz: +oz.toFixed(2),
+    sz: mean(live('stock')), vz: mean(live('vol')), cz: mean(live('crypto')),
+    assets: assets.map(({ sd, ...a }) => a), oh: Math.abs(oz) >= 1 ? halfway(os, now - DAY) : null }; // half/oh: when each side did half its move
+  return verdict(x, { stock: true, vol: true, crypto: true });
+}
+
+// The verdict. The page runs an identical copy (mjJudge in index.html) with its panel filters: keep both in step.
+// Only a region's own prices (k 'stock': shares, commodities, currencies) can make lightning. Fear gauges and
+// crypto are the same for every hotspot (Bitcoin can't tell Yemen from Ukraine), so they only amplify: up to
+// ±15 points when they back or contradict the story, and never a signal on their own.
+const MJ_FLASH = 40;
+function verdict(x, f) {
+  const on = a => f[a.k || 'stock'], shown = x.assets.filter(on);
+  const live = x.assets.filter(a => (a.k || 'stock') === 'stock' && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
+  const az = live.length ? live.reduce((t, a) => t + a.z, 0) / live.length : null;
+  const amp = x.assets.filter(a => a.k && a.k !== 'stock' && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
+  const mz = ws ? amp.reduce((t, a) => t + W(a) * a.z, 0) / ws : null;
+  const out = { ...x, assets: shown, az: az == null ? null : +az.toFixed(2), mz: mz == null ? null : +mz.toFixed(2), boost: 0, amps: [] };
+  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => (a.k || 'stock') === 'stock').map(a => a.n).join(' and ')} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
+  const oz = x.oz, d = x.d, A = Math.abs(oz), B = Math.abs(az);
   // who moved first: the odds or the biggest-moving price
-  const oh = A >= 1 ? halfway(os, now - DAY) : null, ah = B >= 1 && Math.abs(lead.z) >= 1 ? lead.half : null; // only when the price side as a whole moved
-  const gapMs = oh && ah ? oh - ah : null; // > 0: prices first
-  const timing = gapMs == null ? (A >= 1 && B < 1 ? 'Odds moved, the prices on balance did not' : B >= 1 && A < 1 ? `${lead.n} moved, the odds did not` : 'Both quiet')
-    : Math.abs(gapMs) < H ? 'Both moved within the same hour'
-    : gapMs > 0 ? `${lead.n} moved ${fmtGap(gapMs)} before the odds` : `Odds moved ${fmtGap(gapMs)} before ${lead.n}`;
+  const oh = A >= 1 ? x.oh : null, ah = B >= 1 && Math.abs(lead.z) >= 1 ? lead.half : null, gap = oh && ah ? oh - ah : null; // > 0: prices first
+  const timing = gap == null ? (A >= 1 && B < 1 ? 'Odds moved, the prices on balance did not' : B >= 1 && A < 1 ? `${lead.n} moved, the odds did not` : 'Both quiet')
+    : Math.abs(gap) < H ? 'Both moved within the same hour' : gap > 0 ? `${lead.n} moved ${fmtGap(gap)} before the odds` : `Odds moved ${fmtGap(gap)} before ${lead.n}`;
   const mv = `${lead.n} ${fmtPct(lead.chg)} (${Math.abs(lead.z).toFixed(1)}× a normal day)`;
-  let kind, why;
+  let kind, why, dir = Math.sign(oz);
   if (A < 1 && B < 1) { kind = 'quiet'; why = `Odds ${fmtPts(d)} and ${mv}: both within a normal day.` }
   else if (A >= 1 && B >= 1 && Math.sign(oz) === Math.sign(az)) {
-    kind = gapMs != null && gapMs >= H ? 'lead' : 'confirm';
-    why = kind === 'lead' ? `${mv} moved first and the odds (${fmtPts(d)}) followed ${fmtGap(gapMs)} later: ${who} priced it before the bettors.`
+    kind = gap != null && gap >= H ? 'lead' : 'confirm';
+    why = kind === 'lead' ? `${mv} moved first and the odds (${fmtPts(d)}) followed ${fmtGap(gap)} later: the stock market priced it before the bettors.`
       : `Odds ${fmtPts(d)} and ${mv} point the same way, both beyond a normal day. Both markets tell the same story: more ${oz > 0 ? 'risk' : 'calm'}.`;
   } else if (A >= 1 && B >= 1) { kind = 'gap'; why = `The odds point to more ${oz > 0 ? 'risk' : 'calm'} (${fmtPts(d)}), ${mv} to the opposite. One of the two crowds is wrong.` }
-  else if (A >= 1.5 && B < 0.5) { kind = 'gap'; why = `Odds moved ${fmtPts(d)} in 24 hours, about ${A.toFixed(1)}× a normal day, yet the prices most exposed to it barely moved on balance (${assets.filter(a => a.open).map(a => `${a.n} ${fmtPct(a.chg)}`).join(', ')}). Either the betting market is early, or traders think it is priced in.` }
-  else if (B >= 1.5 && A < 0.5) { kind = 'gap'; why = `${mv} while the odds barely changed (${fmtPts(d)}). ${who[0].toUpperCase() + who.slice(1)} may be pricing something the bettors have not.` }
+  else if (A >= 1.5 && B < 0.5) { kind = 'gap'; why = `Odds moved ${fmtPts(d)} in 24 hours, about ${A.toFixed(1)}× a normal day, yet the prices most exposed to it barely moved on balance (${live.map(a => `${a.n} ${fmtPct(a.chg)}`).join(', ')}). Either the betting market is early, or traders think it is priced in.` }
+  else if (B >= 1.5 && A < 0.5) { kind = 'gap'; dir = Math.sign(az); why = `${mv} while the odds barely changed (${fmtPts(d)}). The stock market may be pricing something the bettors have not.` }
   else { kind = 'quiet'; why = `Odds ${fmtPts(d)} and ${mv}: a small move, not a clear signal.` }
-  const score = kind === 'quiet' ? Math.round(Math.min(39, 15 * Math.max(A, B))) : Math.round(Math.min(99, 40 + 12 * Math.max(A, B) + (kind === 'gap' ? 6 * Math.abs(A - B) : 4 * Math.min(A, B))));
-  return { ...base, kind, score, lead: timing, why };
+  let score = kind === 'quiet' ? Math.round(Math.min(39, 15 * Math.max(A, B))) : Math.round(Math.min(99, 40 + 12 * Math.max(A, B) + (kind === 'gap' ? 6 * Math.abs(A - B) : 4 * Math.min(A, B))));
+  // amplifiers: backing the story (same direction as the signal) adds, contradicting it subtracts; below 0.5× a normal day they're noise
+  if (kind !== 'quiet' && mz != null && Math.abs(mz) >= 0.5) {
+    out.boost = Math.round(Math.max(-1.5, Math.min(1.5, mz * dir)) * 10);
+    out.amps = amp.filter(a => Math.abs(a.z) >= 0.5 && Math.sign(a.z * dir) === Math.sign(out.boost)).map(a => a.n);
+    score = Math.max(0, Math.min(99, score + out.boost));
+  }
+  return { ...out, kind, score, lead: timing, why };
 }
 
 async function main() {
   const now = Date.now(), picks = await pickMarkets();
   const key = a => a.sym || a.cb;
-  for (const th of THEMES) th.assets = [...th.assets, ...(CRYPTO[th.id] || [])];
+  for (const th of THEMES) th.assets = [...th.assets, ...(VOL[th.id] || []), ...(CRYPTO[th.id] || [])];
   const symbols = [...new Map(THEMES.flatMap(t => t.assets).map(a => [key(a), a])).values()];
   const moves = new Map();
   for (const a of symbols) { try { moves.set(key(a), await assetMove(a, now)) } catch (e) { console.warn(e.message) } await sleep(300) }
@@ -209,11 +228,21 @@ async function main() {
     const assets = th.assets.map(a => { const x = moves.get(key(a)); return x && { ...x, n: a.n, x: a.x, z: +(x.chg * a.s / x.sd).toFixed(2) } }).filter(Boolean);
     if (!assets.length) continue;
     const r = judge(th, m, os, assets, now); out.push(r);
-    console.log(`${th.id.padEnd(9)} ${r.kind.padEnd(7)} ${String(r.score).padStart(2)}  odds ${fmtPts(r.d)} z${r.oz}  stocks z${r.sz} crypto z${r.cz}  | ${r.q}`);
+    console.log(`${th.id.padEnd(9)} ${r.kind.padEnd(7)} ${String(r.score).padStart(2)}  odds ${fmtPts(r.d)} z${r.oz}  stocks z${r.sz}  amp z${r.mz} ${r.boost ? (r.boost > 0 ? '+' : '') + r.boost : ''}  | ${r.q}`);
   }
   out.sort((a, b) => b.score - a.score);
+  // Past lightning (base filter: regional prices only, what every visitor sees first), newest first. A hotspot
+  // that keeps flashing updates its entry for 6 h instead of adding one per run. Shown as "last real lightning".
+  let prev = null;
+  try { prev = /^https?:/.test(PREV) ? await getJSON(PREV, 1) : existsSync(PREV) ? JSON.parse(readFileSync(PREV, 'utf8')) : null } catch { }
+  const recent = ((prev && prev.recent) || []).slice();
+  for (const x of out) {
+    const b = verdict(x, { stock: true, vol: false, crypto: false }); if (b.score < MJ_FLASH) continue;
+    const e = { country: x.country, kind: b.kind, score: b.score, q: x.q, url: x.url, at: new Date(now).toISOString() }, k = recent.findIndex(r => r.country === x.country && now - Date.parse(r.at) < 6 * H);
+    if (k >= 0) recent[k] = { ...e, at: recent[k].at, score: Math.max(recent[k].score, e.score) }; else recent.unshift(e);
+  }
   mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, JSON.stringify({ updated: new Date(now).toISOString(), signals: out }));
-  console.log(`wrote ${OUT}: ${out.filter(x => x.score >= 40).length} signals, ${out.length} themes`);
+  writeFileSync(OUT, JSON.stringify({ updated: new Date(now).toISOString(), signals: out, recent: recent.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 10) }));
+  console.log(`wrote ${OUT}: ${out.filter(x => x.score >= MJ_FLASH).length} signals, ${out.length} themes`);
 }
 main().catch(e => { console.error(e); process.exit(1) });

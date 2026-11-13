@@ -42,6 +42,19 @@
     .logo{display:flex;align-items:center;gap:10px;min-width:0}
     .logo-icon{font-size:26px}
     .logo h1{font-size:19px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+    .tool-filters{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px;background:rgba(148,163,184,0.04)}
+    .tf-hd{font-size:10px;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;font-weight:700}
+    .tf-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .tf-chip{font:inherit;font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+    .tf-chip.on{background:rgba(148,163,184,0.08)}
+    .tf-new{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;background:#fbbf24;color:#0f172a}
+    .mj-calm{border:1px solid rgba(34,211,238,0.3);border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:12px;line-height:1.5;background:rgba(34,211,238,0.05)}
+    .mj-calm-row{margin-top:5px}
+    .mj-ex-btn{font:inherit;font-size:11px;margin-top:8px;padding:5px 10px;border-radius:8px;border:1px solid #22d3ee;background:transparent;color:#67e8f9;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+    .tf-chip.base{cursor:default;opacity:.85}
+    .tf-base{font-size:8px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:4px;border:1px solid currentColor}
+    .tf-count{margin-left:5px;font-size:9px;opacity:.65}
+    .ladder-tag{font-size:10px;color:#fbbf24;margin-right:6px;font-family:inherit}
     .tagline{font-size:12px;color:var(--muted);font-style:italic;letter-spacing:0.03em;white-space:nowrap;padding-left:10px;border-left:1px solid var(--border)}
     .stats{display:flex;gap:18px;align-items:center}
     .header{flex-wrap:wrap;row-gap:8px}
@@ -614,6 +627,7 @@ const POLY_FEEDS=['tag_slug=geopolitics','tag_slug=world','tag_slug=politics','t
 
 const LOCS={trump:{lat:38.9,lng:-77,c:'USA'},'united states':{lat:38.9,lng:-77,c:'USA'},'u.s.':{lat:38.9,lng:-77,c:'USA'},fed:{lat:38.89,lng:-77.04,c:'USA'},ukraine:{lat:48.38,lng:31.17,c:'Ukraine'},crimea:{lat:45.3,lng:34.1,c:'Ukraine'},russia:{lat:55.76,lng:37.62,c:'Russia'},putin:{lat:55.76,lng:37.62,c:'Russia'},china:{lat:39.9,lng:116.4,c:'China'},' xi ':{lat:39.9,lng:116.4,c:'China'},taiwan:{lat:25.03,lng:121.57,c:'Taiwan'},iran:{lat:35.69,lng:51.39,c:'Iran'},israel:{lat:31.77,lng:35.22,c:'Israel'},gaza:{lat:31.5,lng:34.47,c:'Gaza'},hamas:{lat:31.5,lng:34.47,c:'Gaza'},lebanon:{lat:33.89,lng:35.5,c:'Lebanon'},syria:{lat:33.51,lng:36.29,c:'Syria'},yemen:{lat:15.37,lng:44.19,c:'Yemen'},venezuela:{lat:10.49,lng:-66.88,c:'Venezuela'},maduro:{lat:10.49,lng:-66.88,c:'Venezuela'},'north korea':{lat:39.03,lng:125.75,c:'North Korea'},'south korea':{lat:37.57,lng:126.98,c:'South Korea'},india:{lat:28.61,lng:77.21,c:'India'},pakistan:{lat:33.68,lng:73.05,c:'Pakistan'},greenland:{lat:64.18,lng:-51.72,c:'Greenland'},nato:{lat:50.88,lng:4.42,c:'NATO'},' eu ':{lat:50.85,lng:4.35,c:'EU'},france:{lat:48.86,lng:2.35,c:'France'},macron:{lat:48.86,lng:2.35,c:'France'},germany:{lat:52.52,lng:13.4,c:'Germany'},' uk ':{lat:51.51,lng:-0.13,c:'UK'},japan:{lat:35.68,lng:139.69,c:'Japan'},mexico:{lat:19.43,lng:-99.13,c:'Mexico'},canada:{lat:45.42,lng:-75.7,c:'Canada'},bitcoin:{lat:37.77,lng:-122.42,c:'USA'},kyiv:{lat:50.45,lng:30.52,c:'Ukraine'},zelensky:{lat:50.45,lng:30.52,c:'Ukraine'},moscow:{lat:55.76,lng:37.62,c:'Russia'},kremlin:{lat:55.76,lng:37.62,c:'Russia'},beijing:{lat:39.9,lng:116.4,c:'China'},tehran:{lat:35.69,lng:51.39,c:'Iran'},khamenei:{lat:35.69,lng:51.39,c:'Iran'},netanyahu:{lat:31.77,lng:35.22,c:'Israel'},hezbollah:{lat:33.89,lng:35.5,c:'Lebanon'},houthi:{lat:15.37,lng:44.19,c:'Yemen'},hormuz:{lat:26.57,lng:56.25,c:'Iran'},pahlavi:{lat:35.69,lng:51.39,c:'Iran'},romania:{lat:44.43,lng:26.1,c:'Romania'},falkland:{lat:-51.7,lng:-57.85,c:'Falklands'},'kim jong':{lat:39.03,lng:125.75,c:'North Korea'},saudi:{lat:24.71,lng:46.68,c:'Saudi Arabia'},qatar:{lat:25.29,lng:51.53,c:'Qatar'},egypt:{lat:30.04,lng:31.24,c:'Egypt'},turkey:{lat:39.93,lng:32.86,c:'Turkey'},erdogan:{lat:39.93,lng:32.86,c:'Turkey'},modi:{lat:28.61,lng:77.21,c:'India'},starmer:{lat:51.51,lng:-0.13,c:'UK'},britain:{lat:51.51,lng:-0.13,c:'UK'},brazil:{lat:-15.79,lng:-47.88,c:'Brazil'},argentina:{lat:-34.6,lng:-58.38,c:'Argentina'},colombia:{lat:4.71,lng:-74.07,c:'Colombia'},cuba:{lat:23.11,lng:-82.37,c:'Cuba'},panama:{lat:8.98,lng:-79.52,c:'Panama'},poland:{lat:52.23,lng:21.01,c:'Poland'},hungary:{lat:47.5,lng:19.04,c:'Hungary'},serbia:{lat:44.79,lng:20.45,c:'Serbia'},sudan:{lat:15.5,lng:32.56,c:'Sudan'},congo:{lat:-4.32,lng:15.31,c:'DR Congo'},ethiopia:{lat:9.03,lng:38.74,c:'Ethiopia'},somalia:{lat:2.05,lng:45.32,c:'Somalia'},philippines:{lat:14.6,lng:120.98,c:'Philippines'},vietnam:{lat:21.03,lng:105.85,c:'Vietnam'},australia:{lat:-35.28,lng:149.13,c:'Australia'},'south africa':{lat:-25.75,lng:28.19,c:'South Africa'},nigeria:{lat:9.08,lng:7.4,c:'Nigeria'}};
 
+const LOCS_BY_C=(()=>{const m=new Map();for(const v of Object.values(LOCS))if(!m.has(v.c))m.set(v.c,v);return m})(); // a country's main point
 const isWar=m=>m.category==='Conflict'||CONFLICT_RE.test(m.question); // Tyr filter: war bets stay hidden until it is on
 const CONFLICT_RE=/\b(war|invade|invasion|strike|attack|nuclear|military|ceasefire|missile|clash|troops|icbm|article 5|bomb)/i;
 // All places a question mentions, in the order they appear; the first is where the market sits
@@ -632,6 +646,49 @@ const fmtHour=h=>{const x=Math.floor(h)%24;return(x%12||12)+(x<12?'a':'p')};
 const fmtChg=c=>(c>0?'▲':c<0?'▼':'')+Math.abs(c*100).toFixed(1);
 const fmtCents=p=>(p*100).toFixed(p<0.01||p>0.99?1:0)+'¢';
 
+// ============ WHEN? (deadline ladders) ============
+// "…by March 31?" events hold one market per deadline. The page keeps one market per event, so the
+// whole ladder is stored on it: the step between two deadlines is the chance the event falls in that window.
+const DEADLINE_RE=/\b(by|before)\b/i;
+function mkLadder(rows){
+  const now=Date.now(),r=rows.filter(x=>isFinite(x.end)&&x.end>now&&x.p>0&&x.p<1).sort((a,b)=>a.end-b.end);
+  if(r.length<2||new Set(r.map(x=>x.end)).size!==r.length)return null; // one shared end date = a multi-outcome event, not a ladder
+  return r.map(x=>({end:x.end,p:+x.p.toFixed(3)}));
+}
+// windows between deadlines; the "most likely" one is the highest chance per 30 days, so a long window
+// doesn't win just by being long. bad = a later deadline priced below an earlier one (can't both be right)
+function ladderWindows(l){
+  const now=Date.now();let prev=0,from=now,bad=null;
+  const w=l.map((x,i)=>{const d=Math.max(0,x.p-prev),days=Math.max(1,(x.end-from)/864e5),o={from,end:x.end,p:x.p,d,dens:d/days*30};
+    if(i&&x.p<l[i-1].p-0.02)bad=bad||{early:l[i-1],late:x};prev=Math.max(prev,x.p);from=x.end;return o});
+  const peak=w.reduce((b,x)=>x.dens>b.dens?x:b,w[0]);
+  return{w,peak:peak.d>0.005?peak:null,bad,last:l[l.length-1]};
+}
+// Deadlines are often midnight US Eastern (04:59 UTC next day): read them 12 h earlier in UTC, so
+// "by March 31" shows as 31 Mar everywhere. Another year gets its 'yy.
+const dlDate=t=>new Date(t-432e5),dlYear=t=>dlDate(t).getUTCFullYear()!==new Date().getUTCFullYear()?" '"+String(dlDate(t).getUTCFullYear()).slice(2):'';
+const fmtDay=t=>dlDate(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'})+dlYear(t);
+const fmtMon=t=>dlDate(t).toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})+dlYear(t);
+function LadderChart({ladder,source}){
+  const{w,peak,bad,last}=ladderWindows(ladder),now=Date.now(),W=340,H=64,B=34,t0=now,t1=last.end,X=t=>(t-t0)/(t1-t0||1)*W;
+  const hi=Math.max(0.05,...ladder.map(x=>x.p)),Y=v=>H-3-v/hi*(H-10),dm=Math.max(...w.map(x=>x.dens),1e-6);
+  let pts=`0,${Y(0)}`,prev=0;ladder.forEach(x=>{pts+=` ${X(x.end).toFixed(1)},${Y(prev).toFixed(1)} ${X(x.end).toFixed(1)},${Y(x.p).toFixed(1)}`;prev=x.p});
+  return(<div style={{marginTop:12}}>
+    <div className="spark-hd"><span>⏳ When? · {ladder.length} deadlines on {srcName(source)}</span><span className="mono">{peak?'most likely '+fmtDay(peak.from)+'–'+fmtDay(peak.end):'no window stands out'}</span></div>
+    <svg viewBox={`0 0 ${W} ${H+B}`} width="100%" height={H+B} style={{display:'block'}}>
+      <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="rgba(148,163,184,0.2)"/>
+      <polyline points={pts} fill="none" stroke="#93c5fd" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
+      {ladder.map(x=><g key={x.end}><circle cx={X(x.end)} cy={Y(x.p)} r="3" fill="#93c5fd"/><text x={Math.min(W-2,X(x.end))} y={Math.max(9,Y(x.p)-5)} textAnchor="end" fontSize="9" fill="#cbd5e1">{Math.round(x.p*100)}%</text></g>)}
+      {w.map(x=>{const x0=X(x.from)+1,x1=X(x.end)-1,h=Math.max(1,x.dens/dm*(B-14));return<g key={x.end}>
+        <rect x={x0} y={H+B-12-h} width={Math.max(2,x1-x0)} height={h} rx="1.5" fill={peak&&x.end===peak.end?'#f59e0b':'rgba(147,197,253,0.45)'}/>
+        <text x={x1} y={H+B-2} textAnchor="end" fontSize="9" fill="#94a3b8">{fmtDay(x.end)}</text></g>})}
+    </svg>
+    <div className="shop-meta">Line: chance it happens <i>by</i> each date. Bars: chance per month inside each window{peak?<>; highest {fmtDay(peak.from)}–{fmtDay(peak.end)} ({Math.round(peak.d*100)} pts)</>:null}. {Math.round((1-last.p)*100)}% says not by {fmtDay(last.end)}.</div>
+    {bad&&<div className="shop-meta" style={{color:'var(--yellow)'}}>⚠️ Ladder out of line: {fmtDay(bad.late.end)} ({Math.round(bad.late.p*100)}%) is priced below {fmtDay(bad.early.end)} ({Math.round(bad.early.p*100)}%). Both can't be right.</div>}
+  </div>);
+}
+const ladderTag=l=>{if(!l)return null;const{peak,bad}=ladderWindows(l);return bad?'⚠️ ladder':peak?'⏳ '+fmtMon(peak.end):null};
+
 function parseEvent(e){
   // Resolved markets can stay open for days while settlement runs; their 1/0 prices are stale
   const now=Date.now(),decided=m=>{const p=num(parseArr(m.outcomePrices)[0]);const end=Date.parse(m.endDate||'');return p>=0.995||p<=0.005||(end<now&&(p>=0.97||p<=0.03))};
@@ -646,7 +703,8 @@ function parseEvent(e){
   return{id:String(m.id||e.id),eventId:String(e.id),conditionId:m.conditionId,tokenYes:tokens[0]?String(tokens[0]):null,outcome:outcomes[0]||'Yes',
     question,eventTitle:e.title,probability:displayPrice(bid,ask,num(m.lastTradePrice)||prices[0]||0.5),bid,ask,
     change24:num(m.oneDayPriceChange),volume:num(e.volume)||num(m.volumeNum??m.volume),vol24:num(e.volume24hr)||num(m.volume24hr),liquidity:num(e.liquidity)||num(m.liquidityNum??m.liquidity),
-    endDate:m.endDate||e.endDate,source:'polymarket',slug:e.slug,url:'https://polymarket.com/event/'+e.slug,...loc,category:getCat(question)};
+    endDate:m.endDate||e.endDate,source:'polymarket',slug:e.slug,url:'https://polymarket.com/event/'+e.slug,...loc,category:getCat(question),
+    ladder:ms.length>1&&ms.every(x=>DEADLINE_RE.test(x.question||''))?mkLadder(ms.map(x=>({end:Date.parse(x.endDate||''),p:displayPrice(num(x.bestBid),num(x.bestAsk),num(x.lastTradePrice)||num(parseArr(x.outcomePrices)[0]))}))):null};
 }
 
 async function fetchPoly(){
@@ -732,7 +790,8 @@ function parseKalshiEvent(e,seriesTitle=''){
   const loc=getLoc(question+' '+(e.sub_title||'')+' '+seriesTitle);if(!loc)return null;
   const q=kQuote(m);if(!(q.probability>0))return null;
   return{id:'k-'+m.ticker,ticker:m.ticker,seriesTicker:e.series_ticker,conditionId:'k:'+m.ticker,source:'kalshi',question,eventTitle:e.title,...q,endDate:m.close_time,
-    url:'https://kalshi.com/markets/'+String(e.series_ticker||m.event_ticker||'').toLowerCase(),...loc,category:getCat(question)};
+    url:'https://kalshi.com/markets/'+String(e.series_ticker||m.event_ticker||'').toLowerCase(),...loc,category:getCat(question),
+    ladder:ms.length>1&&DEADLINE_RE.test((e.title||'')+' '+ms.map(x=>x.yes_sub_title||x.title||'').join(' '))?mkLadder(ms.map(x=>({end:Date.parse(x.close_time||''),p:kQuote(x).probability}))):null};
 }
 // Price/volume fields of one Kalshi market. Contracts pay $1, so contract counts ≈ dollars traded
 function kQuote(m){
@@ -843,7 +902,7 @@ function similarMarkets(m,all){
 // Live: tools/mjolnir.mjs runs hourly in GitHub Actions (Polymarket odds + Yahoo Finance prices) and
 // force-pushes mjolnir.json to the mjolnir-data branch, read here as a static file (no Pages Function).
 // MJOLNIR_DEMO is only the fallback when that file can't be loaded, and is then labelled DEMO.
-const EXCH={nyse:{name:'NYSE',lat:40.7069,lng:-74.0113},nymex:{name:'NYMEX',lat:40.7146,lng:-74.0151},nasdaq:{name:'Nasdaq',lat:40.7568,lng:-73.986},ice:{name:'ICE London',lat:51.5155,lng:-0.099},xetra:{name:'Frankfurt',lat:50.1109,lng:8.6821},ttf:{name:'ICE Endex',lat:52.37,lng:4.89},twse:{name:'Taiwan SE',lat:25.033,lng:121.5654},krx:{name:'Korea Exchange',lat:37.5235,lng:126.9269},tse:{name:'Tokyo SE',lat:35.6828,lng:139.7744},cph:{name:'Copenhagen',lat:55.6761,lng:12.5683},tase:{name:'Tel Aviv SE',lat:32.0636,lng:34.7748},crypto:{name:'Crypto',lat:37.7749,lng:-122.4194}};
+const EXCH={nyse:{name:'NYSE',lat:40.7069,lng:-74.0113},nymex:{name:'NYMEX',lat:40.7146,lng:-74.0151},nasdaq:{name:'Nasdaq',lat:40.7568,lng:-73.986},ice:{name:'ICE London',lat:51.5155,lng:-0.099},xetra:{name:'Frankfurt',lat:50.1109,lng:8.6821},ttf:{name:'ICE Endex',lat:52.37,lng:4.89},twse:{name:'Taiwan SE',lat:25.033,lng:121.5654},krx:{name:'Korea Exchange',lat:37.5235,lng:126.9269},tse:{name:'Tokyo SE',lat:35.6828,lng:139.7744},cph:{name:'Copenhagen',lat:55.6761,lng:12.5683},tase:{name:'Tel Aviv SE',lat:32.0636,lng:34.7748},crypto:{name:'Crypto',lat:37.7749,lng:-122.4194},cboe:{name:'Cboe Chicago',lat:41.8781,lng:-87.6298}};
 const MJ_KIND={gap:{t:'DIVERGENCE',d:'betting market and stock market disagree',c:'#22d3ee'},lead:{t:'STOCKS MOVED FIRST',d:'the stock market reacted before the odds',c:'#a78bfa'},confirm:{t:'CONFIRMED',d:'both markets price the same story',c:'#38bdf8'},quiet:{t:'QUIET',d:'both markets within a normal day',c:'#64748b'},closed:{t:'MARKETS CLOSED',d:'no stock trading to compare with',c:'#64748b'}};
 const MJ_FLASH=40; // below this score a hotspot is listed but gets no lightning
 const MJ_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/mjolnir.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/mjolnir-data/mjolnir.json';
@@ -871,6 +930,47 @@ const MJOLNIR_DEMO=[
   assets:[{n:'Maersk',x:'cph',chg:0.051}],
   lead:'Shipping stocks moved the same morning',why:'Odds of a new attack jumped 11 points and Maersk rallied 5 %: higher freight rates if ships avoid the Red Sea. The surprise is how small the odds move still is.'}];
 const fmtPct=c=>(c>0?'+':c<0?'−':'')+Math.abs(c*100).toFixed(1)+'%';
+// Amplifier filters in the Mjölnir panel. The verdict is re-run here with only the switched-on kinds (the file
+// carries every asset's z and timing, and the odds side)
+const MJ_KINDS=[['stock','📈 Regional prices',false,true],['vol','😨 Fear gauges',true],['crypto','₿ Crypto',true]]; // regional prices are the base: always on
+const MJ_F_DEFAULT={stock:true,vol:false,crypto:false};
+const fmtPts=d=>(d>0?'+':d<0?'−':'')+Math.abs(Math.round(d*100))+' pts';
+const fmtGapMs=ms=>{const m=Math.round(Math.abs(ms)/6e4),h=Math.floor(m/60);return h?`${h} h${m%60?' '+(m%60)+' min':''}`:`${m} min`};
+// Same code as verdict() in tools/mjolnir.mjs (copied verbatim): regional prices make the signal, fear gauges and crypto only amplify it
+const mjJudge=(()=>{const H=36e5,fmtGap=fmtGapMs;
+function verdict(x, f) {
+  const on = a => f[a.k || 'stock'], shown = x.assets.filter(on);
+  const live = x.assets.filter(a => (a.k || 'stock') === 'stock' && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
+  const az = live.length ? live.reduce((t, a) => t + a.z, 0) / live.length : null;
+  const amp = x.assets.filter(a => a.k && a.k !== 'stock' && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
+  const mz = ws ? amp.reduce((t, a) => t + W(a) * a.z, 0) / ws : null;
+  const out = { ...x, assets: shown, az: az == null ? null : +az.toFixed(2), mz: mz == null ? null : +mz.toFixed(2), boost: 0, amps: [] };
+  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => (a.k || 'stock') === 'stock').map(a => a.n).join(' and ')} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
+  const oz = x.oz, d = x.d, A = Math.abs(oz), B = Math.abs(az);
+  // who moved first: the odds or the biggest-moving price
+  const oh = A >= 1 ? x.oh : null, ah = B >= 1 && Math.abs(lead.z) >= 1 ? lead.half : null, gap = oh && ah ? oh - ah : null; // > 0: prices first
+  const timing = gap == null ? (A >= 1 && B < 1 ? 'Odds moved, the prices on balance did not' : B >= 1 && A < 1 ? `${lead.n} moved, the odds did not` : 'Both quiet')
+    : Math.abs(gap) < H ? 'Both moved within the same hour' : gap > 0 ? `${lead.n} moved ${fmtGap(gap)} before the odds` : `Odds moved ${fmtGap(gap)} before ${lead.n}`;
+  const mv = `${lead.n} ${fmtPct(lead.chg)} (${Math.abs(lead.z).toFixed(1)}× a normal day)`;
+  let kind, why, dir = Math.sign(oz);
+  if (A < 1 && B < 1) { kind = 'quiet'; why = `Odds ${fmtPts(d)} and ${mv}: both within a normal day.` }
+  else if (A >= 1 && B >= 1 && Math.sign(oz) === Math.sign(az)) {
+    kind = gap != null && gap >= H ? 'lead' : 'confirm';
+    why = kind === 'lead' ? `${mv} moved first and the odds (${fmtPts(d)}) followed ${fmtGap(gap)} later: the stock market priced it before the bettors.`
+      : `Odds ${fmtPts(d)} and ${mv} point the same way, both beyond a normal day. Both markets tell the same story: more ${oz > 0 ? 'risk' : 'calm'}.`;
+  } else if (A >= 1 && B >= 1) { kind = 'gap'; why = `The odds point to more ${oz > 0 ? 'risk' : 'calm'} (${fmtPts(d)}), ${mv} to the opposite. One of the two crowds is wrong.` }
+  else if (A >= 1.5 && B < 0.5) { kind = 'gap'; why = `Odds moved ${fmtPts(d)} in 24 hours, about ${A.toFixed(1)}× a normal day, yet the prices most exposed to it barely moved on balance (${live.map(a => `${a.n} ${fmtPct(a.chg)}`).join(', ')}). Either the betting market is early, or traders think it is priced in.` }
+  else if (B >= 1.5 && A < 0.5) { kind = 'gap'; dir = Math.sign(az); why = `${mv} while the odds barely changed (${fmtPts(d)}). The stock market may be pricing something the bettors have not.` }
+  else { kind = 'quiet'; why = `Odds ${fmtPts(d)} and ${mv}: a small move, not a clear signal.` }
+  let score = kind === 'quiet' ? Math.round(Math.min(39, 15 * Math.max(A, B))) : Math.round(Math.min(99, 40 + 12 * Math.max(A, B) + (kind === 'gap' ? 6 * Math.abs(A - B) : 4 * Math.min(A, B))));
+  // amplifiers: backing the story (same direction as the signal) adds, contradicting it subtracts; below 0.5× a normal day they're noise
+  if (kind !== 'quiet' && mz != null && Math.abs(mz) >= 0.5) {
+    out.boost = Math.round(Math.max(-1.5, Math.min(1.5, mz * dir)) * 10);
+    out.amps = amp.filter(a => Math.abs(a.z) >= 0.5 && Math.sign(a.z * dir) === Math.sign(out.boost)).map(a => a.n);
+    score = Math.max(0, Math.min(99, score + out.boost));
+  }
+  return { ...out, kind, score, lead: timing, why };
+}return verdict})();
 const gcDeg=(a,b)=>{const r=Math.PI/180;return Math.acos(Math.min(1,Math.sin(a.lat*r)*Math.sin(b.lat*r)+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.cos((a.lng-b.lng)*r)))/r};
 const seeded=x=>()=>(x=(x*16807)%2147483647)/2147483647;
 // A bolt: great-circle points with a jagged sideways and vertical jitter that is zero at both ends
@@ -909,26 +1009,49 @@ const fmtLead=m=>m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'')
 const pct=x=>Math.round(x*100)+'%';
 const volColor=s=>s>=60?'#ef4444':s>=40?'#f59e0b':'#4ade80';
 // ============ HEIMDALL (early warning) ============
-// Only feeds the page already loads (aircraft, news, odds, GDELT, pizza): no extra /api calls
+// Live channels from feeds the page already loads (aircraft, news, odds); the slow ones (travel
+// warnings, Wikipedia attention) come from heimdall.json, built every 3 h by tools/heimdall.mjs in
+// GitHub Actions and read from raw.githubusercontent.com: no extra /api calls either way
 const HEIM_R=800; // km around a capital that counts as "near"
 const ISR_RE=/^(K35[RE]|KC\d|R135|E3[TC]F|E6|E7|P8|Q4|U2|EP3|E8)/; // tankers, spy and patrol planes: what flies before a strike
 const HOME_AIR=new Set(['USA','UK','Germany','France','Canada','Australia','Japan']); // big home bases: their tankers fly every day, so only emergencies count
 const NEWS_SKIP=new Set(['bitcoin','fed']); // market keys that aren't places in a headline ("federal", crypto news)
 const HEIM_PLACES=(()=>{const m=new Map();for(const[k,v]of Object.entries(LOCS)){if(v.c==='NATO'||v.c==='EU')continue;const p=m.get(v.c)||{country:v.c,lat:v.lat,lng:v.lng,keys:[]};if(!NEWS_SKIP.has(k))p.keys.push(k);m.set(v.c,p)}return[...m.values()]})();
 const HEIM_LVL=[null,{name:'SIGNAL',color:'#60a5fa'},{name:'WATCH',color:'#f59e0b'},{name:'ALERT',color:'#ef4444'}];
+// Channel filters in the panel; the newer slow channels start off so the default view stays simple
+const HEIM_CH=[['air','✈️ Aircraft'],['news','📰 Headlines'],['odds','📈 Odds'],['wiki','📖 Wikipedia',true],['official','🏛️ Travel warnings',true]];
+const HEIM_CH_DEFAULT={air:true,news:true,odds:true,wiki:false,official:false};
+const heimChN=ch=>[ch.air,ch.news||ch.wiki,ch.odds,ch.official].filter(Boolean).length; // channels that can light (news + Wikipedia share one)
+const loadPref=(k,d)=>{try{return{...d,...JSON.parse(localStorage.getItem(k)||'{}')}}catch(e){return d}};
+const savePref=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+// A tool's filter row: chips that switch parts of its analysis on and off; new ones carry a NEW tag
+function FilterBar({items,state,onToggle,color}){return<div className="tool-filters" role="group" aria-label="Filters">
+  <div className="tf-hd">FILTERS <span className="muted">· {items.filter(([k,,,b])=>b||state[k]).length}/{items.length} on</span></div>
+  <div className="tf-chips">{items.map(([k,l,isNew,base])=>{const on=base||state[k];return<button key={k} className={`tf-chip${on?' on':''}${base?' base':''}`} style={on?{borderColor:color,color}:undefined} aria-pressed={!!on} disabled={base} title={base?'The base of this tool: always on':undefined} onClick={()=>onToggle(k)}>{l}{isNew&&<span className="tf-new">NEW</span>}{base&&<span className="tf-base">BASE</span>}</button>})}</div>
+</div>}
+const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
+async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
+const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
 const kmBetween=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
-function heimdall(markets,news,air){
+function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT){
+  const slow=new Map(((hd&&hd.countries)||[]).map(x=>[x.country,x]));
   const now=Date.now(),recent=(news||[]).filter(n=>{const t=new Date(n.time).getTime();return isFinite(t)&&now-t<432e5}).map(n=>' '+String(n.title||'').toLowerCase()+' ');
   return HEIM_PLACES.map(p=>{
     const war=markets.filter(m=>m.country===p.country&&isUSD(m)&&isWar(m)&&(m.volume||0)>=1e4&&!((daysLeft(m.endDate)??99)<3)); // "…on November 11?" markets swing 20 pts a day by design
     const mv=war.reduce((b,m)=>Math.abs(m.change24||0)>Math.abs(b?b.change24||0:0)?m:b,null);
-    const odds={lit:!!mv&&Math.abs(mv.change24)>=0.05,move:mv?mv.change24||0:0,m:mv};
+    const odds={lit:ch.odds&&!!mv&&Math.abs(mv.change24)>=0.05,move:mv?mv.change24||0:0,m:mv};
     const hl=recent.filter(t=>p.keys.some(k=>t.includes(k))).length;
     let isr=0,emg=0,near=0;
     if(air)for(const a of air){if(kmBetween(p.lat,p.lng,a.lat,a.lng)>HEIM_R)continue;near++;if(ISR_RE.test(a.type))isr++;if(/^7[567]00$/.test(a.squawk))emg++}
-    const home=HOME_AIR.has(p.country),ac={lit:emg>0||(!home&&isr>=2),isr,emg,near,home,none:!air};
-    const n=[ac.lit,hl>=3,odds.lit].filter(Boolean).length;
-    return{...p,odds,news:{lit:hl>=3,n:hl},air:ac,n,score:n*1000+hl*10+Math.abs(odds.move)*100+isr};
+    const home=HOME_AIR.has(p.country),ac={lit:ch.air&&(emg>0||(!home&&isr>=2)),isr,emg,near,home,none:!air};
+    // Wikipedia attention joins the news channel (same question: is the world looking here?)
+    const sl=slow.get(p.country),wiki=sl&&sl.wiki,off=sl?sl.official:null;
+    const nw={lit:(ch.news&&hl>=3)||(ch.wiki&&!!(wiki&&wiki.lit)),n:hl,wiki};
+    const official={lit:ch.official&&!!(off&&off.lit),strong:ch.official&&!!(off&&off.strong),why:off?off.why:[],items:off?off.items:[],none:!hd};
+    const n=[ac.lit,nw.lit,odds.lit,official.lit].filter(Boolean).length;
+    // a raised warning level or an evacuation call is enough on its own to watch
+    const lvl=Math.min(3,official.strong?Math.max(n,2):n);
+    return{...p,odds,news:nw,air:ac,official,n,k:heimChN(ch),lvl,score:lvl*1e4+n*1000+hl*10+Math.abs(odds.move)*100+isr+(wiki?wiki.ratio:0)};
   }).filter(x=>x.n>0).sort((a,b)=>b.score-a.score);
 }
 // ============ DAY / NIGHT ============
@@ -1121,13 +1244,13 @@ function ToolCard({ico,name,color,pitch,more,on,hint}){const[open,setOpen]=useSt
 </>}
 const LOKI_MORE="Every hour, Loki reads the large trades on the 40 busiest geopolitical Polymarket markets, with wallet and timestamp, and lines them up against our news feeds and GDELT. Bets of $5K or more placed shortly before the first matching headline, at odds that have since moved their way, are flagged with their head start and the wallet's age. A second check scores staged-looking volume: wallets trading back and forth, or a few wallets making up most of it.";
 const VALK_MORE="Every six hours, the Valkyries score Polymarket wallets on the geopolitical markets resolved in the last 120 days: profit, hit rate and how early they got in. You see what the top 20 hold now, as gold rings on the globe. A second view checks the markets themselves on Polymarket and Kalshi: of the events priced at about 70% a week before the close, how many happened? That tells you how far to trust today's odds.";
-const HEIM_MORE="Heimdall watches every channel at once and blows the horn when several move together in the same country. It combines military aircraft from adsb.lol, news coverage from GDELT, the odds on our conflict markets and the Pentagon pizza index, and later airspace closures (NOTAMs) and tanker traffic (AIS). Each signal has a threshold that marks unusual activity. One spike is noise; three at once are an alert. The globe shows which countries light up on several channels.";
+const HEIM_MORE="Heimdall watches four channels per country and blows the horn when several move together: tankers and spy planes near the capital (adsb.lol), headlines plus Wikipedia attention, sharp moves in real-money war markets, and official travel warnings from the US, German and UK foreign ministries. Each channel has a threshold for unusual activity. One spike is noise, two are worth watching, three are an alert. A raised warning or an evacuation call is worth watching on its own.";
 function MjCard({on,data,demo,n}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
   <div className="dc-kicker" style={{color:'#67e8f9'}}>🔨 MJÖLNIR</div>
   <div className="info-pitch">Flags anomalies: money moving before the news.</div>
-  <div className="info-hint">{on?`On · tap the lightning on the globe for details. ${act} the button to switch off.`:`${act} the button to switch on.`} {demo?'Live scan unavailable, showing demo data.':data?`${n?n+' signal'+(n>1?'s':''):'All calm'} · scanned ${fmtTime(data.updated)}.`:'Live: an hourly scan of Polymarket odds against stock and crypto prices.'}</div>
+  <div className="info-hint">{on?`On · ${act.toLowerCase()} the button for the panel and its filters; tap the lightning on the globe for details. Most days are calm: the panel shows the closest call and an example.`:`${act} the button to switch on.`} {demo?'Live scan unavailable, showing demo data.':data?`${n?n+' signal'+(n>1?'s':''):'All calm'} · scanned ${fmtTime(data.updated)}.`:'Live: an hourly scan of Polymarket odds against stock and crypto prices.'}</div>
   <button className="mj-more-btn" onClick={e=>{e.stopPropagation();setMore(v=>!v)}} aria-expanded={more}>{more?'Read less ▴':'Read more ▾'}</button>
-  {more&&<div className="mj-more">Mjölnir compares prediction markets with financial markets. Every hour it takes the busiest Polymarket market for seven hotspots and the prices most exposed to them: oil, gas, defense, shipping, chips and currencies (Yahoo Finance, Twelve Data), plus Bitcoin and tokenised gold (Coinbase, Kraken). Each 24-hour move is measured against a normal day for that price. When one side moves far beyond normal and the other doesn't, or moves first, lightning connects the region to the exchange.</div>}
+  {more&&<div className="mj-more">Mjölnir compares prediction markets with financial markets. Every hour it takes the busiest Polymarket market for seven hotspots and the prices most exposed to them: oil, gas, defense, shipping, chips, currencies and options-market fear gauges (Yahoo Finance, Twelve Data), plus Bitcoin and tokenised gold (Coinbase, Kraken). Each 24-hour move is measured against a normal day for that price. When one side moves far beyond normal and the other doesn't, or moves first, lightning connects the region to the exchange.</div>}
 </>}
 // Catches a crash in one part of the page, shows the error there, and keeps the rest running
 // The 3D globe needs WebGL; Brave/Chrome without graphics acceleration can't create a context
@@ -1332,7 +1455,7 @@ const[srcFilter,setSrcFilter]=useState('all');
 const[air,setAir]=useState(null);
 const[coverage,setCoverage]=useState(null);
 const[sigFilter,setSigFilter]=useState('ALL');
-const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:false,air:true,hot:true};
+const LAYER_DEFAULTS={markets:true,arcs:true,trades:true,pizza:false,air:true,hot:true,when:false};
 const[layers,setLayers]=useState(()=>{try{return{...LAYER_DEFAULTS,...JSON.parse(localStorage.getItem('ct-layers')||'{}')}}catch(e){return LAYER_DEFAULTS}});
 const[globeView,setGlobeView]=useState(()=>{try{const v=localStorage.getItem('ct-view');return GLOBE_VIEWS[v]?v:'night'}catch(e){return'night'}});
 const cycleView=()=>setGlobeView(v=>{const ks=Object.keys(GLOBE_VIEWS),n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('ct-view',n)}catch(e){}return n});
@@ -1407,11 +1530,13 @@ const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
 useEffect(()=>{if(!tyr){setSelected(m=>m&&isWar(m)?null:m)}},[tyr]); // switching Tyr off closes an open war market
 const[bolt,setBolt]=useState(null); // id of the Mjölnir signal whose panel is open
 const[mjData,setMjData]=useState(null);const[mjErr,setMjErr]=useState(false); // hourly scan (mjolnir.json)
+const[mjOpen,setMjOpen]=useState(false);const[mjF,setMjF]=useState(()=>loadPref('ct-mj-f',MJ_F_DEFAULT));
+const toggleMjF=k=>setMjF(c=>{const n={...c,[k]:!c[k]};savePref('ct-mj-f',n);return n});
 const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
 useEffect(()=>{const k=e=>{
 if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
-if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false);setMjOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Pulse trades on the globe where their market sits; whales pulse bigger and longer (and get an arc)
 const pulseTrades=list=>{const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
@@ -1525,26 +1650,40 @@ const hlRing=useMemo(()=>highlighted?[{lat:highlighted.lat,lng:highlighted.lng,m
 const[focus,setFocus]=useState(null);const[globeReady,setGlobeReady]=useState(false); // mobile deck: the country the globe is turned to
 const focusRing=useMemo(()=>{const h=focus&&hotspots(marketsRef.current).find(x=>x.country===focus);return h?[{lat:h.lat,lng:h.lng,maxR:5,propagationSpeed:1.2,repeatPeriod:1600,color:'rgba(255,255,255,0.6)'}]:[]},[focus]);
 // Live scan from mjolnir.json; the demo set only when that file can't be loaded (labelled DEMO)
-const mjDemo=mjolnir&&!mjData&&mjErr;
-const signals=useMemo(()=>!mjolnir||(!mjData&&!mjErr)?[]:(mjData?mjData.signals:MJOLNIR_DEMO).map(x=>{
+// mjEx: "Show example" plays one made-up signal (labelled DEMO) on a calm day, until its card is closed
+const[mjEx,setMjEx]=useState(false);
+const mjDemo=mjolnir&&(mjEx||(!mjData&&mjErr));
+const signals=useMemo(()=>!mjolnir||(!mjData&&!mjErr)?[]:(mjEx?MJOLNIR_DEMO.filter(x=>x.id==='mj-iran'):mjData?mjData.signals.filter(x=>x.assets&&x.oz!=null).map(x=>mjJudge(x,{...mjF,stock:true})).sort((a,b)=>b.score-a.score):MJOLNIR_DEMO).map(x=>{
   const h=hotspots(marketsRef.current).find(y=>y.country===x.country),loc=Object.values(LOCS).find(l=>l.c===x.country),lat=h?h.lat:loc&&loc.lat,lng=h?h.lng:loc&&loc.lng;if(lat==null)return null;
   const m=x.marketId?markets.find(y=>y.conditionId===x.marketId)||null:markets.filter(y=>y.country===x.country&&isUSD(y)&&x.re.test(y.question)).sort((a,b)=>volOf(b)-volOf(a))[0]||null;
-  return{...x,lat,lng,market:m,flash:x.score>=MJ_FLASH,assets:x.assets.filter(a=>EXCH[a.x]),news:news.filter(n=>getLocs(n.title).some(l=>l.country===x.country)).slice(0,3)}}).filter(Boolean),[mjolnir,mjData,mjErr,markets,news]);
+  return{...x,lat,lng,market:m,flash:x.score>=MJ_FLASH,assets:x.assets.filter(a=>EXCH[a.x]),news:news.filter(n=>getLocs(n.title).some(l=>l.country===x.country)).slice(0,3)}}).filter(Boolean),[mjolnir,mjData,mjErr,markets,news,mjF,mjEx]);
 const flashes=signals.filter(x=>x.flash);
+// calm day: the hotspot closest to a signal still gets a quiet ring, so the globe shows where Mjölnir looks
+const mjClosest=!flashes.length&&signals.length?signals[0]:null;
+useEffect(()=>{if(mjEx&&!bolt)setMjEx(false)},[bolt]);
+const startMjEx=()=>{setMjEx(true);if(mobile)setMjOpen(false);openBolt('mj-iran')};
+// amplifiers that moved beyond a normal day, once for the whole panel (they're the same for every country)
+const mjMood=useMemo(()=>{if(!mjData)return[];const m=new Map();for(const x of mjData.signals)for(const a of x.assets||[])if(a.k&&a.k!=='stock'&&mjF[a.k]&&a.open&&Math.abs(a.z)>=1&&!m.has(a.n))m.set(a.n,a);return[...m.values()]},[mjData,mjF]);
 const sigKey=flashes.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|');
 // Bolts re-strike every 1.6 s with fresh jitter; only this layer is rebuilt, markers and arcs stay put
 const[boltTick,setBoltTick]=useState(0);
 useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
-const boltPaths=useMemo(()=>{const out=[];flashes.forEach((x,k)=>x.assets.forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
+const boltPaths=useMemo(()=>{const out=[];flashes.forEach((x,k)=>x.assets.filter(a=>(a.k||'stock')==='stock').forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
   const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
-const heimList=useMemo(()=>heim?heimdall(markets,news,air):[],[heim,markets,news,air]);
-const heimKey=heimList.filter(h=>h.n>=2).map(h=>h.country+h.n).join('|');
+// travel warnings + Wikipedia every 3 h in the Action; fetched on switch-on, then every 30 min
+const[heimData,setHeimData]=useState(null);
+const[heimCh,setHeimCh]=useState(()=>loadPref('ct-heim-ch',HEIM_CH_DEFAULT));
+const toggleHeimCh=k=>setHeimCh(c=>{const n={...c,[k]:!c[k]};savePref('ct-heim-ch',n);return n});
+useEffect(()=>{if(!heim)return;let off=false;const load=async()=>{try{const d=await fetchHeim();if(!off)setHeimData(d)}catch(e){console.log('Heimdall data unavailable:',e.message)}};
+  load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[heim]);
+const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh):[],[heim,markets,news,air,heimData,heimCh]);
+const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 // rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
-const heimRings=useMemo(()=>heimList.filter(h=>h.n>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.n>=3?6:4,propagationSpeed:h.n>=3?2:1.2,repeatPeriod:(h.n>=3?900:1600)+k*150,color:HEIM_LVL[h.n].color})),[heimKey]);
+const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:(h.lvl>=3?900:1600)+k*150,color:HEIM_LVL[h.lvl].color})),[heimKey]);
 const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
 // one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
-const onlyDrawer=keep=>{if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
-useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
+const onlyDrawer=keep=>{if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
+useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
 useEffect(()=>{if(!valk)return;let off=false;const load=async()=>{try{const d=await fetchValk();if(!off){setValkData(d);setValkErr(false)}}catch(e){console.log('Valkyries unavailable:',e.message);if(!off)setValkErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[valk]);
 const toggleValk=()=>{const on=!valk;setValk(on);setValkOpen(on);if(on)setToolsOpen(false)};
@@ -1562,7 +1701,7 @@ const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.cu
 const lokiGo=f=>{const m=bets.find(x=>x.conditionId===f.id);if(m){if(mobile){setLokiOpen(false);setValkOpen(false)}setSelected(m)}else window.open(f.url,'_blank','noopener')}; // war markets stay hidden while Tyr is off
 const toggleHeim=()=>{const on=!heim;setHeim(on);setHeimOpen(on);if(on)setToolsOpen(false)};
 const heimGo=h=>{try{globeEl.current&&globeEl.current.pointOfView({lat:h.lat-8,lng:h.lng,altitude:1.7},REDUCED_MOTION?0:1000)}catch(e){}if(mobile)setHeimOpen(false);if(bets.some(m=>m.country===h.country))openCountry(h.country)};
-const mjRings=useMemo(()=>flashes.flatMap((x,k)=>[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300+k*170,color:'#22d3ee'},...x.assets.map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]),[sigKey]);
+const mjRings=useMemo(()=>flashes.flatMap((x,k)=>[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300+k*170,color:'#22d3ee'},...x.assets.filter(a=>(a.k||'stock')==='stock').map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]).concat(mjClosest?[{lat:mjClosest.lat,lng:mjClosest.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800,color:'rgba(148,163,184,0.75)'}]:[]),[sigKey,mjClosest&&mjClosest.id]);
 const sigById=useMemo(()=>new Map(signals.map(x=>[x.id,x])),[signals]);
 const boltSig=bolt?sigById.get(bolt):null;
 const mjScore=flashes.length?Math.round(flashes.reduce((t,x)=>t+x.score,0)/flashes.length):0;
@@ -1595,7 +1734,11 @@ return[...head,...news.slice(0,15).map(n=>({text:(n.isBreaking?'🔴 ':'')+n.sou
 const cats=['All','Conflict','Trump','Politics','Economy','Trade'];
 const hot=useMemo(()=>hotspots(bets),[bets]);
 const hotByCountry=useMemo(()=>new Map(hot.map(h=>[h.country,h])),[hot]);
-const hotLabels=useMemo(()=>[{lat:PENTAGON.lat,lng:PENTAGON.lng,text:'PENTAGON',pentagon:true},...hot.slice(0,6).filter(h=>h.country!=='USA').map(h=>({lat:h.lat,lng:h.lng,text:h.country.toUpperCase()}))],[hot.slice(0,6).map(h=>h.country).join()]);
+// ⏳ When layer: per country the busiest market with a deadline ladder, labelled with its likeliest window
+const whenByCountry=useMemo(()=>{if(!layers.when)return[];const m=new Map();for(const x of filtered){if(!x.ladder||x.lat==null||!ladderTag(x.ladder))continue;const b=m.get(x.country);if(!b||volOf(x)>volOf(b))m.set(x.country,x)}return[...m.values()]},[layers.when,shownKey]);
+const whenKey=whenByCountry.map(x=>x.country+ladderTag(x.ladder)).join('|');
+const hotLabels=useMemo(()=>[{lat:PENTAGON.lat,lng:PENTAGON.lng,text:'PENTAGON',pentagon:true},...hot.slice(0,6).filter(h=>h.country!=='USA').map(h=>({lat:h.lat,lng:h.lng,text:h.country.toUpperCase()})),
+  ...whenByCountry.map(x=>{const l=LOCS_BY_C.get(x.country)||x;return{lat:l.lat-2.2,lng:l.lng,text:ladderTag(x.ladder).replace('⏳ ','WHEN ').toUpperCase(),when:true}})],[hot.slice(0,6).map(h=>h.country).join(),whenKey]);
 // Hotspot shading: heat relative to the hottest country. Polygon accessors are keyed on the
 // rounded heat, not on prices, so the country layer only re-renders when a country's heat moves.
 // Only countries with conflict/escalation markets count: central-bank or election markets aren't hotspots
@@ -1623,9 +1766,9 @@ const snapTap=(c,fallback)=>{if(!c||c.lat==null){if(fallback)pickCountry(fallbac
   let best=null,bd=Math.max(4,5*zoomRef.current);places.forEach((p,k)=>{const d=gcDeg(c,p);if(d<bd){bd=d;best=k}});
   if(best)openCountry(best);else if(fallback)pickCountry(fallback)};
 // With Mjölnir on, a tap near a bolt's source opens that signal (the bolt line itself is too thin to hit)
-const hitSig=c=>{if(!mjolnir||!c||c.lat==null)return null;let best=null,bd=Math.max(4,5*zoomRef.current);flashes.forEach(x=>{const d=gcDeg(c,x);if(d<bd){bd=d;best=x.id}});return best};
+const hitSig=c=>{if(!mjolnir||!c||c.lat==null)return null;let best=null,bd=Math.max(4,5*zoomRef.current);(mjClosest?[...flashes,mjClosest]:flashes).forEach(x=>{const d=gcDeg(c,x);if(d<bd){bd=d;best=x.id}});return best};
 const openBolt=id=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(null);setBolt(id)};
-const toggleMj=()=>{setBolt(null);setMjolnir(v=>!v)};
+const toggleMj=()=>{const on=!mjolnir;setBolt(null);setMjEx(false);setMjolnir(on);setMjOpen(on);if(on)setToolsOpen(false)};
 // switching on turns the globe to where most bolts strike (Middle East to Europe)
 useEffect(()=>{if(!mjolnir||!globeEl.current||selRef.current)return;lastTouch.current=Date.now();globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:mobile?18:32,lng:30,altitude:mobile?2.8:2.5},REDUCED_MOTION?0:1600)},[mjolnir]);
 const onPolyClick=(d,e,c)=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);mobile?snapTap(c,d):pickCountry(d)};
@@ -1707,7 +1850,7 @@ return(
 <button className={`mj-pill tyr-pill${tyr?' on':''}`} onClick={()=>setTyr(v=>!v)} aria-pressed={tyr}>⚔️ TYR {tyr?<span className="mono">{warN}</span>:<span className="mj-off">OFF</span>}</button>
 </HoverInfo>
 <HoverInfo tone="mj" label="What is Mjölnir?" card={<MjCard on={mjolnir} data={mjData} demo={mjDemo} n={flashes.length}/>}>
-<button className={`mj-pill${mjolnir?' on':''}`} onClick={toggleMj} aria-pressed={mjolnir}>🔨 MJÖLNIR {mjolnir?(mjData||mjErr?(flashes.length?<span className="mono">{mjScore}</span>:<span className="mj-off">CALM</span>):<span className="mj-off">…</span>):<span className="mj-off">OFF</span>}{mjDemo&&<span className="sim-tag">DEMO</span>}</button>
+<button className={`mj-pill${mjolnir?' on':''}`} onClick={mjolnir?()=>setMjOpen(o=>!o):toggleMj} aria-pressed={mjolnir} aria-expanded={mjolnir&&mjOpen}>🔨 MJÖLNIR {mjolnir?(mjData||mjErr?(flashes.length?<span className="mono">{mjScore}</span>:<span className="mj-off">CALM</span>):<span className="mj-off">…</span>):<span className="mj-off">OFF</span>}{mjolnir&&!mjDemo&&<span className="tf-count">{MJ_KINDS.filter(([k,,,b])=>b||mjF[k]).length}/{MJ_KINDS.length}</span>}{mjDemo&&<span className="sim-tag">DEMO</span>}</button>
 </HoverInfo>
 <HoverInfo tone="loki" label="About Loki" card={<ToolCard ico="🐍" name="LOKI" color="#4ade80" on={loki} hint={loki?"On · click to open the panel. Switch it off there.":"Off by default. Click to switch on. Live: an hourly scan of Polymarket trades and the news."} pitch="Exposes insider bets and fake trading volume." more={LOKI_MORE}/>}>
 <button className={`mj-pill loki-pill${loki?' on':''}`} onClick={loki?()=>setLokiOpen(o=>!o):toggleLoki} aria-pressed={loki} aria-expanded={loki&&lokiOpen}>🐍 LOKI {loki?<span className="mj-off">{lokiData?`${lokiData.flags.length} EARLY`:lokiErr?'N/A':'…'}</span>:<span className="mj-off">OFF</span>}</button>
@@ -1716,7 +1859,7 @@ return(
 <button className={`mj-pill valk-pill${valk?' on':''}`} onClick={valk?()=>setValkOpen(o=>!o):toggleValk} aria-pressed={valk} aria-expanded={valk&&valkOpen}>🪽 VALKYRIES {valk?<span className="mj-off">{valkData?`${valkData.picks.length} PICKS`:valkErr?'N/A':'…'}</span>:<span className="mj-off">OFF</span>}</button>
 </HoverInfo>
 <HoverInfo tone="heim" label="About Heimdall" card={<ToolCard ico="📯" name="HEIMDALL" color="#60a5fa" on={heim} hint={heim?"On · click to open the panel. Switch it off there.":"Off by default. Click to switch on. Live: uses only data the page already loads."} pitch="Raises the alarm when many signals spike together." more={HEIM_MORE}/>}>
-<button className={`mj-pill heim-pill${heim?' on':''}`} onClick={heim?()=>setHeimOpen(o=>!o):toggleHeim} aria-pressed={heim} aria-expanded={heim&&heimOpen}>📯 HEIMDALL {heim?<span className="mj-off">{heimList.length?(()=>{const top=heimList[0].n;return`${heimList.filter(h=>h.n===top).length} ${HEIM_LVL[top].name}`})():'QUIET'}</span>:<span className="mj-off">OFF</span>}</button>
+<button className={`mj-pill heim-pill${heim?' on':''}`} onClick={heim?()=>setHeimOpen(o=>!o):toggleHeim} aria-pressed={heim} aria-expanded={heim&&heimOpen}>📯 HEIMDALL {heim?<span className="mj-off">{heimList.length?(()=>{const top=heimList[0].lvl;return`${heimList.filter(h=>h.lvl===top).length} ${HEIM_LVL[top].name}`})():'QUIET'}<span className="tf-count">{HEIM_CH.filter(([k])=>heimCh[k]).length}/{HEIM_CH.length}</span></span>:<span className="mj-off">OFF</span>}</button>
 </HoverInfo>
 {layers.pizza&&<HoverInfo noTouch style={{borderColor:DOUGHCON[dc].color+'88'}} card={<>
 <div className="dc-kicker" style={{color:DOUGHCON[dc].color}}>🍕 DOUGHCON {dc} · {DOUGHCON[dc].name}</div>
@@ -1792,6 +1935,7 @@ return(
 {(selected.bid>0||selected.liquidity>0||selected.endDate)&&<div className="shop-meta" style={{marginTop:8}}>{[selected.bid>0&&`Bid ${fmtCents(selected.bid)} · Ask ${fmtCents(selected.ask)}`,selected.liquidity>0&&`Liquidity ${fmtMoney(selected.liquidity,selected.source)}`].filter(Boolean).join(' · ')}{selected.endDate&&<>{(selected.bid>0||selected.liquidity>0)?' · ':''}{fmtLeft(selected.endDate)}</>}</div>}
 {selected.links?.length>0&&<div className="shop-meta" style={{marginTop:4}}>Connects {selected.country} ↔ {selected.links.map(l=>l.country).join(', ')}</div>}
 {(selected.tokenYes||selected.seriesTicker)&&<PriceChart data={history&&(history.length?[...history,{t:Date.now(),p:selected.probability}]:history)}/>}
+{layers.when&&selected.ladder&&<Boundary name="When chart"><LadderChart ladder={selected.ladder} source={selected.source}/></Boundary>}
 {similar.length>0&&<div style={{marginTop:12,borderTop:'1px solid var(--border)',paddingTop:8}}><div className="dc-kicker" style={{marginBottom:4}}>SAME QUESTION ELSEWHERE</div>{similar.map(({m})=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {srcName(m.source)} · {m.question}</span><span className="mono" style={{color:Math.abs(m.probability-selected.probability)>=0.05?'var(--yellow)':undefined}}>{fmtProb(m.probability)}{Math.abs(m.probability-selected.probability)>=0.01?' ('+(m.probability>selected.probability?'+':'−')+Math.round(Math.abs(m.probability-selected.probability)*100)+')':''}</span></div>)}</div>}
 {selected.country&&countIn(selected.country)>1&&<div className="detail-more" onClick={()=>openCountry(selected.country)}>{country===selected.country?'← Back to':'All'} {countIn(selected.country)} markets in {selected.country}</div>}
 {selected.url&&<a href={selected.url} target="_blank" rel="noopener noreferrer" className="detail-link">View on {srcName(selected.source)} →</a>}
@@ -1801,7 +1945,7 @@ return(
 <div className="detail">
 <div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>
 {pct!=null&&<div className="shop-meta" style={{marginTop:-6,marginBottom:8}}>Escalation odds <b style={{color:nehLabel(pct).c}}>{pct}%</b> · {nehLabel(pct).t}{h.vol24?' · '+fmtVol(h.vol24)+' traded 24h':''}</div>}
-<div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
+<div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{layers.when&&ladderTag(m.ladder)&&<span className="ladder-tag">{ladderTag(m.ladder)}</span>}{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
 {mobile&&countryMarkets.length>countryN&&<button className="more-btn" onClick={()=>setCountryN(n=>n+5)}>Show {Math.min(5,countryMarkets.length-countryN)} more · {countryN} of {countryMarkets.length}</button>}
 </div>)})()}
 
@@ -1811,14 +1955,14 @@ return(
 <div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>
 <div className="mj-cols">
 <div className="mj-col"><div className="dc-kicker">BETTING MARKET</div><div className="mj-q">{x.q}</div><div className="mj-big mono">{fmtProb(x.p)} <span style={{color:x.d>0?'var(--red)':'var(--green)'}}>{fmtChg(x.d)} pts 24h</span></div></div>
-<div className="mj-col">{[['stock','STOCK MARKET · 24H'],['crypto','CRYPTO · 24H']].map(([k,t])=>{const as=x.assets.filter(a=>(a.k||'stock')===k);return as.length>0&&<React.Fragment key={k}><div className="dc-kicker" style={k==='crypto'?{marginTop:8}:undefined}>{t}</div>{as.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {a.src&&a.k==='crypto'?a.src:EXCH[a.x].name}{a.open===false?' · closed':''}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}{a.z!=null&&<span className="muted"> {Math.abs(a.z).toFixed(1)}×</span>}</span></div>)}</React.Fragment>})}</div>
+<div className="mj-col">{[['stock','STOCK MARKET · 24H'],['vol','FEAR GAUGES · 24H'],['crypto','CRYPTO · 24H']].map(([k,t])=>{const as=x.assets.filter(a=>(a.k||'stock')===k);return as.length>0&&<React.Fragment key={k}><div className="dc-kicker" style={k!=='stock'?{marginTop:8}:undefined}>{t}</div>{as.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {a.src&&a.k==='crypto'?a.src:EXCH[a.x].name}{a.open===false?' · closed':''}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}{a.z!=null&&<span className="muted"> {Math.abs(a.z).toFixed(1)}×</span>}</span></div>)}</React.Fragment>})}</div>
 </div>
-<div className="mj-why"><b>{x.flash?'Why it flashes:':'Why no lightning:'}</b> {x.why}</div>
+<div className="mj-why"><b>{x.flash?'Why it flashes:':'Why no lightning:'}</b> {x.why}{x.boost?` ${x.boost>0?'Backed':'Contradicted'} by ${x.amps.join(', ')||'the fear gauges and crypto'}: ${x.boost>0?'+':'−'}${Math.abs(x.boost)} points.`:''}</div>
 <div className="shop-meta" style={{marginTop:6}}>⏱ {x.lead}</div>
 <div className="dc-kicker" style={{marginTop:12}}>HEADLINES BEHIND IT</div>
 {x.news.length?x.news.map(n=><a key={n.id} className="mj-news" href={n.url} target="_blank" rel="noopener noreferrer"><span className="muted">{n.source} · {fmtTime(n.time)}</span><br/>{n.title}</a>):<div className="shop-meta">No headline about {x.country} in the news feed right now.</div>}
 {x.market?<div className="detail-more" onClick={()=>setSelected(x.market)}>Open this market →</div>:x.url&&<a className="detail-more" href={x.url} target="_blank" rel="noopener noreferrer">Open on Polymarket ↗</a>}
-<div className="note" style={{marginTop:8}}>{mjDemo?'Live scan unavailable: odds moves, stock moves, timing and signal strength are demo data; headlines are live.':<>Hourly scan{mjData&&' · '+fmtTime(mjData.updated)}: Polymarket odds vs. stock prices (Yahoo Finance, Twelve Data) and crypto (Coinbase, Kraken) over 24 h; crypto counts half. "1.8×" = the move compared with a normal day for that price. Lightning from a score of {MJ_FLASH}.</>}</div>
+<div className="note" style={{marginTop:8}}>{mjEx?'Example with demo data: the odds move, the price moves, the timing and the score are made up to show what a real signal looks like. Close this card to end the example.':mjDemo?'Live scan unavailable: odds moves, stock moves, timing and signal strength are demo data; headlines are live.':<>Hourly scan{mjData&&' · '+fmtTime(mjData.updated)}: Polymarket odds vs. stock prices (Yahoo Finance, Twelve Data) and crypto (Coinbase, Kraken) over 24 h; crypto counts half. "1.8×" = the move compared with a normal day for that price. Lightning from a score of {MJ_FLASH}.</>}</div>
 </div>)})()}
 
 {mobile&&deckKeys.length>0&&<div className={`deck${selected||country||boltSig?' off':''}`} ref={deckRef} onScroll={onDeckScroll} onPointerDown={()=>deckTouch.current=Date.now()} onTouchMove={()=>deckTouch.current=Date.now()} onWheel={()=>deckTouch.current=Date.now()}>
@@ -1835,8 +1979,8 @@ return(
 </div>)})}
 </div>}
 <div className="layers" role="group" aria-label="Globe layers">
-{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null]].map(([k,l,c,n])=>(
-<button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
+{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]].map(([k,l,c,n])=>(
+<button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':k==='when'?'When does the market expect it? For questions traded with several deadlines ("by Dec 31", "by Mar 31"…): the likeliest window on the globe, in the country list and as a curve in the market card.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
 <Boundary name="Globe">{gsize.w>0&&!HAS_WEBGL&&<><FlatMap w={gsize.w} h={gsize.h} countries={countries.features} points={globePoints} arcs={arcs} selected={selected} onSelect={pickPoint} onCountry={openCountry} dcColor={DOUGHCON[dc].color} heat={shownHeat} heatKey={heatKey+layers.hot}/><div className="note" style={{position:'absolute',left:12,bottom:40,right:12,zIndex:40,color:'#94a3b8'}}>2D view: your browser has WebGL turned off, so the 3D globe can't run. In Brave, enable <b>Settings → System → Use graphics acceleration when available</b> and restart the browser.</div></>}
@@ -1848,7 +1992,7 @@ pointRadius={d=>(d.isAir?0.14:d.isShop?0.12:(selected?.id===d.id||highlighted?.i
 pointColor={d=>d.isAir?'#7dd3fc':d.isShop?shopStatus(d).c:marketColor(d)}
 pointLabel={d=>d.isAir?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(125,211,252,0.4)"><div style="font-weight:700;color:white;font-size:11px">✈ '+(d.callsign||'Unknown')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.type,d.reg].filter(Boolean).join(' · ')+'</div><div style="color:#94a3b8;font-size:10px">'+[d.alt!=null?d.alt.toLocaleString()+' ft':'',d.speed!=null?d.speed+' kt':'',d.squawk?'squawk '+d.squawk:''].filter(Boolean).join(' · ')+'</div><div style="color:#64748b;font-size:9px;margin-top:3px">Military ADS-B · adsb.lol · click to track</div></div>':d.isShop?'<div style="background:rgba(10,15,26,0.95);padding:8px 10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3)"><div style="font-weight:700;color:white;font-size:11px">🍕 '+d.name+'</div><div style="color:#94a3b8;font-size:10px">'+shopStatus(d).t+(d.ratio!=null?' · '+Math.round(d.ratio*100)+'% of usual':'')+(d.source!=='live'?' · simulated':'')+'</div></div>':'<div style="background:rgba(10,15,26,0.95);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.3);max-width:220px"><div style="font-size:9px;color:#60a5fa;margin-bottom:3px">'+srcName(d.source).toUpperCase()+' • '+d.country+'</div><div style="font-weight:600;color:white;margin-bottom:6px;font-size:11px">'+d.question+'</div><div style="display:flex;gap:12px"><div><div style="font-size:8px;color:#6b7280">YES</div><div style="color:#22c55e;font-weight:700">'+fmtProb(d.probability)+'</div></div><div><div style="font-size:8px;color:#6b7280">VOL</div><div style="color:white;font-weight:600">'+(d.volume>0?fmtMoney(d.volume,d.source):'—')+'</div></div></div></div>'}
 onPointClick={pickPoint} pointsTransitionDuration={REDUCED_MOTION?0:900} arcsTransitionDuration={REDUCED_MOTION?0:1500} arcDashInitialGap="initGap"
-labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:1.05} labelDotRadius={d=>d.pentagon?0.3:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
+labelsData={hotLabels} labelLat="lat" labelLng="lng" labelText="text" labelSize={d=>d.pentagon?0.9:d.when?0.8:1.05} labelDotRadius={d=>d.pentagon?0.3:d.when?0:0.18} labelColor={d=>d.pentagon?DOUGHCON[dc].color:d.when?'#fbbf24':'rgba(226,232,240,0.75)'} labelAltitude={0.012} labelsTransitionDuration={REDUCED_MOTION?0:1200} labelResolution={2}
 arcsData={arcs} arcStartLat="startLat" arcStartLng="startLng" arcEndLat="endLat" arcEndLng="endLng" arcColor="color" arcAltitude="altitude" arcStroke="stroke" arcDashLength="dashLength" arcDashGap="dashGap" arcDashAnimateTime="dashAnimateTime"
 ringsData={rings} ringLat="lat" ringLng="lng" ringMaxRadius={d=>d.maxR*zf} ringPropagationSpeed={d=>d.propagationSpeed*zf} ringRepeatPeriod="repeatPeriod" ringColor={d=>t=>{const c=d.color;return c.startsWith('#')?c+Math.round((1-t)*200).toString(16).padStart(2,'0'):c}}
 pathsData={boltPaths} pathPoints="pts" pathPointLat={p=>p[0]} pathPointLng={p=>p[1]} pathPointAlt={p=>p[2]} pathResolution={1} pathTransitionDuration={0}
@@ -1978,24 +2122,46 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </>}
 <div className="heim-foot">How it's measured, every six hours: 🏆 every trade at 5–85¢ on the 80 biggest geopolitical Polymarket markets resolved in the last 120 days is scored at resolution; wallets need 3+ markets and $5K+ staked, ranked by profit. "Hit" is the share of money on the right side, "early" the average days before the close. 🪽 Their current positions on open geopolitical markets. 📊 Each resolved Polymarket and Kalshi market's price a week before the close (halfway for short ones): the bar is how often those events happened, the white mark what the market priced in. The archive grows with every scan and keeps a year.</div>
 </div></div></Boundary>}
+{mjOpen&&mjolnir&&<Boundary name="Mjölnir panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Mjölnir: odds against markets">
+<div className="panel-hd"><span className="panel-title">🔨 Mjölnir · Odds vs. markets</span><span className="drawer-acts"><button className="tool-off" onClick={toggleMj}>Switch off</button><button className="detail-close" onClick={()=>setMjOpen(false)} aria-label="Close">✕</button></span></div>
+<div className="scroll heim-body">
+{!mjDemo&&<FilterBar items={MJ_KINDS} state={mjF} onToggle={toggleMjF} color="#22d3ee"/>}
+<div className="heim-intro">Each hotspot's busiest betting market set against the region's own prices: shares, commodities, currencies. Lightning where one side moves far beyond a normal day and the other doesn't, or moves first. Fear gauges and crypto move the same for every country, so they only strengthen or weaken a signal.</div>
+{mjData&&!mjEx&&!flashes.length&&<div className="mj-calm">
+<div><b>No lightning right now.</b> It strikes when a betting market and the region's prices disagree by more than a normal day, or one moves first. Most days are calm.</div>
+{mjClosest&&<div className="mj-calm-row">Closest to a signal: <b>{mjClosest.country} {mjClosest.score}/100</b> <span className="muted">(lightning from {MJ_FLASH}) · grey ring on the globe</span></div>}
+<div className="mj-calm-row">{mjData.recent&&mjData.recent.length?<>Last real lightning: <b>{mjData.recent[0].country}</b> · {new Date(mjData.recent[0].at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · {(MJ_KIND[mjData.recent[0].kind]||{}).t} {mjData.recent[0].score}</>:<span className="muted">No lightning recorded yet since the log started.</span>}</div>
+<button className="mj-ex-btn" onClick={startMjEx}>▶ Show example <span className="sim-tag">DEMO</span></button>
+</div>}
+{mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and Lockheed). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
+{mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
+{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?signals.map(x=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className="heim-card" style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
+<div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
+<div className="heim-q">{x.q}</div>
+<div className="heim-chs"><span className="heim-ch">🎲 odds {fmtChg(x.d)} pts</span>{top&&<span className="heim-ch">📈 {top.n} {fmtPct(top.chg)}</span>}{x.boost?<span className="heim-ch on">{x.boost>0?'＋':'−'}{Math.abs(x.boost)} {x.boost>0?'backed':'contradicted'} by {x.amps.join(', ')||'amplifiers'}</span>:null}</div>
+</div>}):<div className="heim-empty">No hotspot has a matching market right now.</div>}
+<div className="heim-foot">How it's measured, every hour: per hotspot the Polymarket market with the most trading today against its exposed prices (Yahoo Finance, Twelve Data; fear gauges OVX, GVZ, VIX; Bitcoin and tokenised gold from Coinbase or Kraken). Each 24-hour move is divided by a normal day for that price; crypto counts half. Lightning from a score of {MJ_FLASH}. Fear gauges and crypto add or take up to 15 points when they back or contradict a signal, and never make one on their own.{mjData?` Scanned ${fmtTime(mjData.updated)}.`:''}</div>
+</div></div></Boundary>}
 {heimOpen&&heim&&<Boundary name="Heimdall panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Heimdall early warning">
 <div className="panel-hd"><span className="panel-title">📯 Heimdall · Early warning</span><span className="drawer-acts"><button className="tool-off" onClick={toggleHeim}>Switch off</button><button className="detail-close" onClick={()=>setHeimOpen(false)} aria-label="Close">✕</button></span></div>
 <div className="scroll heim-body">
-<div className="heim-intro">Countries where independent signals spike at the same time. One is noise, two is worth watching, three is an alert.</div>
+<FilterBar items={HEIM_CH} state={heimCh} onToggle={toggleHeimCh} color="#60a5fa"/>
+<div className="heim-intro">Countries where independent signals spike at the same time. One is noise, two is worth watching, three or more is an alert. A raised travel warning or an evacuation call is worth watching on its own.</div>
 <div className="heim-global">
 <div className="heim-g"><span>🌐 War news worldwide (GDELT)</span><b style={{color:heimCov?.lit?'#f59e0b':undefined}}>{heimCov?`${heimCov.ratio>=1?'+':'−'}${Math.abs(Math.round((heimCov.ratio-1)*100))}% vs 7-day avg`:'not loaded'}</b></div>
 <div className="heim-g"><span>🍕 Pentagon pizza</span><b style={{color:DOUGHCON[dc].color}}>DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</b></div>
 </div>
-{heimList.length?heimList.map(h=>{const L=HEIM_LVL[h.n];return<div key={h.country} className="heim-card" style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
-<div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/3</span></div>
+{heimList.length?heimList.map(h=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className="heim-card" style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
+<div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/{h.k}</span></div>
 <div className="heim-chs">
-<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>
-<span className={`heim-ch${h.news.lit?' on':''}`}>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</span>
-<span className={`heim-ch${h.odds.lit?' on':''}`}>📈 {h.odds.m?`${fmtChg(h.odds.move)} pts in 24h`:'no war market'}</span>
+{heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
+{(heimCh.news||heimCh.wiki)&&<span className={`heim-ch${h.news.lit?' on':''}`}>{heimCh.news&&<>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</>}{heimCh.news&&heimCh.wiki&&h.news.wiki&&' · '}{heimCh.wiki&&h.news.wiki&&<>📖 {h.news.wiki.ratio>=1.5?`${h.news.wiki.ratio.toFixed(1)}× usual on Wikipedia`:`${fmtK(h.news.wiki.v)} wiki views`}</>}</span>}
+{heimCh.odds&&<span className={`heim-ch${h.odds.lit?' on':''}`}>📈 {h.odds.m?`${fmtChg(h.odds.move)} pts in 24h`:'no war market'}</span>}
+{heimCh.official&&<span className={`heim-ch${h.official.lit?' on':''}`}>🏛️ {h.official.none?'travel warnings not loaded':h.official.lit?h.official.why.join(' · '):h.official.items.length?'warnings '+h.official.items.map(x=>x.src+' '+x.level).join(' · '):'no travel warning'}</span>}
 </div>
-{h.odds.lit&&<div className="heim-q">{h.odds.m.question}</div>}
+{h.odds.lit&&h.odds.m&&<div className="heim-q">{h.odds.m.question}</div>}
 </div>}):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
-<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
+<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings and Wikipedia are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
 </div></div></Boundary>}
 
 <Boundary name="Ticker" className="ticker"><div className="ticker">
