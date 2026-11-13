@@ -45,7 +45,7 @@ A single-page "situation monitor" inspired by PizzINT (pizzint.watch). A 3D glob
 ## Rules that matter (learned the hard way)
 - **WebGL may be missing** (Brave without graphics acceleration). `HAS_WEBGL` switches to the 2D `FlatMap`. Never render `<Globe>` unguarded: an uncaught WebGL error blanks the whole page.
 - **Keep globe data objects stable.** Arcs and rings are memoised on `shownKey` (the set of shown market IDs), and points are reused via `pointCache`. Recreating them on every price tick restarts their animations and makes markers re-grow.
-- **The ticker swaps content only between loops** (`onAnimationIteration`) at `TICKER_PX_PER_S`. Never bind its duration or text straight to live data, or it jumps mid-scroll.
+- **The ticker swaps content only between loops** (`onAnimationIteration`) at `TICKER_PX_PER_S`. Never bind its duration or text straight to live data, or it jumps mid-scroll. The one exception: a new breaking alert (`alerts`, `alertKey`) replaces the content at once. Alerts lead the ticker in red: an FAA ground stop (`faaData`, now loaded for every visitor every 10 min) and US/DE/UK travel warnings raised or calling for departure (`heimData`, now read for every visitor; static file).
 - **App state named `history`** (price history) shadows `window.history`. Use `window.history` explicitly.
 - Polymarket's `outcomePrices`/`clobTokenIds`/`outcomes` are JSON-encoded strings; use `parseArr`. Kalshi prices are integer cents or `*_dollars` strings; use `kPrice`.
 - Manifold is play money (Ṁ). Keep it out of the NEH index, the $ totals and volume-based rings/arcs.
