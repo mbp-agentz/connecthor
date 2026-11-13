@@ -550,16 +550,18 @@ function modelSnapshot(t){
 }
 function modelHistory(t){const out=[];for(let i=48;i>=0;i--){const tt=t-i*1800000;const{h}=etTime(tt);out.push({t:tt,index:indexOf(SHOPS.map(s=>ratioOf(liveAt(s,tt),typicalAt(s,h))))})}return out}
 
+// A failed live feed (no BestTime key: 502) is asked again after 30 min, not every minute: each try is a Pages Function call
+let pizzaRetryAt=0;
 async function fetchPizza(){
   const now=Date.now();
-  if(apiUp){
+  if(apiUp&&now>=pizzaRetryAt){
     try{
       const d=await getJSON(PIZZA_FEED,12000);const{h}=etTime(now);
       // the feed's real venues replace the generic placeholder shops; "usual" = BestTime's forecast for this hour
       const shops=(d.shops||[]).filter(x=>Array.isArray(x.typical)&&x.typical.length===24).map(x=>{const curve=x.typical.slice();if(x.forecast!=null)curve[Math.floor(h)]=x.forecast;const typ=curve[Math.floor(h)];
         return{...x,typical:typ,live:x.live,ratio:x.live==null?null:ratioOf(x.live,typ),noLive:x.live==null&&typ>0,curve}});
       if(shops.some(s=>s.live!=null))return{snap:{shops,index:indexOf(shops.map(s=>s.ratio)),hour:h,source:'live',updated:new Date(d.updated||now)},history:null};
-    }catch(e){console.log('Pizza feed unavailable, using the simulation:',e.message)}
+    }catch(e){pizzaRetryAt=now+18e5;console.log('Pizza feed unavailable, using the simulation for 30 min:',e.message)}
   }
   return{snap:modelSnapshot(now),history:modelHistory(now)};
 }
@@ -656,10 +658,10 @@ function mkLadder(rows){
   return r.map(x=>({end:x.end,p:+x.p.toFixed(3)}));
 }
 // windows between deadlines; the "most likely" one is the highest chance per 30 days, so a long window
-// doesn't win just by being long. bad = a later deadline priced below an earlier one (can't both be right)
+// doesn't win just by being long (and a very short one doesn't win by being short). bad = a later deadline priced below an earlier one (can't both be right)
 function ladderWindows(l){
   const now=Date.now();let prev=0,from=now,bad=null;
-  const w=l.map((x,i)=>{const d=Math.max(0,x.p-prev),days=Math.max(1,(x.end-from)/864e5),o={from,end:x.end,p:x.p,d,dens:d/days*30};
+  const w=l.map((x,i)=>{const d=Math.max(0,x.p-prev),days=Math.max(14,(x.end-from)/864e5),o={from,end:x.end,p:x.p,d,dens:d/days*30}; // a 2-day window counts as 14, or 2 pts would read as a monthly 30
     if(i&&x.p<l[i-1].p-0.02)bad=bad||{early:l[i-1],late:x};prev=Math.max(prev,x.p);from=x.end;return o});
   const peak=w.reduce((b,x)=>x.dens>b.dens?x:b,w[0]);
   return{w,peak:peak.d>0.005?peak:null,bad,last:l[l.length-1]};
@@ -672,6 +674,7 @@ const fmtMon=t=>dlDate(t).toLocaleDateString('en-GB',{month:'short',timeZone:'UT
 function LadderChart({ladder,source}){
   const{w,peak,bad,last}=ladderWindows(ladder),now=Date.now(),W=340,H=64,B=34,t0=now,t1=last.end,X=t=>(t-t0)/(t1-t0||1)*W;
   const hi=Math.max(0.05,...ladder.map(x=>x.p)),Y=v=>H-3-v/hi*(H-10),dm=Math.max(...w.map(x=>x.dens),1e-6);
+  const lbl=new Set();{let right=Infinity;for(let i=w.length-1;i>=0;i--){const x1=X(w[i].end);if(right-x1>=40){lbl.add(i);right=x1}}}
   let pts=`0,${Y(0)}`,prev=0;ladder.forEach(x=>{pts+=` ${X(x.end).toFixed(1)},${Y(prev).toFixed(1)} ${X(x.end).toFixed(1)},${Y(x.p).toFixed(1)}`;prev=x.p});
   return(<div style={{marginTop:12}}>
     <div className="spark-hd"><span>⏳ When? · {ladder.length} deadlines on {srcName(source)}</span><span className="mono">{peak?'most likely '+fmtDay(peak.from)+'–'+fmtDay(peak.end):'no window stands out'}</span></div>
@@ -679,9 +682,9 @@ function LadderChart({ladder,source}){
       <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="rgba(148,163,184,0.2)"/>
       <polyline points={pts} fill="none" stroke="#93c5fd" strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke"/>
       {ladder.map(x=><g key={x.end}><circle cx={X(x.end)} cy={Y(x.p)} r="3" fill="#93c5fd"/><text x={Math.min(W-2,X(x.end))} y={Math.max(9,Y(x.p)-5)} textAnchor="end" fontSize="9" fill="#cbd5e1">{Math.round(x.p*100)}%</text></g>)}
-      {w.map(x=>{const x0=X(x.from)+1,x1=X(x.end)-1,h=Math.max(1,x.dens/dm*(B-14));return<g key={x.end}>
+      {w.map((x,i)=>{const x0=X(x.from)+1,x1=X(x.end)-1,h=Math.max(1,x.dens/dm*(B-14));return<g key={x.end}>
         <rect x={x0} y={H+B-12-h} width={Math.max(2,x1-x0)} height={h} rx="1.5" fill={peak&&x.end===peak.end?'#f59e0b':'rgba(147,197,253,0.45)'}/>
-        <text x={x1} y={H+B-2} textAnchor="end" fontSize="9" fill="#94a3b8">{fmtDay(x.end)}</text></g>})}
+        {lbl.has(i)&&<text x={x1} y={H+B-2} textAnchor="end" fontSize="9" fill="#94a3b8">{fmtDay(x.end)}</text>}</g>})}
     </svg>
     <div className="shop-meta">Line: chance it happens <i>by</i> each date. Bars: chance per month inside each window{peak?<>; highest {fmtDay(peak.from)}–{fmtDay(peak.end)} ({Math.round(peak.d*100)} pts)</>:null}. {Math.round((1-last.p)*100)}% says not by {fmtDay(last.end)}.</div>
     {bad&&<div className="shop-meta" style={{color:'var(--yellow)'}}>⚠️ Ladder out of line: {fmtDay(bad.late.end)} ({Math.round(bad.late.p*100)}%) is priced below {fmtDay(bad.early.end)} ({Math.round(bad.early.p*100)}%). Both can't be right.</div>}
@@ -1033,11 +1036,13 @@ const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.j
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
 const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
 const kmBetween=(a,b,c,d)=>{const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+// Combo bets ("Democrats sweep the House and Senate and Israel and Hamas not agree…") move on several things at once
+const isCombo=m=>(String(m.question).match(/\band\b/gi)||[]).length>=3||/\b(parlay|combo)\b/i.test(m.question);
 function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT){
   const slow=new Map(((hd&&hd.countries)||[]).map(x=>[x.country,x]));
   const now=Date.now(),recent=(news||[]).filter(n=>{const t=new Date(n.time).getTime();return isFinite(t)&&now-t<432e5}).map(n=>' '+String(n.title||'').toLowerCase()+' ');
   return HEIM_PLACES.map(p=>{
-    const war=markets.filter(m=>m.country===p.country&&isUSD(m)&&isWar(m)&&(m.volume||0)>=1e4&&!((daysLeft(m.endDate)??99)<3)); // "…on November 11?" markets swing 20 pts a day by design
+    const war=markets.filter(m=>m.country===p.country&&isUSD(m)&&isWar(m)&&!isCombo(m)&&(m.volume||0)>=1e4&&!((daysLeft(m.endDate)??99)<3)); // "…on November 11?" markets swing 20 pts a day by design
     const mv=war.reduce((b,m)=>Math.abs(m.change24||0)>Math.abs(b?b.change24||0:0)?m:b,null);
     const odds={lit:ch.odds&&!!mv&&Math.abs(mv.change24)>=0.05,move:mv?mv.change24||0:0,m:mv};
     const hl=recent.filter(t=>p.keys.some(k=>t.includes(k))).length;
@@ -1508,8 +1513,8 @@ return()=>clearInterval(i);
 useEffect(()=>{
 const loadAir=async()=>{if(document.hidden&&air)return;try{setAir(await fetchMilAir())}catch(e){console.log('Aircraft feed unavailable:',e.message)}}; // keep the last fix; never show a fake 0
 // The Loki scan stores GDELT's curve hourly (static file, no rate limit, no Function call); asking
-// GDELT from the browser is only the fallback when that file is missing or older than 6 h
-const loadCov=async()=>{try{const d=await fetchLoki(),pts=d.coverage&&d.coverage.pts;if(pts&&pts.length>2&&Date.now()-Date.parse(d.coverage.updated)<216e5){setCoverage(pts);return}}catch(e){console.log('Coverage file unavailable:',e.message)}
+// GDELT from the browser is only the fallback when that file is missing or older than 24 h (GitHub often runs the hourly Loki scan only every 5–9 h)
+const loadCov=async()=>{try{const d=await fetchLoki(),pts=d.coverage&&d.coverage.pts;if(pts&&pts.length>2&&Date.now()-Date.parse(d.coverage.updated)<864e5){setCoverage(pts);return}}catch(e){console.log('Coverage file unavailable:',e.message)}
   try{const c=await fetchCoverage();if(c)setCoverage(c)}catch(e){console.log('GDELT unavailable:',e.message)}};
 loadAir();const k=setTimeout(loadCov,apiUp?0:7000);const i=setInterval(loadAir,60000),j=setInterval(loadCov,1800000);return()=>{clearTimeout(k);clearInterval(i);clearInterval(j)};
 },[]);
@@ -2133,7 +2138,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="mj-calm-row">{mjData.recent&&mjData.recent.length?<>Last real lightning: <b>{mjData.recent[0].country}</b> · {new Date(mjData.recent[0].at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · {(MJ_KIND[mjData.recent[0].kind]||{}).t} {mjData.recent[0].score}</>:<span className="muted">No lightning recorded yet since the log started.</span>}</div>
 <button className="mj-ex-btn" onClick={startMjEx}>▶ Show example <span className="sim-tag">DEMO</span></button>
 </div>}
-{mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and Lockheed). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
+{mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and US defense stocks). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
 {mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
 {!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?signals.map(x=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className="heim-card" style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
 <div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
