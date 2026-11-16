@@ -148,6 +148,9 @@
     .heim-g{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
     .heim-g span{color:var(--muted)}
     .heim-card{border:1px solid;border-radius:10px;padding:10px;background:var(--card2);cursor:pointer}
+    /* one result per tool in colour; the rest greyed out but still clickable */
+    .heim-card.dim{opacity:.45;filter:grayscale(1);border-color:var(--line)!important;transition:opacity .15s}
+    .heim-card.dim:hover,.heim-card.dim:focus-visible{opacity:.8}
     .heim-card:hover{background:rgba(96,165,250,0.08)}
     .heim-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
     .heim-lvl{font-size:10px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border:1px solid;border-radius:4px;white-space:nowrap}
@@ -1743,11 +1746,13 @@ useEffect(()=>{if(mjEx&&!bolt)setMjEx(false)},[bolt]);
 const startMjEx=()=>{setMjEx(true);if(mobile)setMjOpen(false);openBolt('mj-iran')};
 // amplifiers that moved beyond a normal day, once for the whole panel (they're the same for every country)
 const mjMood=useMemo(()=>{if(!mjData)return[];const m=new Map();for(const x of mjData.signals)for(const a of x.assets||[])if(a.k&&a.k!=='stock'&&mjF[a.k]&&a.open&&Math.abs(a.z)>=1&&!m.has(a.n))m.set(a.n,a);return[...m.values()]},[mjData,mjF]);
-const sigKey=flashes.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|');
+// one result per tool: only the opened signal (else the strongest) strikes; other flashes get a grey ring
+const mjTop=(bolt&&flashes.find(x=>x.id===bolt))||flashes[0]||null;
+const sigKey=flashes.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|')+'>'+(mjTop?mjTop.id:'');
 // Bolts re-strike every 1.6 s with fresh jitter; only this layer is rebuilt, markers and arcs stay put
 const[boltTick,setBoltTick]=useState(0);
 useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
-const boltPaths=useMemo(()=>{const out=[];flashes.forEach((x,k)=>x.assets.filter(a=>(a.k||'stock')==='stock').forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
+const boltPaths=useMemo(()=>{const out=[];(mjTop?[mjTop]:[]).forEach((x,k)=>x.assets.filter(a=>(a.k||'stock')==='stock').forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
   const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
 // travel warnings + Wikipedia every 3 h in the Action; fetched on load, then every 30 min
 const[heimData,setHeimData]=useState(null);
@@ -1764,7 +1769,7 @@ useEffect(()=>{if(!apiUp)return;let off=false;const load=async()=>{if(document.h
 const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh,faaData):[],[heim,markets,news,air,heimData,heimCh,faaData]);
 const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 // rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
-const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>({lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:(h.lvl>=3?900:1600)+k*150,color:HEIM_LVL[h.lvl].color})),[heimKey]);
+const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>k?{lat:h.lat,lng:h.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*150,color:'rgba(148,163,184,0.6)'}:{lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:h.lvl>=3?900:1600,color:HEIM_LVL[h.lvl].color}),[heimKey]);
 const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
 // one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
 const onlyDrawer=keep=>{if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
@@ -1776,7 +1781,7 @@ useEffect(()=>{if(!valk)return;let off=false;const load=async()=>{try{const d=aw
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[valk]);
 const toggleValk=()=>{const on=!valk;setValk(on);setValkOpen(on);if(on)setToolsOpen(false)};
 const valkKey=valk&&valkData?valkData.picks.slice(0,8).map(p=>p.id).join('|'):'';
-const valkRings=useMemo(()=>{if(!valkKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(valkKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:3,propagationSpeed:1,repeatPeriod:1900+k*190,color:'#fbbf24'}))},[valkKey,markets.length]);
+const valkRings=useMemo(()=>{if(!valkKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(valkKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:k?2.4:3,propagationSpeed:k?0.6:1,repeatPeriod:1900+k*190,color:k?'rgba(148,163,184,0.6)':'#fbbf24'}))},[valkKey,markets.length]);
 // Mjölnir's scan runs hourly; fetched as soon as it is switched on, then every 15 min
 useEffect(()=>{if(!mjolnir)return;let off=false;const load=async()=>{try{const d=await fetchMj();if(!off){setMjData(d);setMjErr(false)}}catch(e){console.log('Mjölnir unavailable:',e.message);if(!off)setMjErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},900000);return()=>{off=true;clearInterval(i)}},[mjolnir]);
@@ -1785,11 +1790,11 @@ useEffect(()=>{if(!loki)return;let off=false;const load=async()=>{try{const d=aw
   load();const i=setInterval(()=>{if(!document.hidden)load()},900000);return()=>{off=true;clearInterval(i)}},[loki]);
 const toggleLoki=()=>{const on=!loki;setLokiEx(false);setLoki(on);setLokiOpen(on);if(on)setToolsOpen(false)};
 const lokiKey=loki&&lokiData?lokiData.flags.map(f=>f.id).join('|'):'';
-const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(lokiKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:3.2,propagationSpeed:1.4,repeatPeriod:1500+k*170,color:'#4ade80'}))},[lokiKey,markets.length]);
+const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.current.map(m=>[m.conditionId,m]));return[...new Set(lokiKey.split('|'))].map(id=>by.get(id)).filter(m=>m&&m.lat!=null).map((m,k)=>({lat:m.lat,lng:m.lng,maxR:k?2.4:3.2,propagationSpeed:k?0.6:1.4,repeatPeriod:1500+k*170,color:k?'rgba(148,163,184,0.6)':'#4ade80'}))},[lokiKey,markets.length]);
 const lokiGo=f=>{const m=bets.find(x=>x.conditionId===f.id);if(m){if(mobile){setLokiOpen(false);setValkOpen(false)}setSelected(m)}else window.open(f.url,'_blank','noopener')}; // war markets stay hidden while Tyr is off
 const toggleHeim=()=>{const on=!heim;setHeim(on);setHeimOpen(on);if(on)setToolsOpen(false)};
 const heimGo=h=>{try{globeEl.current&&globeEl.current.pointOfView({lat:h.lat-8,lng:h.lng,altitude:1.7},REDUCED_MOTION?0:1000)}catch(e){}if(mobile)setHeimOpen(false);if(bets.some(m=>m.country===h.country))openCountry(h.country)};
-const mjRings=useMemo(()=>flashes.flatMap((x,k)=>[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300+k*170,color:'#22d3ee'},...x.assets.filter(a=>(a.k||'stock')==='stock').map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]).concat(mjClosest?[{lat:mjClosest.lat,lng:mjClosest.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800,color:'rgba(148,163,184,0.75)'}]:[]),[sigKey,mjClosest&&mjClosest.id]);
+const mjRings=useMemo(()=>flashes.flatMap((x,k)=>x!==mjTop?[{lat:x.lat,lng:x.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*170,color:'rgba(148,163,184,0.6)'}]:[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300,color:'#22d3ee'},...x.assets.filter(a=>(a.k||'stock')==='stock').map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]).concat(mjClosest?[{lat:mjClosest.lat,lng:mjClosest.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800,color:'rgba(148,163,184,0.75)'}]:[]),[sigKey,mjClosest&&mjClosest.id]);
 const sigById=useMemo(()=>new Map(signals.map(x=>[x.id,x])),[signals]);
 const boltSig=bolt?sigById.get(bolt):null;
 const mjScore=flashes.length?Math.round(flashes.reduce((t,x)=>t+x.score,0)/flashes.length):0;
@@ -2186,14 +2191,14 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {lokiEx&&<div className="mj-calm loki-calm"><b>Example</b> with demo data: what an early bet looks like. <button className="mj-ex-btn loki-ex-btn" style={{marginTop:0}} onClick={()=>setLokiEx(false)}>■ End example</button></div>}
 <div className="loki-h">🕵️ EARLY BETS · LAST 24 H</div>
-{(lokiEx?[LOKI_DEMO]:lokiData.flags).length?(lokiEx?[LOKI_DEMO]:lokiData.flags).map(f=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className="heim-card loki-card" role="button" tabIndex={0} onClick={()=>{if(!f.demo)lokiGo(f)}} onKeyDown={e=>{if(e.key==='Enter'&&!f.demo)lokiGo(f)}}>
+{(lokiEx?[LOKI_DEMO]:lokiData.flags).length?(lokiEx?[LOKI_DEMO]:lokiData.flags).map((f,i)=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className={`heim-card loki-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>{if(!f.demo)lokiGo(f)}} onKeyDown={e=>{if(e.key==='Enter'&&!f.demo)lokiGo(f)}}>
 <div className="loki-q">{f.demo&&<span className="sim-tag" style={{marginRight:6}}>DEMO</span>}{f.question}</div>
 <div className="loki-bet"><b className="mono">{fmtVol(f.usd)}</b> {f.side==='SELL'?'sold':'bought'} {f.outcome} at {fmtCents(f.price)} → now <b className="mono">{fmtCents(f.now)}</b></div>
 <div className="loki-lead">⏱ {fmtLead(f.leadMin)} before <a href={f.demo?undefined:f.headline.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.headline.title}</a> <span className="loki-src">· {f.headline.source}</span></div>
 <div className="heim-chs"><span className={`heim-ch${w&&w.isNew?' on loki-on':''}`}>{w&&w.isNew?'🆕 new wallet':'👤 wallet'} · {w?(w.more?'500+ trades':`${w.acts} trades${w.ageDays!=null?`, ${w.ageDays} d old`:''}`):'unknown'}</span>{f.demo?<span className="heim-ch">{f.who}</span>:<a className="heim-ch" href={`https://polymarket.com/profile/${f.wallet}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.who} ↗</a>}<span className="heim-ch">{fmtTime(f.time)}</span></div>
 </div>}):<div className="heim-empty">No early bets in the last 24 hours.</div>}
 <div className="loki-h">🧪 SUSPICIOUS VOLUME</div>
-{(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?v.map(x=><a key={x.id} className="heim-card loki-vol" href={x.url} target="_blank" rel="noopener noreferrer">
+{(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?v.map((x,i)=><a key={x.id} className={`heim-card loki-vol${i?' dim':''}`} href={x.url} target="_blank" rel="noopener noreferrer">
 <div className="heim-top"><span className="loki-q">{x.question}</span><span className="heim-lvl" style={{color:volColor(x.score),borderColor:volColor(x.score)+'88'}}>{x.score}/100</span></div>
 <div className="bet-bar"><span style={{width:x.score+'%',background:volColor(x.score)}}></span></div>
 <div className="heim-chs"><span className="heim-ch">🔁 round trips {pct(x.roundTrip)}</span><span className="heim-ch">🐋 top 3 wallets {pct(x.top3)}</span><span className="heim-ch">{x.trades} trades · {fmtVol(x.usd)}</span></div>
@@ -2208,7 +2213,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {!valkData?<div className="heim-empty">{valkErr?"The Valkyries' scan isn't available right now. Try again later.":'Loading…'}</div>:<>
 <div className="heim-global"><div className="heim-g"><span>Last scan</span><b>{fmtTime(valkData.updated)} · {valkData.resolvedChecked} resolved markets</b></div></div>
 <div className="loki-h valk-h">🪽 WHAT THE TOP {valkData.wallets.length} HOLD NOW</div>
-{valkData.picks.length?valkData.picks.map(p=><div key={p.id+p.outcome} className="heim-card valk-card" role="button" tabIndex={0} onClick={()=>lokiGo(p)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(p)}}>
+{valkData.picks.length?valkData.picks.map((p,i)=><div key={p.id+p.outcome} className={`heim-card valk-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>lokiGo(p)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(p)}}>
 <div className="heim-top"><span className="loki-q">{p.question}</span><span className="heim-lvl valk-side">{p.outcome}</span></div>
 <div className="loki-bet"><b>{p.wallets} of {valkData.wallets.length}</b> wallets · <b className="mono">{fmtVol(p.value)}</b> · avg entry {fmtCents(p.avg)} → now <b className="mono">{fmtCents(p.now)}</b>{p.recent?<span className="valk-new"> · {p.recent} new this week</span>:null}</div>
 </div>):<div className="heim-empty">The top wallets hold no open geopolitical positions right now.</div>}
@@ -2284,7 +2289,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and US defense stocks). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
 {mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
-{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?signals.map(x=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className="heim-card" style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
+{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
 <div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
 <div className="heim-q">{x.q}</div>
 <div className="heim-chs"><span className="heim-ch">🎲 odds {fmtChg(x.d)} pts</span>{top&&<span className="heim-ch">📈 {top.n} {fmtPct(top.chg)}</span>}{x.boost?<span className="heim-ch on">{x.boost>0?'＋':'−'}{Math.abs(x.boost)} {x.boost>0?'backed':'contradicted'} by {x.amps.join(', ')||'amplifiers'}</span>:null}</div>
@@ -2300,7 +2305,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-g"><span>🌐 War news worldwide (GDELT)</span><b style={{color:heimCov?.lit?'#f59e0b':undefined}}>{heimCov?`${heimCov.ratio>=1?'+':'−'}${Math.abs(Math.round((heimCov.ratio-1)*100))}% vs 7-day avg`:'not loaded'}</b></div>
 <div className="heim-g"><span>🍕 Pentagon pizza</span><b style={{color:DOUGHCON[dc].color}}>DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</b></div>
 </div>
-{heimList.length?heimList.map(h=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className="heim-card" style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
+{heimList.length?heimList.map((h,i)=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className={`heim-card${i?' dim':''}`} style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
 <div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/{h.k}</span></div>
 <div className="heim-chs">
 {heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.faaHit?(h.air.faa.national?'FAA: nationwide ground stop':'FAA: ground stops')+` · ${h.air.faa.stops.length} stop${h.air.faa.stops.length===1?'':'s'}, ${h.air.faa.equip.length} equipment outage${h.air.faa.equip.length===1?'':'s'}`:h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
