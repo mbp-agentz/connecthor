@@ -2,7 +2,8 @@
 // Runs every 3 hours in GitHub Actions (.github/workflows/heimdall.yml) and writes heimdall.json to
 // the heimdall-data branch; the page merges it with its own live channels (aircraft, news, odds).
 // Sources (official, free, no key): US State Department advisories (RSS), German Foreign Office
-// (open data JSON), UK FCDO (GOV.UK content API), Wikimedia pageviews (daily, per article).
+// (open data JSON), UK FCDO (GOV.UK content API), Wikimedia pageviews (daily, per article), Google Trends'
+// public "trending now" RSS per country (no key; Trends has no free API for keyword history).
 // Usage: node tools/heimdall.mjs [out.json] [previous file or URL]
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -17,6 +18,13 @@ const WIKI_MIN = 3000;  // …and enough views that it isn't a rounding blip
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const LOCS = Function('return ' + html.match(/const LOCS=(\{[^\n]*?\});/)[1])();
 const COUNTRIES = [...new Set(Object.values(LOCS).map(v => v.c))].filter(c => c !== 'NATO' && c !== 'EU');
+const CONFLICT_RE = Function('return ' + html.match(/const CONFLICT_RE=(\/.*?\/i);/)[1])();
+// German trends come in German; the feeds' news titles are mostly English elsewhere
+const CONFLICT_DE = /\b(krieg|angriff|luftangriff|rakete|milit[äa]r|truppen|invasion|evakuier|waffenruhe|atom)/i;
+const TREND_GEOS = ['US', 'GB', 'DE', 'CA', 'AU', 'IN'];
+const SPORT_RE = /\b(vs\.?|v|fc|cup|league|match|score|odds|prediction)\b/i;
+const TREND_MIN = 1000; // one trend with 1,000+ searches, or two trends, light a country
+const SKIP_KEYS = new Set(['bitcoin', 'fed', 'trump']); // not places in a search sense
 
 // Names per source. w = Wikipedia article, f = GOV.UK travel-advice slug (null: none), i = ISO3 (German
 // Foreign Office), us = start of the State Department title. Defaults: the country name itself.
@@ -84,15 +92,53 @@ async function wiki(title, now) {
   return { title, v: last, med, ratio: +(last / med).toFixed(2), lit: last >= WIKI_MIN && last / med >= WIKI_X, spark: v.slice(-14) };
 }
 
+// ---- Google Trends: today's trending searches per country, with the news Google attached ----
+const unent = s => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+async function trends() {
+  const by = new Map(), seen = new Set();
+  const feeds = await pool(TREND_GEOS, 3, async geo => [geo, await get(`https://trends.google.com/trending/rss?geo=${geo}`, 'text')]);
+  let n = 0;
+  for (const f of feeds) {
+    if (!f || !f[1]) continue;
+    const [geo, xml] = f;
+    for (const it of xml.split('<item>').slice(1)) {
+      n++;
+      const q = unent(strip((it.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '')), traffic = parseInt(((it.match(/<ht:approx_traffic>([\d,]+)/) || [])[1] || '0').replace(/,/g, ''));
+      const news = [...it.matchAll(/<ht:news_item_title>([\s\S]*?)<\/ht:news_item_title>/g)].map(m => unent(strip(m[1])));
+      const url = unent(strip((it.match(/<ht:news_item_url>([\s\S]*?)<\/ht:news_item_url>/) || [])[1] || ''));
+      // the search itself must name the place (news titles alone dragged in China and the UK), it must not
+      // be a match ("somalia vs ghana"), and the conflict word sits in the search or in a news title naming the place
+      if (SPORT_RE.test(q)) continue;
+      const lq = ' ' + q.toLowerCase() + ' ', war = t => CONFLICT_RE.test(t) || CONFLICT_DE.test(t);
+      const keys = Object.entries(LOCS).filter(([k]) => !SKIP_KEYS.has(k) && lq.includes(k));
+      const cs = new Set(keys.map(([, v]) => v.c).filter(c => war(q) || news.some(t => war(t) && keys.some(([k, v]) => v.c === c && (' ' + t.toLowerCase() + ' ').includes(k)))));
+      for (const c of cs) {
+        if (!COUNTRIES.includes(c) || seen.has(c + '|' + q.toLowerCase())) continue;
+        seen.add(c + '|' + q.toLowerCase());
+        if (!by.has(c)) by.set(c, []);
+        by.get(c).push({ q, traffic, geo, url, news: news[0] || '' });
+      }
+    }
+  }
+  return { by, n, geos: feeds.filter(f => f && f[1]).map(f => f[0]) };
+}
+
 async function loadPrev() {
   try { return /^https?:/.test(PREV) ? await get(PREV) : existsSync(PREV) ? JSON.parse(readFileSync(PREV, 'utf8')) : null } catch { return null }
 }
+
+const trendOf = xs => {
+  if (!xs || !xs.length) return null;
+  xs.sort((a, b) => b.traffic - a.traffic);
+  return { lit: xs.length >= 2 || xs[0].traffic >= TREND_MIN, traffic: xs.reduce((t, x) => t + x.traffic, 0), items: xs.slice(0, 3) };
+};
 
 async function main() {
   const now = Date.now(), prev = await loadPrev(), prevBy = new Map(((prev && prev.countries) || []).map(c => [c.country, c]));
   const [us, aa] = await Promise.all([usAdvisories().catch(e => (console.warn(e.message), new Map())), aaWarnings().catch(e => (console.warn(e.message), new Map()))]);
   const uk = new Map((await pool(COUNTRIES, 4, async c => { const f = nameOf(c).f; return f ? [c, await fcdo(f)] : null })).filter(Boolean));
   const wk = new Map(await pool(COUNTRIES, 4, async c => [c, await wiki(nameOf(c).w, now)]));
+  const tr = await trends().catch(e => (console.warn('Google Trends:', e.message), { by: new Map(), n: 0, geos: [] }));
   const out = [];
   for (const c of COUNTRIES) {
     const n = nameOf(c), p = prevBy.get(c), items = [];
@@ -109,12 +155,12 @@ async function main() {
     // counts: a raised level, a fresh departure call, or a fresh update while at level 3+ (FCDO: a security note)
     const hits = items.filter(it => it.raisedAt || (it.fresh && it.depart) || (it.fresh && it.level >= 3 && (it.src !== 'UK' || /strike|attack|conflict|military|security|tension|leave|evacuat|border|missile/i.test(it.note || ''))));
     const strong = items.some(it => it.raisedAt || (it.fresh && it.depart));
-    out.push({ country: c, official: { lit: hits.length > 0, strong, why: hits.map(it => it.src + (it.raisedAt ? ' raised to level ' + it.level : it.depart ? ' departure call' : ' updated at level ' + it.level)), items: items.map(({ fresh, ...it }) => it) }, wiki: wk.get(c) || null });
+    out.push({ country: c, official: { lit: hits.length > 0, strong, why: hits.map(it => it.src + (it.raisedAt ? ' raised to level ' + it.level : it.depart ? ' departure call' : ' updated at level ' + it.level)), items: items.map(({ fresh, ...it }) => it) }, wiki: wk.get(c) || null, trends: trendOf(tr.by.get(c)) });
   }
   mkdirSync(dirname(OUT) || '.', { recursive: true });
-  writeFileSync(OUT, JSON.stringify({ updated: new Date(now).toISOString(), countries: out }));
-  const lit = out.filter(x => x.official.lit || (x.wiki && x.wiki.lit));
-  console.log(`wrote ${OUT}: ${out.length} countries · US ${us.size} · DE ${aa.size} · UK ${uk.size} · wiki ${[...wk.values()].filter(Boolean).length}`);
-  for (const x of lit) console.log(' ', x.country.padEnd(13), x.official.lit ? '🏛️ ' + x.official.why.join(', ') : '', x.wiki && x.wiki.lit ? `📖 ${x.wiki.v} views (${x.wiki.ratio}× median)` : '');
+  writeFileSync(OUT, JSON.stringify({ updated: new Date(now).toISOString(), trends: { geos: tr.geos, n: tr.n }, countries: out }));
+  const lit = out.filter(x => x.official.lit || (x.wiki && x.wiki.lit) || x.trends);
+  console.log(`wrote ${OUT}: ${out.length} countries · US ${us.size} · DE ${aa.size} · UK ${uk.size} · wiki ${[...wk.values()].filter(Boolean).length} · trends ${tr.n} from ${tr.geos.join('/')}`);
+  for (const x of lit) console.log(' ', x.country.padEnd(13), x.official.lit ? '🏛️ ' + x.official.why.join(', ') : '', x.wiki && x.wiki.lit ? `📖 ${x.wiki.v} views (${x.wiki.ratio}× median)` : '', x.trends ? `🔎 ${x.trends.lit ? 'LIT ' : ''}${x.trends.items.map(t => `"${t.q}" ${t.traffic}+ ${t.geo}`).join(', ')}` : '');
 }
 main().catch(e => { console.error(e); process.exit(1) });

@@ -1075,9 +1075,9 @@ const NEWS_SKIP=new Set(['bitcoin','fed']); // market keys that aren't places in
 const HEIM_PLACES=(()=>{const m=new Map();for(const[k,v]of Object.entries(LOCS)){if(v.c==='NATO'||v.c==='EU')continue;const p=m.get(v.c)||{country:v.c,lat:v.lat,lng:v.lng,keys:[]};if(!NEWS_SKIP.has(k))p.keys.push(k);m.set(v.c,p)}return[...m.values()]})();
 const HEIM_LVL=[null,{name:'SIGNAL',color:'#60a5fa'},{name:'WATCH',color:'#f59e0b'},{name:'ALERT',color:'#ef4444'}];
 // Channel filters in the panel; the newer slow channels start off so the default view stays simple
-const HEIM_CH=[['air','✈️ Aircraft'],['news','📰 Headlines'],['odds','📈 Odds'],['wiki','📖 Wikipedia',true],['official','🏛️ Travel warnings',true]];
-const HEIM_CH_DEFAULT={air:true,news:true,odds:true,wiki:false,official:false};
-const heimChN=ch=>[ch.air,ch.news||ch.wiki,ch.odds,ch.official].filter(Boolean).length; // channels that can light (news + Wikipedia share one)
+const HEIM_CH=[['air','✈️ Aircraft'],['news','📰 Headlines'],['odds','📈 Odds'],['wiki','📖 Wikipedia',true],['trends','🔎 Google Trends',true],['official','🏛️ Travel warnings',true]];
+const HEIM_CH_DEFAULT={air:true,news:true,odds:true,wiki:false,trends:false,official:false};
+const heimChN=ch=>[ch.air,ch.news||ch.wiki||ch.trends,ch.odds,ch.official].filter(Boolean).length; // channels that can light (news, Wikipedia and Google Trends share one)
 const loadPref=(k,d)=>{try{return{...d,...JSON.parse(localStorage.getItem(k)||'{}')}}catch(e){return d}};
 const savePref=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 // A tool's filter row: chips that switch parts of its analysis on and off; new ones carry a NEW tag
@@ -1106,13 +1106,13 @@ function heimdall(markets,news,air,hd,ch=HEIM_CH_DEFAULT,faa=null){
     const fa=p.country==='USA'&&faa&&(faa.national||faa.stops.length>=3)?faa:null;
     const ac={lit:ch.air&&(emg>0||(!home&&isr>=2)||!!fa),isr,emg,near,home,none:!air,faa:p.country==='USA'?faa:null,faaHit:!!fa};
     // Wikipedia attention joins the news channel (same question: is the world looking here?)
-    const sl=slow.get(p.country),wiki=sl&&sl.wiki,off=sl?sl.official:null;
-    const nw={lit:(ch.news&&hl>=3)||(ch.wiki&&!!(wiki&&wiki.lit)),n:hl,wiki};
+    const sl=slow.get(p.country),wiki=sl&&sl.wiki,tr=sl&&sl.trends,off=sl?sl.official:null;
+    const nw={lit:(ch.news&&hl>=3)||(ch.wiki&&!!(wiki&&wiki.lit))||(ch.trends&&!!(tr&&tr.lit)),n:hl,wiki,trends:ch.trends?tr:null};
     const official={lit:ch.official&&!!(off&&off.lit),strong:ch.official&&!!(off&&off.strong),why:off?off.why:[],items:off?off.items:[],none:!hd};
     const n=[ac.lit,nw.lit,odds.lit,official.lit].filter(Boolean).length;
     // a raised warning level or an evacuation call is enough on its own to watch
     const lvl=Math.min(3,official.strong||(ch.air&&fa&&fa.national)?Math.max(n,2):n);
-    return{...p,odds,news:nw,air:ac,official,n,k:heimChN(ch),lvl,score:lvl*1e4+n*1000+hl*10+Math.abs(odds.move)*100+isr+(wiki?wiki.ratio:0)};
+    return{...p,odds,news:nw,air:ac,official,n,k:heimChN(ch),lvl,score:lvl*1e4+n*1000+hl*10+Math.abs(odds.move)*100+isr+(wiki?wiki.ratio:0)+(tr&&ch.trends?Math.min(5,tr.traffic/1000):0)};
   }).filter(x=>x.n>0).sort((a,b)=>b.score-a.score);
 }
 // ============ DAY / NIGHT ============
@@ -1306,7 +1306,7 @@ function ToolCard({ico,name,color,pitch,more,on,hint}){const[open,setOpen]=useSt
 </>}
 const LOKI_MORE="Every hour, Loki reads the large trades on the 40 busiest geopolitical Polymarket markets, with wallet and timestamp, and lines them up against our news feeds and GDELT. Bets of $5K or more placed shortly before the first matching headline, at odds that have since moved their way, are flagged with their head start and the wallet's age. A second check scores staged-looking volume: wallets trading back and forth, or a few wallets making up most of it.";
 const VALK_MORE="Every six hours, the Valkyries score Polymarket wallets on the geopolitical markets resolved in the last 120 days: profit, hit rate and how early they got in. You see what the top 20 hold now, as gold rings on the globe. A second view checks the markets themselves on Polymarket and Kalshi: of the events priced at about 70% a week before the close, how many happened? That tells you how far to trust today's odds.";
-const HEIM_MORE="Heimdall watches four channels per country and blows the horn when several move together: tankers and spy planes near the capital (adsb.lol) or US ground stops (FAA), headlines plus Wikipedia attention, sharp moves in real-money war markets, and official travel warnings from the US, German and UK foreign ministries. One spike is noise, two are worth watching, three are an alert. A raised warning or an evacuation call is worth watching on its own.";
+const HEIM_MORE="Heimdall watches four channels per country and blows the horn when several move together: tankers and spy planes near the capital (adsb.lol) or US ground stops (FAA), headlines plus Wikipedia and Google Trends attention, sharp moves in real-money war markets, and official travel warnings from the US, German and UK foreign ministries. One spike is noise, two are worth watching, three are an alert. A raised warning or an evacuation call is worth watching on its own.";
 function MjCard({on,data,demo,n}){const[more,setMore]=useState(false);const act=CAN_HOVER?'Click':'Tap';return<>
   <div className="dc-kicker" style={{color:'#67e8f9'}}>🔨 MJÖLNIR</div>
   <div className="info-pitch">Flags anomalies: money moving before the news.</div>
@@ -2308,14 +2308,14 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/{h.k}</span></div>
 <div className="heim-chs">
 {heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.faaHit?(h.air.faa.national?'FAA: nationwide ground stop':'FAA: ground stops')+` · ${h.air.faa.stops.length} stop${h.air.faa.stops.length===1?'':'s'}, ${h.air.faa.equip.length} equipment outage${h.air.faa.equip.length===1?'':'s'}`:h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
-{(heimCh.news||heimCh.wiki)&&<span className={`heim-ch${h.news.lit?' on':''}`}>{heimCh.news&&<>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</>}{heimCh.news&&heimCh.wiki&&h.news.wiki&&' · '}{heimCh.wiki&&h.news.wiki&&<>📖 {h.news.wiki.ratio>=1.5?`${h.news.wiki.ratio.toFixed(1)}× usual on Wikipedia`:`${fmtK(h.news.wiki.v)} wiki views`}</>}</span>}
+{(heimCh.news||heimCh.wiki||heimCh.trends)&&<span className={`heim-ch${h.news.lit?' on':''}`}>{heimCh.news&&<>📰 {h.news.n} headline{h.news.n===1?'':'s'} in 12h</>}{heimCh.news&&heimCh.wiki&&h.news.wiki&&' · '}{heimCh.wiki&&h.news.wiki&&<>📖 {h.news.wiki.ratio>=1.5?`${h.news.wiki.ratio.toFixed(1)}× usual on Wikipedia`:`${fmtK(h.news.wiki.v)} wiki views`}</>}{h.news.trends&&<>{(heimCh.news||(heimCh.wiki&&h.news.wiki))&&' · '}🔎 trending: {h.news.trends.items.map(t=>`"${t.q}" (${fmtK(t.traffic)}+ ${t.geo})`).join(', ')}</>}</span>}
 {heimCh.odds&&<span className={`heim-ch${h.odds.lit?' on':''}`}>📈 {h.odds.m?`${fmtChg(h.odds.move)} pts in 24h`:'no war market'}</span>}
 {heimCh.official&&<span className={`heim-ch${h.official.lit?' on':''}`}>🏛️ {h.official.none?'travel warnings not loaded':h.official.lit?h.official.why.join(' · '):h.official.items.length?'warnings '+h.official.items.map(x=>x.src+' '+x.level).join(' · '):'no travel warning'}</span>}
 </div>
 {h.air.faaHit&&<div className="heim-q">FAA airports: {h.air.faa.stops.slice(0,4).join(' · ')}{h.air.faa.equip.length?` · equipment: ${h.air.faa.equip.slice(0,6).join(', ')}`:''}</div>}
 {h.odds.lit&&h.odds.m&&<div className="heim-q">{h.odds.m.question}</div>}
 </div>}):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
-<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only); for the USA also FAA ground stops (three or more airports, or a nationwide stop, which is worth watching on its own). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings and Wikipedia are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
+<div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only); for the USA also FAA ground stops (three or more airports, or a nationwide stop, which is worth watching on its own). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🔎 a search naming the country plus a war word is in Google's "trending now" list (US, UK, Germany, Canada, Australia, India) with 1,000+ searches, or two such searches; also on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings, Wikipedia and Google Trends are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
 </div></div></Boundary>}
 
 <Boundary name="Ticker" className="ticker"><div className="ticker">
