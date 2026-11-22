@@ -21,7 +21,7 @@ const THEMES = [
     assets: [{ sym: 'BZ=F', td: 'BNO', n: 'Brent crude', x: 'ice', s: 1 }, { sym: 'LMT', td: 'LMT', n: 'Lockheed Martin', x: 'nyse', s: 1 }] },
   { id: 'israel', country: 'Israel', in: ['Israel', 'Gaza', 'Lebanon'], re: /ceasefire|strike|hezbollah|hamas|war|attack|invade|hostage/i,
     assets: [{ sym: 'ILS=X', td: 'USD/ILS', n: 'USD/Shekel', x: 'tase', s: 1 }, { sym: 'ESLT', td: 'ESLT', n: 'Elbit Systems', x: 'nasdaq', s: 1 }] },
-  { id: 'taiwan', country: 'Taiwan', in: ['Taiwan', 'China'], re: /invade|invasion|blockade|taiwan|military|clash/i,
+  { id: 'taiwan', country: 'Taiwan', in: ['Taiwan', 'China'], out: ['Philippines'], re: /invade|invasion|blockade|taiwan|military|clash/i,
     assets: [{ sym: '2330.TW', td: 'TSM', n: 'TSMC', x: 'twse', s: -1 }, { sym: 'TWD=X', td: 'USD/TWD', n: 'USD/Taiwan dollar', x: 'twse', s: 1 }] },
   { id: 'ukraine', country: 'Ukraine', in: ['Ukraine', 'Russia'], re: /ceasefire|peace|truce|war|deal|invade|capture|offensive/i,
     assets: [{ sym: 'RHM.DE', n: 'Rheinmetall', x: 'xetra', s: 1 }, { sym: 'TTF=F', n: 'EU gas (TTF)', x: 'ttf', s: 1 }] },
@@ -31,18 +31,30 @@ const THEMES = [
     assets: [{ sym: '^KS11', td: 'EWY', n: 'KOSPI', x: 'krx', s: -1 }, { sym: '7011.T', n: 'Mitsubishi Heavy', x: 'tse', s: 1 }] },
   { id: 'yemen', country: 'Yemen', in: ['Yemen'], re: /houthi|red sea|ship|attack|strike|war/i,
     assets: [{ sym: 'MAERSK-B.CO', n: 'Maersk', x: 'cph', s: 1 }, { sym: 'BZ=F', td: 'BNO', n: 'Brent crude', x: 'ice', s: 1 }] },
+  // Russia against NATO or an EU country (the Ukraine theme keeps the war itself): the zloty weakens,
+  // Saab rises, European blue chips fall
+  { id: 'nato', country: 'NATO', in: ['NATO', 'EU', 'Poland', 'Romania'], re: /military|clash|attack|invade|invasion|war|strike|drone|article 5/i,
+    assets: [{ sym: 'PLN=X', td: 'USD/PLN', n: 'USD/Zloty', x: 'wse', s: 1 }, { sym: 'SAAB-B.ST', n: 'Saab', x: 'sto', s: 1 }, { sym: '^STOXX50E', n: 'Euro Stoxx 50', x: 'xetra', s: -1 }] },
+  // China against the Philippines in the South China Sea (the Manila index has no daily history on
+  // Yahoo, so the US-listed Philippines fund stands in)
+  { id: 'scs', country: 'Philippines', in: ['Philippines'], re: /military|clash|attack|invade|invasion|blockade|war|strike|scarborough|south china sea/i,
+    assets: [{ sym: 'PHP=X', td: 'USD/PHP', n: 'USD/Peso', x: 'pse', s: 1 }, { sym: 'EPHE', td: 'EPHE', n: 'Philippines fund (EPHE)', x: 'nyse', s: -1 }] },
+  // US action against Cuba: Cuba has no market of its own, so the companies most exposed to it stand in,
+  // Meliá (the largest hotel operator on the island) and Carnival (Caribbean cruises)
+  { id: 'cuba', country: 'Cuba', in: ['Cuba'], re: /invade|invasion|military|strike|attack|blockade|regime|war|action/i,
+    assets: [{ sym: 'MEL.MC', n: 'Meliá Hotels', x: 'bme', s: -1 }, { sym: 'CCL', td: 'CCL', n: 'Carnival', x: 'nyse', s: -1 }] },
 ];
 // Crypto never closes, so it still says something on weekends. Bitcoin trades as a risk asset (falls when
 // fear rises); PAXG is tokenised gold, the safe haven. Bolts go to one point (Coinbase, San Francisco).
 const BTC = { cb: 'BTC-USD', kr: 'XBTUSD', n: 'Bitcoin', x: 'crypto', k: 'crypto', s: -1 };
 const GOLD = { cb: 'PAXG-USD', kr: 'PAXGUSD', n: 'Gold token (PAXG)', x: 'crypto', k: 'crypto', s: 1 };
-const CRYPTO = { iran: [BTC, GOLD], israel: [BTC, GOLD], taiwan: [BTC, GOLD], ukraine: [BTC, GOLD], venezuela: [BTC], nk: [BTC], yemen: [BTC] };
+const CRYPTO = { iran: [BTC, GOLD], israel: [BTC, GOLD], taiwan: [BTC, GOLD], ukraine: [BTC, GOLD], venezuela: [BTC], nk: [BTC], yemen: [BTC], nato: [BTC, GOLD], scs: [BTC], cuba: [BTC] };
 // Fear gauges: what options traders pay for protection. They jump on real fear even when prices
 // hardly move yet, so they sharpen the price side. Cboe indices on Yahoo; no Twelve Data proxy.
 const OVX = { sym: '^OVX', n: 'Oil volatility (OVX)', x: 'cboe', k: 'vol', s: 1 };
 const GVZ = { sym: '^GVZ', n: 'Gold volatility (GVZ)', x: 'cboe', k: 'vol', s: 1 };
 const VIX = { sym: '^VIX', n: 'Stock volatility (VIX)', x: 'cboe', k: 'vol', s: 1 };
-const VOL = { iran: [OVX], israel: [GVZ], taiwan: [VIX], ukraine: [GVZ], venezuela: [OVX], nk: [VIX], yemen: [OVX] };
+const VOL = { iran: [OVX], israel: [GVZ], taiwan: [VIX], ukraine: [GVZ], venezuela: [OVX], nk: [VIX], yemen: [OVX], nato: [GVZ], scs: [VIX], cuba: [VIX] };
 // "Yes" on these questions means less risk (a ceasefire holds, a deal is signed)
 const CALM_RE = /ceasefire|peace|truce|deal|agreement|normaliz|recogni|release|withdraw/i;
 const MIN_VOL = 20000; // a thinner market moves on a single trade
@@ -79,7 +91,7 @@ async function pickMarkets() {
   }
   const out = {};
   for (const th of THEMES) {
-    const c = [...all.values()].filter(m => m.vol >= MIN_VOL && th.re.test(m.q) && th.in.some(x => m.cs.has(x)));
+    const c = [...all.values()].filter(m => m.vol >= MIN_VOL && th.re.test(m.q) && th.in.some(x => m.cs.has(x)) && !(th.out || []).some(x => m.cs.has(x)));
     // the market people trade most today, so the 24 h move means something
     out[th.id] = c.sort((a, b) => b.vol24 - a.vol24 || b.vol - a.vol)[0] || null;
   }
