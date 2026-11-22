@@ -35,6 +35,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/site"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/site"
           rm -rf "$RUNNER_TEMP/site/.github"
+          rm -rf "$RUNNER_TEMP/site/workers"   # the ticker Worker is deployed on its own (ticker.yml)
 
       - name: Deploy
         id: deploy

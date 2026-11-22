@@ -1,0 +1,9 @@
+# The ticker Worker (see index.js). Deployed by .github/workflows/ticker.yml, not part of the Pages site.
+name = "connecthor-ticker"
+main = "index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+# every hour at :05 (UTC): the tools that are due (index.js); every 3 hours at :25: aggregaTHOR's update
+[triggers]
+crons = ["5 * * * *", "25 */3 * * *"]
