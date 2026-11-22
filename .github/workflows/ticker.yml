@@ -1,0 +1,44 @@
+# Deploys the ticker Worker (workers/ticker), which starts Mjölnir, Loki, Heimdall and Valkyries on
+# the hour via workflow_dispatch, because GitHub's own schedule skips most hourly runs.
+# Needs two repo secrets:
+#   CLOUDFLARE_API_TOKEN   must also allow Account > Workers Scripts > Edit (the Pages token alone can't)
+#   GH_DISPATCH_TOKEN      fine-grained GitHub token for connecthor and aggregathor, only "Actions: Read and write"
+# CLOUDFLARE_ACCOUNT_ID is the one the Pages deploy already uses.
+name: Ticker worker
+
+on:
+  push:
+    branches: [main]
+    paths: ['workers/ticker/**', '.github/workflows/ticker.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ticker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy the Worker and its token
+        working-directory: workers/ticker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_DISPATCH_TOKEN" ]; then
+            echo "::error::Add the GH_DISPATCH_TOKEN repository secret (fine-grained token, Actions: Read and write on connecthor and aggregathor)."; exit 1
+          fi
+          npx --yes wrangler@4.20.0 deploy
+          printf '%s' "$GH_DISPATCH_TOKEN" | npx --yes wrangler@4.20.0 secret put GH_TOKEN
