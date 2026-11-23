@@ -293,6 +293,7 @@
     .agg-teaser{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px}
     .agg-odds{font-size:11px;margin-top:4px}
     .agg-h{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
+    .agg-ico{width:13px;height:13px;vertical-align:-2px;margin-right:2px}
     .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
@@ -1094,6 +1095,8 @@ function FilterBar({items,state,onToggle,color}){return<div className="tool-filt
 const AGG_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/aggregathor.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/aggregathor-data/aggregathor.json';
 async function fetchAgg(){const r=await fetch(AGG_URL,{cache:'no-cache'});if(!r.ok)throw new Error('aggregaTHOR HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.stories))throw new Error('bad aggregaTHOR data');return d}
 const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round(h/24)+'d ago':fmtTime(t)}; // stories can be weeks old: "480h ago" reads badly
+// aggregaTHOR's own favicon (aggregathor.com/favicon.svg), inline so the tab needs no request
+const AggIcon=()=><svg className="agg-ico" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e14"/><path d="M32 10 50 54H41.5l-3.4-9H25.9l-3.4 9H14L32 10Zm0 14.5-4 11.7h8l-4-11.7Z" fill="#7aa2ff"/></svg>;
 const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
 const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
@@ -1237,7 +1240,6 @@ function layoutMarkets(ms){
 }
 // Soft pulses on the 25 biggest markets (plus the Pentagon's DOUGHCON ring)
 function genRings(ms,dc){const rs=[...ms].filter(m=>m.lat!=null).sort((a,b)=>volOf(b)-volOf(a)).slice(0,25).map((m,i)=>({lat:m.lat,lng:m.lng,maxR:1.6,propagationSpeed:0.5,repeatPeriod:2600+(i*397)%2400,color:marketColor(m)}));rs.push({lat:PENTAGON.lat,lng:PENTAGON.lng,maxR:2+(5-dc)*1.2,propagationSpeed:0.7+(5-dc)*0.35,repeatPeriod:Math.max(900,2800-(5-dc)*450),color:DOUGHCON[dc].color});return rs}
-function genActs(ms){const a=[];const amts=[500,1000,2500,5000,10000,25000];for(let i=0;i<14;i++){const m=ms[Math.floor(Math.random()*Math.min(ms.length,15))];if(!m)continue;const amt=amts[Math.floor(Math.random()*amts.length)];a.push({id:'a-'+i,market:m.question,action:Math.random()<0.5?'BUY':'SELL',amount:amt,isWhale:amt>=10000,time:new Date(Date.now()-Math.random()*300000),source:m.source})}return a.sort((x,y)=>y.time-x.time)}
 
 // Countries ranked by escalation odds × money at stake (real-money venues only)
 function hotspots(ms){
@@ -1509,7 +1511,7 @@ const[markets,setMarkets]=useState(()=>layoutMarkets(MARKETS.map(m=>({...m,links
 const[news,setNews]=useState([]);
 const[newsSource,setNewsSource]=useState('loading');
 const[newsLoading,setNewsLoading]=useState(true);
-const[activities,setActivities]=useState(()=>genActs(MARKETS));
+
 const[dataSource,setDataSource]=useState('sample');
 const[selected,setSelected]=useState(null);
 const[country,setCountry]=useState(null); // country panel: every market in one place
@@ -1536,7 +1538,7 @@ const[betsOpen,setBetsOpen]=useState(false); // mobile: the Top Bets panel start
 const[betSrc,setBetSrc]=useState('all');
 const[trades,setTrades]=useState([]);
 const[tradesLive,setTradesLive]=useState(null);
-const[whaleOnly,setWhaleOnly]=useState(false);
+
 const[pulses,setPulses]=useState([]);
 const[history,setHistory]=useState(null);
 const[venues,setVenues]=useState({});
@@ -1585,7 +1587,7 @@ setVenues(st);
 if(all.some(isUSD)){
 // keep live Polymarket prices from the stream when a refresh lands
 setMarkets(prev=>{const old=new Map(prev.map(m=>[m.id,m]));return layoutMarkets(all.map(m=>{const o=old.get(m.id);return o&&o.flashAt?{...m,probability:o.probability,flash:o.flash,flashAt:o.flashAt}:m}))});
-setActivities(genActs(all));setDataSource('live');setLastUpd(new Date());setSelected(s=>s&&(all.find(m=>m.id===s.id)||s));
+setDataSource('live');setLastUpd(new Date());setSelected(s=>s&&(all.find(m=>m.id===s.id)||s));
 }
 };
 loadPoly();const i=setInterval(loadPoly,300000);
@@ -1729,7 +1731,7 @@ const stats=useMemo(()=>{const u=markets.filter(isUSD);return{total:markets.leng
 const neh=useMemo(()=>nehIndex(markets),[markets]);
 const nehPrev=useMemo(()=>nehIndex(markets.map(m=>({...m,probability:Math.min(1,Math.max(0,m.probability-(m.change24||0)))}))).score,[markets]);
 const movers=useMemo(()=>[...markets].filter(m=>m.change24).sort((a,b)=>Math.abs(b.change24)-Math.abs(a.change24)).slice(0,5),[markets]);
-const whales=useMemo(()=>trades.filter(t=>t.usd>=WHALE_USD).slice(0,5),[trades]);
+
 const geoWhales=useMemo(()=>{const c=new Set(markets.map(m=>m.conditionId).filter(Boolean));return trades.filter(t=>t.usd>=WHALE_USD&&c.has(t.conditionId)).slice(0,2)},[trades,markets]);
 const whaleKey=pulses.filter(p=>p.whale).map(p=>p.id).join('|');
 const flowArcs=useMemo(()=>pulses.filter(p=>p.whale).map(p=>({startLat:PENTAGON.lat,startLng:PENTAGON.lng,endLat:p.lat,endLng:p.lng,color:p.side==='SELL'?['rgba(239,68,68,0.1)','rgba(239,68,68,0.95)']:['rgba(34,197,94,0.1)','rgba(34,197,94,0.95)'],stroke:1.4,dashLength:1,dashGap:0,dashAnimateTime:0,altitude:0.35})),[whaleKey]);
@@ -2125,8 +2127,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="act-tabs">
 <button className={`act-tab ${tab==='news'?'active':''}`} onClick={()=>setTab('news')}>📰 Intel</button>
 <button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>setTab('markets')}>📊 Markets</button>
-<button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>setTab('agg')}>⚡ aggregaTHOR</button>
-<button className={`act-tab ${tab==='activity'?'active':''}`} onClick={()=>setTab('activity')}>🔴 Flow{tradesLive&&whales.length>0&&<span className="badge" style={{marginLeft:4,background:'var(--yellow)',color:'#0a0f1a'}}>{whales.length}</span>}</button>
+<button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>setTab('agg')}><AggIcon/> aggregaTHOR</button>
 </div>
 <div className="scroll">
 {tab==='news'&&(<>
@@ -2169,24 +2170,6 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="row"><span><span key={m.flashAt||0} className={`prob ${m.probability>=0.7?'hi':m.probability>=0.4?'md':'lo'} ${m.flash&&Date.now()-m.flashAt<3000?'flash-'+m.flash:''}`}>{fmtProb(m.probability)}</span>{m.change24?<span className="mono" style={{fontSize:10,marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span><span className="vol">{m.vol24?fmtMoney(m.vol24,m.source)+' 24h · ':''}{m.volume>0?fmtMoney(m.volume,m.source):''}</span></div>
 </div>))}
 </>)}
-{tab==='activity'&&(tradesLive?(<>
-<div className="tabs"><button className={`tab ${!whaleOnly?'active':''}`} onClick={()=>setWhaleOnly(false)}>All ≥ $100</button><button className={`tab ${whaleOnly?'active':''}`} onClick={()=>setWhaleOnly(true)}>🐋 Whales ≥ {fmtVol(WHALE_USD)}</button></div>
-<div className="note" style={{paddingTop:0}}>Live fills: Polymarket every 15 s, plus the three busiest Kalshi markets every 2 min</div>
-{trades.filter(t=>!whaleOnly||t.usd>=WHALE_USD).slice(0,60).map(t=>{const m=markets.find(x=>x.conditionId===t.conditionId);return(
-<div key={t.id} className={`act ${t.usd>=WHALE_USD?'whale':''}`} style={{cursor:m||t.url?'pointer':'default'}} onClick={()=>m?setSelected(m):t.url&&window.open(t.url,'_blank','noopener')}>
-<span>{t.usd>=WHALE_USD?'🐋':t.side==='BUY'?'📈':'📉'}</span>
-<div className="act-content"><div className="act-title">{t.title}</div><div className="act-meta"><span className={`act-amt ${t.side==='SELL'?'sell':'buy'}`}>{t.side} {t.outcome} @ {fmtCents(t.price)}</span> · {fmtVol(t.usd)} · {t.who}{m&&' · 🌐'}</div></div>
-<span className="act-time">{fmtTime(t.time)}</span>
-</div>)})}
-</>):(<>
-<div className="note" style={{paddingTop:0}}>{tradesLive===null?'⏳ Connecting to Polymarket trades…':'⚠ Polymarket trade feed unreachable — showing simulated flow for illustration, not real trades.'}</div>
-{activities.map(a=>(
-<div key={a.id} className={`act ${a.isWhale?'whale':''}`}>
-<span>{a.isWhale?'🐋':a.action==='BUY'?'📈':'📉'}</span>
-<div className="act-content"><div className="act-title">{a.market}</div><div className="act-meta"><span className={`act-amt ${a.action.toLowerCase()}`}>{a.action} ${a.amount.toLocaleString()}</span> • {a.source}</div></div>
-<span className="act-time">{fmtTime(a.time)}</span>
-</div>))}
-</>))}
 </div>
 </aside></Boundary>
 
