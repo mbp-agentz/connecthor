@@ -4,6 +4,7 @@ main = "index.js"
 compatibility_date = "2026-11-01"
 workers_dev = false
 
-# every hour at :05 (UTC): the tools that are due (index.js); every 3 hours at :25: aggregaTHOR's update (at 06:25 also its daily research run)
+# one trigger (the free plan allows 5 per account, shared with other Workers), at :05 and :25 (UTC).
+# :05: the tools that are due (index.js); every 3 hours at :25: aggregaTHOR's update (at 06:25 also its daily research run)
 [triggers]
-crons = ["5 * * * *", "25 */3 * * *"]
+crons = ["5,25 * * * *"]
