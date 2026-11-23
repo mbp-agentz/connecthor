@@ -15,6 +15,7 @@ const PLAN = [
   ['loki.yml', 1],
   ['heimdall.yml', 3],
   ['valkyries.yml', 6],
+  ['aggregathor.yml', 1], // slims aggregaTHOR's newest stories for the page's tab
 ];
 // aggregaTHOR (sister site) turns these findings into news; its own 3-hour schedule is skipped by
 // GitHub as well, so the second trigger starts its update 20 minutes after the tools, every 3 hours
