@@ -6,7 +6,8 @@
 //
 // Needs the secret GH_TOKEN: a fine-grained GitHub token for mbp-agentz/connecthor and
 // mbp-agentz/aggregathor with only "Actions: Read and write". Deployed by .github/workflows/ticker.yml.
-// Free plan: 2 cron triggers, 32 invocations and about 60 GitHub API calls a day.
+// Free plan: one cron trigger (the account has only 5, shared with other Workers) that fires at :05
+// and :25, 48 invocations and about 60 GitHub API calls a day.
 const REPO = 'mbp-agentz/connecthor';
 // workflow file, every how many hours (UTC hour divisible by it)
 const PLAN = [
@@ -17,7 +18,7 @@ const PLAN = [
 ];
 // aggregaTHOR (sister site) turns these findings into news; its own 3-hour schedule is skipped by
 // GitHub as well, so the second trigger starts its update 20 minutes after the tools, every 3 hours
-const AGGREGATHOR = { cron: '25 */3 * * *', repo: 'mbp-agentz/aggregathor', wf: 'deploy.yml' };
+const AGGREGATHOR = { minute: 25, every: 3, repo: 'mbp-agentz/aggregathor', wf: 'deploy.yml' };
 // aggregaTHOR's daily research run (paid, on the owner's account), also skipped by GitHub: started
 // with the 06:25 trigger as daily=true, so research.yml treats it as its schedule (only runs with
 // RESEARCH_ENABLED=true, at most once in 20 hours)
@@ -43,12 +44,14 @@ export const due = hour => PLAN.filter(([, every]) => hour % every === 0).map(([
 export default {
   async scheduled(event, env, ctx) {
     if (!env.GH_TOKEN) return console.error('GH_TOKEN is not set: nothing started');
-    if (event.cron === AGGREGATHOR.cron) {
+    const at = new Date(event.scheduledTime), hour = at.getUTCHours();
+    if (at.getUTCMinutes() >= AGGREGATHOR.minute) {
+      if (hour % AGGREGATHOR.every) return;
       const jobs = [dispatch(env, AGGREGATHOR.wf, AGGREGATHOR.repo)];
-      if (new Date(event.scheduledTime).getUTCHours() === RESEARCH.hour) jobs.push(dispatch(env, RESEARCH.wf, AGGREGATHOR.repo, RESEARCH.inputs));
+      if (hour === RESEARCH.hour) jobs.push(dispatch(env, RESEARCH.wf, AGGREGATHOR.repo, RESEARCH.inputs));
       return console.log('aggregaTHOR ' + (await Promise.all(jobs)).join(' · '));
     }
-    const wfs = due(new Date(event.scheduledTime).getUTCHours());
+    const wfs = due(hour);
     console.log((await Promise.all(wfs.map(wf => dispatch(env, wf)))).join(' · '));
   },
 };
