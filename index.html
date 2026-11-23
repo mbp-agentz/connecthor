@@ -149,6 +149,7 @@
     .heim-g span{color:var(--muted)}
     .heim-card{border:1px solid;border-radius:10px;padding:10px;background:var(--card2);cursor:pointer}
     /* one result per tool in colour; the rest greyed out but still clickable */
+    .dim-note{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;padding:6px 0;border-top:1px dashed var(--border);margin-top:2px}
     .heim-card.dim{opacity:.5;filter:grayscale(1) blur(2.5px);border-color:var(--line)!important}
     .heim-card:hover{background:rgba(96,165,250,0.08)}
     .heim-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px}
@@ -1097,6 +1098,8 @@ async function fetchAgg(){const r=await fetch(AGG_URL,{cache:'no-cache'});if(!r.
 const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round(h/24)+'d ago':fmtTime(t)}; // stories can be weeks old: "480h ago" reads badly
 // aggregaTHOR's own favicon (aggregathor.com/favicon.svg), inline so the tab needs no request
 const AggIcon=()=><svg className="agg-ico" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e14"/><path d="M32 10 50 54H41.5l-3.4-9H25.9l-3.4 9H14L32 10Zm0 14.5-4 11.7h8l-4-11.7Z" fill="#7aa2ff"/></svg>;
+// one "hidden" note above a tool's greyed-out results (not one per card)
+const withNote=(els,at)=>at>=0&&at<els.length?[...els.slice(0,at),<div key="dim-note" className="dim-note">🔒 Hidden – coming soon</div>,...els.slice(at)]:els;
 const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
 const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
@@ -2193,18 +2196,18 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {lokiEx&&<div className="mj-calm loki-calm"><b>Example</b> with demo data: what an early bet looks like. <button className="mj-ex-btn loki-ex-btn" style={{marginTop:0}} onClick={()=>setLokiEx(false)}>■ End example</button></div>}
 <div className="loki-h">🕵️ EARLY BETS · LAST 24 H</div>
-{(lokiEx?[LOKI_DEMO]:lokiData.flags).length?(lokiEx?[LOKI_DEMO]:lokiData.flags).map((f,i)=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className={`heim-card loki-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>{if(!f.demo)lokiGo(f)}} onKeyDown={e=>{if(e.key==='Enter'&&!f.demo)lokiGo(f)}}>
+{(lokiEx?[LOKI_DEMO]:lokiData.flags).length?withNote((lokiEx?[LOKI_DEMO]:lokiData.flags).map((f,i)=>{const w=f.walletInfo;return<div key={f.wallet+f.id} className={`heim-card loki-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>{if(!f.demo)lokiGo(f)}} onKeyDown={e=>{if(e.key==='Enter'&&!f.demo)lokiGo(f)}}>
 <div className="loki-q">{f.demo&&<span className="sim-tag" style={{marginRight:6}}>DEMO</span>}{f.question}</div>
 <div className="loki-bet"><b className="mono">{fmtVol(f.usd)}</b> {f.side==='SELL'?'sold':'bought'} {f.outcome} at {fmtCents(f.price)} → now <b className="mono">{fmtCents(f.now)}</b></div>
 <div className="loki-lead">⏱ {fmtLead(f.leadMin)} before <a href={f.demo?undefined:f.headline.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.headline.title}</a> <span className="loki-src">· {f.headline.source}</span></div>
 <div className="heim-chs"><span className={`heim-ch${w&&w.isNew?' on loki-on':''}`}>{w&&w.isNew?'🆕 new wallet':'👤 wallet'} · {w?(w.more?'500+ trades':`${w.acts} trades${w.ageDays!=null?`, ${w.ageDays} d old`:''}`):'unknown'}</span>{f.demo?<span className="heim-ch">{f.who}</span>:<a className="heim-ch" href={`https://polymarket.com/profile/${f.wallet}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}>{f.who} ↗</a>}<span className="heim-ch">{fmtTime(f.time)}</span></div>
-</div>}):<div className="heim-empty">No early bets in the last 24 hours.</div>}
+</div>}),1):<div className="heim-empty">No early bets in the last 24 hours.</div>}
 <div className="loki-h">🧪 SUSPICIOUS VOLUME</div>
-{(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?v.map((x,i)=><a key={x.id} className={`heim-card loki-vol${i?' dim':''}`} href={x.url} target="_blank" rel="noopener noreferrer">
+{(()=>{const v=lokiData.volume.filter(x=>x.score>=25);return v.length?withNote(v.map((x,i)=><a key={x.id} className={`heim-card loki-vol${i?' dim':''}`} href={x.url} target="_blank" rel="noopener noreferrer">
 <div className="heim-top"><span className="loki-q">{x.question}</span><span className="heim-lvl" style={{color:volColor(x.score),borderColor:volColor(x.score)+'88'}}>{x.score}/100</span></div>
 <div className="bet-bar"><span style={{width:x.score+'%',background:volColor(x.score)}}></span></div>
 <div className="heim-chs"><span className="heim-ch">🔁 round trips {pct(x.roundTrip)}</span><span className="heim-ch">🐋 top 3 wallets {pct(x.top3)}</span><span className="heim-ch">{x.trades} trades · {fmtVol(x.usd)}</span></div>
-</a>):<div className="heim-empty">No market's volume looks staged right now.</div>})()}
+</a>),1):<div className="heim-empty">No market's volume looks staged right now.</div>})()}
 </>}
 <div className="heim-foot">How it's measured, every hour: the 40 busiest geopolitical Polymarket markets, their trades of the last 24 hours, and the headlines of our five news feeds plus GDELT. 🕵️ An early bet is a trade of $5K or more, at 90¢ or less, placed 5 min to 12 h before the first headline naming the market's country and topic (with no such headline in the 6 h before), and the price has since moved 3 points or more its way. 🆕 New wallet: under 7 days old or 5 trades or fewer. 🔁 Round trips: volume from wallets that bought and sold the same side. Kalshi trades are anonymous, so Loki covers Polymarket only.</div>
 </div></div></Boundary>}
@@ -2215,10 +2218,10 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {!valkData?<div className="heim-empty">{valkErr?"The Valkyries' scan isn't available right now. Try again later.":'Loading…'}</div>:<>
 <div className="heim-global"><div className="heim-g"><span>Last scan</span><b>{fmtTime(valkData.updated)} · {valkData.resolvedChecked} resolved markets</b></div></div>
 <div className="loki-h valk-h">🪽 WHAT THE TOP {valkData.wallets.length} HOLD NOW</div>
-{valkData.picks.length?valkData.picks.map((p,i)=><div key={p.id+p.outcome} className={`heim-card valk-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>lokiGo(p)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(p)}}>
+{valkData.picks.length?withNote(valkData.picks.map((p,i)=><div key={p.id+p.outcome} className={`heim-card valk-card${i?' dim':''}`} role="button" tabIndex={0} onClick={()=>lokiGo(p)} onKeyDown={e=>{if(e.key==='Enter')lokiGo(p)}}>
 <div className="heim-top"><span className="loki-q">{p.question}</span><span className="heim-lvl valk-side">{p.outcome}</span></div>
 <div className="loki-bet"><b>{p.wallets} of {valkData.wallets.length}</b> wallets · <b className="mono">{fmtVol(p.value)}</b> · avg entry {fmtCents(p.avg)} → now <b className="mono">{fmtCents(p.now)}</b>{p.recent?<span className="valk-new"> · {p.recent} new this week</span>:null}</div>
-</div>):<div className="heim-empty">The top wallets hold no open geopolitical positions right now.</div>}
+</div>),1):<div className="heim-empty">The top wallets hold no open geopolitical positions right now.</div>}
 <div className="loki-h valk-h">🏆 TOP WALLETS · RESOLVED GEOPOLITICS, 120 DAYS</div>
 <div className="valk-wallets">{valkData.wallets.slice(0,10).map((w,i)=><a key={w.wallet} className="valk-w" href={`https://polymarket.com/profile/${w.wallet}`} target="_blank" rel="noopener noreferrer">
 <span className="valk-rank mono">{i+1}</span><span className="valk-name">{w.who}</span><span className="mono valk-pnl">+{fmtVol(w.pnl)}</span><span className="valk-meta">{pct(w.hitRate)} hit · {w.markets} mkts · {w.leadDays} d early</span></a>)}</div>
@@ -2291,11 +2294,11 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and US defense stocks). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
 {mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
-{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
+{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?withNote(signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
 <div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
 <div className="heim-q">{x.q}</div>
 <div className="heim-chs"><span className="heim-ch">🎲 odds {fmtChg(x.d)} pts</span>{top&&<span className="heim-ch">📈 {top.n} {fmtPct(top.chg)}</span>}{x.boost?<span className="heim-ch on">{x.boost>0?'＋':'−'}{Math.abs(x.boost)} {x.boost>0?'backed':'contradicted'} by {x.amps.join(', ')||'amplifiers'}</span>:null}</div>
-</div>}):<div className="heim-empty">No hotspot has a matching market right now.</div>}
+</div>}),signals.findIndex(x=>x!==(mjTop||signals[0]))):<div className="heim-empty">No hotspot has a matching market right now.</div>}
 <div className="heim-foot">How it's measured, every hour: per hotspot the Polymarket market with the most trading today against its exposed prices (Yahoo Finance, Twelve Data; fear gauges OVX, GVZ, VIX; Bitcoin and tokenised gold from Coinbase or Kraken). Each 24-hour move is divided by a normal day for that price; crypto counts half. Lightning from a score of {MJ_FLASH}. Fear gauges and crypto add or take up to 15 points when they back or contradict a signal, and never make one on their own.{mjData?` Scanned ${fmtTime(mjData.updated)}.`:''}</div>
 </div></div></Boundary>}
 {heimOpen&&heim&&<Boundary name="Heimdall panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Heimdall early warning">
@@ -2307,7 +2310,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="heim-g"><span>🌐 War news worldwide (GDELT)</span><b style={{color:heimCov?.lit?'#f59e0b':undefined}}>{heimCov?`${heimCov.ratio>=1?'+':'−'}${Math.abs(Math.round((heimCov.ratio-1)*100))}% vs 7-day avg`:'not loaded'}</b></div>
 <div className="heim-g"><span>🍕 Pentagon pizza</span><b style={{color:DOUGHCON[dc].color}}>DOUGHCON {dc}{pizza?.source!=='live'&&<span className="sim-tag">SIM</span>}</b></div>
 </div>
-{heimList.length?heimList.map((h,i)=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className={`heim-card${i?' dim':''}`} style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
+{heimList.length?withNote(heimList.map((h,i)=>{const L=HEIM_LVL[h.lvl];return<div key={h.country} className={`heim-card${i?' dim':''}`} style={{borderColor:L.color+'66'}} role="button" tabIndex={0} onClick={()=>heimGo(h)} onKeyDown={e=>{if(e.key==='Enter')heimGo(h)}}>
 <div className="heim-top"><b>{h.country}</b><span className="heim-lvl" style={{color:L.color,borderColor:L.color+'88'}}>{L.name} · {h.n}/{h.k}</span></div>
 <div className="heim-chs">
 {heimCh.air&&<span className={`heim-ch${h.air.lit?' on':''}`}>✈️ {h.air.faaHit?(h.air.faa.national?'FAA: nationwide ground stop':'FAA: ground stops')+` · ${h.air.faa.stops.length} stop${h.air.faa.stops.length===1?'':'s'}, ${h.air.faa.equip.length} equipment outage${h.air.faa.equip.length===1?'':'s'}`:h.air.none?'no aircraft data':h.air.emg?`${h.air.emg} emergency squawk`:h.air.home?`${h.air.near} military · home base`:`${h.air.isr} tanker/spy · ${h.air.near} military`}</span>}
@@ -2317,7 +2320,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>
 {h.air.faaHit&&<div className="heim-q">FAA airports: {h.air.faa.stops.slice(0,4).join(' · ')}{h.air.faa.equip.length?` · equipment: ${h.air.faa.equip.slice(0,6).join(', ')}`:''}</div>}
 {h.odds.lit&&h.odds.m&&<div className="heim-q">{h.odds.m.question}</div>}
-</div>}):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
+</div>}),1):<div className="heim-empty">All quiet: no country shows a spike right now.</div>}
 <div className="heim-foot">How it's measured: ✈️ two or more tankers, spy or patrol planes within 800 km of the capital, or an emergency squawk (big home bases like the USA or UK count emergencies only); for the USA also FAA ground stops (three or more airports, or a nationwide stop, which is worth watching on its own). 📰 three or more headlines in our news feed in the last 12 hours. 📈 a real-money war market (not one that ends within 3 days) moved 5 points or more in 24 hours. 📖 the country's Wikipedia article had twice its usual daily views (and 3,000+) yesterday; it counts on the news channel. 🔎 a search naming the country plus a war word is in Google's "trending now" list (US, UK, Germany, Canada, Australia, India) with 1,000+ searches, or two such searches; also on the news channel. 🏛️ a US, German or UK travel warning was raised since the last check, called for departure, or was updated in the last 3 days at level 3 or 4 (levels: 1 normal … 4 do not travel). Warnings, Wikipedia and Google Trends are checked every 3 hours{heimData?` · last ${fmtTime(heimData.updated)}`:''}. {!air&&'Aircraft feed not loaded yet. '}{!news.length&&'News feed not loaded yet.'}</div>
 </div></div></Boundary>}
 
