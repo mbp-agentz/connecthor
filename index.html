@@ -290,6 +290,10 @@
     .news-src{font-size:9px;font-weight:600;color:var(--blue);text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:6px}
     .news-title{font-size:12px;line-height:1.4}
     .news-time{font-size:10px;color:var(--muted);margin-top:4px}
+    .agg-teaser{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px}
+    .agg-odds{font-size:11px;margin-top:4px}
+    .agg-h{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
+    .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
     .tag.DIPLOMACY{background:rgba(59,130,246,0.15);color:#93c5fd}
@@ -1085,6 +1089,12 @@ function FilterBar({items,state,onToggle,color}){return<div className="tool-filt
   <div className="tf-hd">FILTERS <span className="muted">· {items.filter(([k,,,b])=>b||state[k]).length}/{items.length} on</span></div>
   <div className="tf-chips">{items.map(([k,l,isNew,base])=>{const on=base||state[k];return<button key={k} className={`tf-chip${on?' on':''}${base?' base':''}`} style={on?{borderColor:color,color}:undefined} aria-pressed={!!on} disabled={base} title={base?'The base of this tool: always on':undefined} onClick={()=>onToggle(k)}>{l}{isNew&&<span className="tf-new">NEW</span>}{base&&<span className="tf-base">BASE</span>}</button>})}</div>
 </div>}
+// aggregaTHOR (sister site): its newest 4 top stories, 3 trending bets and 3 signals, slimmed hourly by tools/aggregathor.mjs
+// (the site's own archive is ~4 MB); a static file, so the tab costs no Function calls
+const AGG_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/aggregathor.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/aggregathor-data/aggregathor.json';
+async function fetchAgg(){const r=await fetch(AGG_URL,{cache:'no-cache'});if(!r.ok)throw new Error('aggregaTHOR HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.stories))throw new Error('bad aggregaTHOR data');return d}
+const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round(h/24)+'d ago':fmtTime(t)}; // stories can be weeks old: "480h ago" reads badly
+const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
 const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
 const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
@@ -1512,6 +1522,10 @@ const[highlighted,setHighlighted]=useState(null);
 const[search,setSearch]=useState('');
 const[catFilter,setCatFilter]=useState('All');
 const[tab,setTab]=useState('news');
+const[aggData,setAggData]=useState(null),[aggErr,setAggErr]=useState(false);
+// loaded when the tab is opened, then every 30 min while it stays open
+useEffect(()=>{if(tab!=='agg')return;let off=false;const load=async()=>{try{const d=await fetchAgg();if(!off){setAggData(d);setAggErr(false)}}catch(e){console.log('aggregaTHOR unavailable:',e.message);if(!off)setAggErr(true)}};
+  load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[tab]);
 const[countries,setCountries]=useState({features:[]});
 const[lastUpd,setLastUpd]=useState(new Date());
 const[newsLastUpd,setNewsLastUpd]=useState(null);
@@ -2111,7 +2125,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <div className="act-tabs">
 <button className={`act-tab ${tab==='news'?'active':''}`} onClick={()=>setTab('news')}>📰 Intel</button>
 <button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>setTab('markets')}>📊 Markets</button>
-<button className={`act-tab ${tab==='hot'?'active':''}`} onClick={()=>setTab('hot')}>🌍 Hotspots</button>
+<button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>setTab('agg')}>⚡ aggregaTHOR</button>
 <button className={`act-tab ${tab==='activity'?'active':''}`} onClick={()=>setTab('activity')}>🔴 Flow{tradesLive&&whales.length>0&&<span className="badge" style={{marginLeft:4,background:'var(--yellow)',color:'#0a0f1a'}}>{whales.length}</span>}</button>
 </div>
 <div className="scroll">
@@ -2130,14 +2144,20 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {(()=>{const h=relatedFor(n.title);return h&&h.top?<span className="news-rel" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(h.top)}}>↳ {h.country} · {h.n} market{h.n>1?'s':''} · {h.top.question.length>48?h.top.question.slice(0,47)+'…':h.top.question} <b>{fmtProb(h.top.probability)}</b></span>:null})()}
 </a>)})}
 </>)}
-{tab==='hot'&&(<div className="tab-fade">
-<div className="note" style={{paddingTop:0}}>Countries ranked by escalation odds × money at stake on real-money markets. Click to fly there.</div>
-{hot.slice(0,15).map((h,i)=>(
-<div key={h.country} className="hot" onClick={()=>openCountry(h.country)}>
-<div className="hot-hd"><span className="hot-name"><span className="muted mono" style={{fontSize:11,marginRight:6}}>{i+1}</span>{h.country}</span><span className="shop-meta">{h.n} market{h.n>1?'s':''}{h.vol24?' · '+fmtVol(h.vol24)+' 24h':''}</span></div>
-{h.tension!=null&&<><div className="hot-bar"><span style={{width:Math.round(h.tension*100)+'%',background:nehLabel(Math.round(h.tension*100)).c}}></span></div><div className="shop-meta">Escalation odds {Math.round(h.tension*100)}% · {nehLabel(Math.round(h.tension*100)).t}</div></>}
-{h.top&&<div className="shop-meta" style={{marginTop:4,color:'var(--text)'}}>{h.top.question} <b className="mono">{fmtProb(h.top.probability)}</b></div>}
-</div>))}
+{tab==='agg'&&(<div className="tab-fade">
+<div className="note" style={{paddingTop:0}}>The newest from our sister site <a href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">aggregathor.com</a>: stories on the markets and their signals.</div>
+{!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
+{AGG_KINDS.map(([k,l])=>{const xs=aggData.stories.filter(x=>x.kind===k);return xs.length?<React.Fragment key={k}><div className="agg-h">{l}</div>{xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
+<a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer" className="news agg">
+<div className="news-src">{x.place||'aggregaTHOR'}</div>
+<div className="news-title">{x.headline}</div>
+{k!=='trending'&&x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
+{x.market&&x.market.p!=null&&<div className="agg-odds">{x.market.source==='kalshi'?'Kalshi':'Polymarket'} <b className="mono">{fmtProb(x.market.p)}</b>{x.market.change24?<span className="mono" style={{color:x.market.change24>0?'var(--green)':'var(--red)'}}> {x.market.change24>0?'▲':'▼'}{Math.abs(Math.round(x.market.change24*100))} pts</span>:null}</div>}
+<div className="news-time">{aggAgo(x.time)}</div>
+{m&&<span className="news-rel" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(m)}}>↳ Show the market on the globe</span>}
+</a>)})}</React.Fragment>:null})}
+<a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">More on aggregathor.com →</a>
+</>}
 </div>)}
 {tab==='markets'&&(<>
 <div className="tabs"><button className={`tab ${srcFilter==='all'?'active':''}`} onClick={()=>setSrcFilter('all')}>All {bets.length}</button>{Object.keys(SOURCES).filter(k=>srcCounts[k]).map(k=><button key={k} className={`tab ${srcFilter===k?'active':''}`} onClick={()=>setSrcFilter(k)}>{srcName(k)} {srcCounts[k]}</button>)}</div>

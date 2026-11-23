@@ -1,0 +1,43 @@
+# aggregaTHOR: the 10 newest stories of the sister site, hourly, for the page's ⚡ aggregaTHOR tab.
+# tools/aggregathor.mjs slims aggregathor.com/data/articles.json (~4 MB) to aggregathor.json, force-pushed as the only file on the orphan branch
+# aggregathor-data. The page reads it from raw.githubusercontent.com, so visitors cost no Pages Function calls.
+name: aggregaTHOR stories
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aggregathor
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      
+      - name: Slim the aggregaTHOR archive
+        run: node tools/aggregathor.mjs "$RUNNER_TEMP/aggregathor/aggregathor.json"
+
+      - name: Publish to the aggregathor-data branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/aggregathor"
+          git init -q -b aggregathor-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add aggregathor.json
+          git commit -q -m "aggregaTHOR stories $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" aggregathor-data
