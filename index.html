@@ -292,7 +292,7 @@
     .news-time{font-size:10px;color:var(--muted);margin-top:4px}
     .agg-teaser{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px}
     .agg-odds{font-size:11px;margin-top:4px}
-    .tag.agg-story{background:rgba(96,165,250,.15);color:var(--blue)}.tag.agg-bet{background:rgba(148,163,184,.15);color:var(--muted)}
+    .agg-h{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
     .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
@@ -1089,11 +1089,12 @@ function FilterBar({items,state,onToggle,color}){return<div className="tool-filt
   <div className="tf-hd">FILTERS <span className="muted">· {items.filter(([k,,,b])=>b||state[k]).length}/{items.length} on</span></div>
   <div className="tf-chips">{items.map(([k,l,isNew,base])=>{const on=base||state[k];return<button key={k} className={`tf-chip${on?' on':''}${base?' base':''}`} style={on?{borderColor:color,color}:undefined} aria-pressed={!!on} disabled={base} title={base?'The base of this tool: always on':undefined} onClick={()=>onToggle(k)}>{l}{isNew&&<span className="tf-new">NEW</span>}{base&&<span className="tf-base">BASE</span>}</button>})}</div>
 </div>}
-// aggregaTHOR (sister site): its 10 newest written stories and bet items, slimmed hourly by tools/aggregathor.mjs
+// aggregaTHOR (sister site): its newest 4 top stories, 3 trending bets and 3 signals, slimmed hourly by tools/aggregathor.mjs
 // (the site's own archive is ~4 MB); a static file, so the tab costs no Function calls
 const AGG_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/aggregathor.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/aggregathor-data/aggregathor.json';
 async function fetchAgg(){const r=await fetch(AGG_URL,{cache:'no-cache'});if(!r.ok)throw new Error('aggregaTHOR HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.stories))throw new Error('bad aggregaTHOR data');return d}
-const AGG_KINDS=[['all','All'],['story','Stories'],['bet','Bets']];
+const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round(h/24)+'d ago':fmtTime(t)}; // stories can be weeks old: "480h ago" reads badly
+const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
 const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
 const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
@@ -1521,7 +1522,7 @@ const[highlighted,setHighlighted]=useState(null);
 const[search,setSearch]=useState('');
 const[catFilter,setCatFilter]=useState('All');
 const[tab,setTab]=useState('news');
-const[aggData,setAggData]=useState(null),[aggErr,setAggErr]=useState(false),[aggKind,setAggKind]=useState('all');
+const[aggData,setAggData]=useState(null),[aggErr,setAggErr]=useState(false);
 // loaded when the tab is opened, then every 30 min while it stays open
 useEffect(()=>{if(tab!=='agg')return;let off=false;const load=async()=>{try{const d=await fetchAgg();if(!off){setAggData(d);setAggErr(false)}}catch(e){console.log('aggregaTHOR unavailable:',e.message);if(!off)setAggErr(true)}};
   load();const i=setInterval(()=>{if(!document.hidden)load()},1800000);return()=>{off=true;clearInterval(i)}},[tab]);
@@ -2146,16 +2147,15 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 {tab==='agg'&&(<div className="tab-fade">
 <div className="note" style={{paddingTop:0}}>The newest from our sister site <a href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">aggregathor.com</a>: stories on the markets and their signals.</div>
 {!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
-<div className="chips">{AGG_KINDS.map(([k,l])=><button key={k} className={`chip-btn ${aggKind===k?'on':''}`} onClick={()=>setAggKind(k)}>{l}</button>)}</div>
-{(()=>{const xs=aggData.stories.filter(x=>aggKind==='all'||x.kind===aggKind).slice(0,10);return xs.length?xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
+{AGG_KINDS.map(([k,l])=>{const xs=aggData.stories.filter(x=>x.kind===k);return xs.length?<React.Fragment key={k}><div className="agg-h">{l}</div>{xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
 <a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer" className="news agg">
-<div className="news-src">aggregaTHOR{x.place&&<span className="muted">· {x.place}</span>}<span className={`tag agg-${x.kind}`}>{x.kind==='bet'?'BET':'STORY'}</span></div>
+<div className="news-src">{x.place||'aggregaTHOR'}</div>
 <div className="news-title">{x.headline}</div>
-{x.kind==='story'&&x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
+{k!=='trending'&&x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
 {x.market&&x.market.p!=null&&<div className="agg-odds">{x.market.source==='kalshi'?'Kalshi':'Polymarket'} <b className="mono">{fmtProb(x.market.p)}</b>{x.market.change24?<span className="mono" style={{color:x.market.change24>0?'var(--green)':'var(--red)'}}> {x.market.change24>0?'▲':'▼'}{Math.abs(Math.round(x.market.change24*100))} pts</span>:null}</div>}
-<div className="news-time">{fmtTime(x.time)}</div>
+<div className="news-time">{aggAgo(x.time)}</div>
 {m&&<span className="news-rel" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(m)}}>↳ Show the market on the globe</span>}
-</a>)}):<div className="news-loading">Nothing here yet.</div>})()}
+</a>)})}</React.Fragment>:null})}
 <a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">More on aggregathor.com →</a>
 </>}
 </div>)}
