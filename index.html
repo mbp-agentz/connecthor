@@ -942,7 +942,7 @@ function similarMarkets(m,all){
 // Live: tools/mjolnir.mjs runs hourly in GitHub Actions (Polymarket odds + Yahoo Finance prices) and
 // force-pushes mjolnir.json to the mjolnir-data branch, read here as a static file (no Pages Function).
 // MJOLNIR_DEMO is only the fallback when that file can't be loaded, and is then labelled DEMO.
-const EXCH={nyse:{name:'NYSE',lat:40.7069,lng:-74.0113},nymex:{name:'NYMEX',lat:40.7146,lng:-74.0151},nasdaq:{name:'Nasdaq',lat:40.7568,lng:-73.986},ice:{name:'ICE London',lat:51.5155,lng:-0.099},xetra:{name:'Frankfurt',lat:50.1109,lng:8.6821},ttf:{name:'ICE Endex',lat:52.37,lng:4.89},twse:{name:'Taiwan SE',lat:25.033,lng:121.5654},krx:{name:'Korea Exchange',lat:37.5235,lng:126.9269},tse:{name:'Tokyo SE',lat:35.6828,lng:139.7744},cph:{name:'Copenhagen',lat:55.6761,lng:12.5683},tase:{name:'Tel Aviv SE',lat:32.0636,lng:34.7748},crypto:{name:'Crypto',lat:37.7749,lng:-122.4194},cboe:{name:'Cboe Chicago',lat:41.8781,lng:-87.6298},wse:{name:'Warsaw SE',lat:52.2297,lng:21.0122},sto:{name:'Stockholm',lat:59.3326,lng:18.0649},pse:{name:'Philippine SE',lat:14.5547,lng:121.0244},bme:{name:'Madrid SE',lat:40.4168,lng:-3.7038}};
+const EXCH={nyse:{name:'NYSE',lat:40.7069,lng:-74.0113},nymex:{name:'NYMEX',lat:40.7146,lng:-74.0151},nasdaq:{name:'Nasdaq',lat:40.7568,lng:-73.986},ice:{name:'ICE London',lat:51.5155,lng:-0.099},xetra:{name:'Frankfurt',lat:50.1109,lng:8.6821},ttf:{name:'ICE Endex',lat:52.37,lng:4.89},twse:{name:'Taiwan SE',lat:25.033,lng:121.5654},krx:{name:'Korea Exchange',lat:37.5235,lng:126.9269},tse:{name:'Tokyo SE',lat:35.6828,lng:139.7744},cph:{name:'Copenhagen',lat:55.6761,lng:12.5683},tase:{name:'Tel Aviv SE',lat:32.0636,lng:34.7748},crypto:{name:'Crypto',lat:37.7749,lng:-122.4194},cboe:{name:'Cboe Chicago',lat:41.8781,lng:-87.6298},wse:{name:'Warsaw SE',lat:52.2297,lng:21.0122},sto:{name:'Stockholm',lat:59.3326,lng:18.0649},pse:{name:'Philippine SE',lat:14.5547,lng:121.0244},bme:{name:'Madrid SE',lat:40.4168,lng:-3.7038},moex:{name:'Moscow Exchange',lat:55.7558,lng:37.6173},kyiv:{name:'Kyiv',lat:50.4501,lng:30.5234},six:{name:'Zurich (SIX)',lat:47.3769,lng:8.5417}};
 const MJ_KIND={gap:{t:'DIVERGENCE',d:'betting market and stock market disagree',c:'#22d3ee'},lead:{t:'STOCKS MOVED FIRST',d:'the stock market reacted before the odds',c:'#a78bfa'},confirm:{t:'CONFIRMED',d:'both markets price the same story',c:'#38bdf8'},quiet:{t:'QUIET',d:'both markets within a normal day',c:'#64748b'},closed:{t:'MARKETS CLOSED',d:'no stock trading to compare with',c:'#64748b'}};
 const MJ_FLASH=40; // below this score a hotspot is listed but gets no lightning
 const MJ_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/mjolnir.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/mjolnir-data/mjolnir.json';
@@ -972,20 +972,22 @@ const MJOLNIR_DEMO=[
 const fmtPct=c=>(c>0?'+':c<0?'−':'')+Math.abs(c*100).toFixed(1)+'%';
 // Amplifier filters in the Mjölnir panel. The verdict is re-run here with only the switched-on kinds (the file
 // carries every asset's z and timing, and the odds side)
-const MJ_KINDS=[['stock','📈 Regional prices',false,true],['vol','😨 Fear gauges',true],['crypto','₿ Crypto',true]]; // regional prices are the base: always on
-const MJ_F_DEFAULT={stock:true,vol:false,crypto:false};
+const MJ_KINDS=[['stock','📈 Regional prices',false,true],['fx','💱 Currencies',true],['vol','😨 Fear gauges',true],['crypto','₿ Crypto',true]]; // regional prices are the base: always on
+const MJ_F_DEFAULT={stock:true,fx:true,vol:false,crypto:false}; // currencies were part of the regional prices before they got a filter, so they stay on
 const fmtPts=d=>(d>0?'+':d<0?'−':'')+Math.abs(Math.round(d*100))+' pts';
 const fmtGapMs=ms=>{const m=Math.round(Math.abs(ms)/6e4),h=Math.floor(m/60);return h?`${h} h${m%60?' '+(m%60)+' min':''}`:`${m} min`};
-// Same code as verdict() in tools/mjolnir.mjs (copied verbatim): regional prices make the signal, fear gauges and crypto only amplify it
+// Same code as verdict() in tools/mjolnir.mjs (copied verbatim): regional prices and currencies make the signal, fear gauges and crypto only amplify it
+const isReg=a=>(a.k||'stock')==='stock'||a.k==='fx';
 const mjJudge=(()=>{const H=36e5,fmtGap=fmtGapMs;
+const REGIONAL = a => (a.k || 'stock') === 'stock' || a.k === 'fx'; // shares, commodities and the region's currency
 function verdict(x, f) {
   const on = a => f[a.k || 'stock'], shown = x.assets.filter(on);
-  const live = x.assets.filter(a => (a.k || 'stock') === 'stock' && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
+  const live = x.assets.filter(a => REGIONAL(a) && on(a) && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
   const az = live.length ? live.reduce((t, a) => t + a.z, 0) / live.length : null;
-  const amp = x.assets.filter(a => a.k && a.k !== 'stock' && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
+  const amp = x.assets.filter(a => !REGIONAL(a) && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
   const mz = ws ? amp.reduce((t, a) => t + W(a) * a.z, 0) / ws : null;
   const out = { ...x, assets: shown, az: az == null ? null : +az.toFixed(2), mz: mz == null ? null : +mz.toFixed(2), boost: 0, amps: [] };
-  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => (a.k || 'stock') === 'stock').map(a => a.n).join(' and ')} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
+  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => REGIONAL(a) && on(a)).map(a => a.n).join(' and ') || 'No regional price'} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
   const oz = x.oz, d = x.d, A = Math.abs(oz), B = Math.abs(az);
   // who moved first: the odds or the biggest-moving price
   const oh = A >= 1 ? x.oh : null, ah = B >= 1 && Math.abs(lead.z) >= 1 ? lead.half : null, gap = oh && ah ? oh - ah : null; // > 0: prices first
@@ -1764,14 +1766,14 @@ const mjClosest=!flashes.length&&signals.length?signals[0]:null;
 useEffect(()=>{if(mjEx&&!bolt)setMjEx(false)},[bolt]);
 const startMjEx=()=>{setMjEx(true);if(mobile)setMjOpen(false);openBolt('mj-iran')};
 // amplifiers that moved beyond a normal day, once for the whole panel (they're the same for every country)
-const mjMood=useMemo(()=>{if(!mjData)return[];const m=new Map();for(const x of mjData.signals)for(const a of x.assets||[])if(a.k&&a.k!=='stock'&&mjF[a.k]&&a.open&&Math.abs(a.z)>=1&&!m.has(a.n))m.set(a.n,a);return[...m.values()]},[mjData,mjF]);
+const mjMood=useMemo(()=>{if(!mjData)return[];const m=new Map();for(const x of mjData.signals)for(const a of x.assets||[])if(!isReg(a)&&mjF[a.k]&&a.open&&Math.abs(a.z)>=1&&!m.has(a.n))m.set(a.n,a);return[...m.values()]},[mjData,mjF]);
 // one result per tool: only the opened signal (else the strongest) strikes; other flashes get a grey ring
 const mjTop=(bolt&&flashes.find(x=>x.id===bolt))||flashes[0]||null;
 const sigKey=flashes.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|')+'>'+(mjTop?mjTop.id:'');
 // Bolts re-strike every 1.6 s with fresh jitter; only this layer is rebuilt, markers and arcs stay put
 const[boltTick,setBoltTick]=useState(0);
 useEffect(()=>{if(!mjolnir||REDUCED_MOTION)return;const i=setInterval(()=>{if(!document.hidden)setBoltTick(t=>t+1)},1600);return()=>clearInterval(i)},[mjolnir]);
-const boltPaths=useMemo(()=>{const out=[];(mjTop?[mjTop]:[]).forEach((x,k)=>x.assets.filter(a=>(a.k||'stock')==='stock').forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
+const boltPaths=useMemo(()=>{const out=[];(mjTop?[mjTop]:[]).forEach((x,k)=>x.assets.filter(isReg).forEach((a,j)=>{const seed=1+k*97+j*13+boltTick*7919,pts=boltPath(x,EXCH[a.x],seed);out.push({sig:x.id,pts,fork:false});
   const r=seeded(seed+5),p=pts[8+Math.floor(r()*14)],f=[p];for(let n=1;n<6;n++){const q=f[n-1];f.push([q[0]+(r()-0.5)*3.2,q[1]+(r()-0.5)*3.2,Math.max(0.003,q[2]-0.012)])}out.push({sig:x.id,pts:f,fork:true})}));return out},[sigKey,boltTick]);
 // travel warnings + Wikipedia every 3 h in the Action; fetched on load, then every 30 min
 const[heimData,setHeimData]=useState(null);
@@ -1813,7 +1815,7 @@ const lokiRings=useMemo(()=>{if(!lokiKey)return[];const by=new Map(marketsRef.cu
 const lokiGo=f=>{const m=bets.find(x=>x.conditionId===f.id);if(m){if(mobile){setLokiOpen(false);setValkOpen(false)}setSelected(m)}else window.open(f.url,'_blank','noopener')}; // war markets stay hidden while Tyr is off
 const toggleHeim=()=>{const on=!heim;setHeim(on);setHeimOpen(on);if(on)setToolsOpen(false)};
 const heimGo=h=>{try{globeEl.current&&globeEl.current.pointOfView({lat:h.lat-8,lng:h.lng,altitude:1.7},REDUCED_MOTION?0:1000)}catch(e){}if(mobile)setHeimOpen(false);if(bets.some(m=>m.country===h.country))openCountry(h.country)};
-const mjRings=useMemo(()=>flashes.flatMap((x,k)=>x!==mjTop?[{lat:x.lat,lng:x.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*170,color:'rgba(148,163,184,0.6)'}]:[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300,color:'#22d3ee'},...x.assets.filter(a=>(a.k||'stock')==='stock').map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]).concat(mjClosest?[{lat:mjClosest.lat,lng:mjClosest.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800,color:'rgba(148,163,184,0.75)'}]:[]),[sigKey,mjClosest&&mjClosest.id]);
+const mjRings=useMemo(()=>flashes.flatMap((x,k)=>x!==mjTop?[{lat:x.lat,lng:x.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*170,color:'rgba(148,163,184,0.6)'}]:[{lat:x.lat,lng:x.lng,maxR:4.5,propagationSpeed:1.6,repeatPeriod:1300,color:'#22d3ee'},...x.assets.filter(isReg).map(a=>({lat:EXCH[a.x].lat,lng:EXCH[a.x].lng,maxR:2.2,propagationSpeed:1.2,repeatPeriod:1800+k*130,color:'#a5f3fc'}))]).concat(mjClosest?[{lat:mjClosest.lat,lng:mjClosest.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800,color:'rgba(148,163,184,0.75)'}]:[]),[sigKey,mjClosest&&mjClosest.id]);
 const sigById=useMemo(()=>new Map(signals.map(x=>[x.id,x])),[signals]);
 const boltSig=bolt?sigById.get(bolt):null;
 const mjScore=flashes.length?Math.round(flashes.reduce((t,x)=>t+x.score,0)/flashes.length):0;
@@ -2079,7 +2081,7 @@ return(
 <div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>
 <div className="mj-cols">
 <div className="mj-col"><div className="dc-kicker">BETTING MARKET</div><div className="mj-q">{x.q}</div><div className="mj-big mono">{fmtProb(x.p)} <span style={{color:x.d>0?'var(--red)':'var(--green)'}}>{fmtChg(x.d)} pts 24h</span></div></div>
-<div className="mj-col">{[['stock','STOCK MARKET · 24H'],['vol','FEAR GAUGES · 24H'],['crypto','CRYPTO · 24H']].map(([k,t])=>{const as=x.assets.filter(a=>(a.k||'stock')===k);return as.length>0&&<React.Fragment key={k}><div className="dc-kicker" style={k!=='stock'?{marginTop:8}:undefined}>{t}</div>{as.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {a.src&&a.k==='crypto'?a.src:EXCH[a.x].name}{a.open===false?' · closed':''}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}{a.z!=null&&<span className="muted"> {Math.abs(a.z).toFixed(1)}×</span>}</span></div>)}</React.Fragment>})}</div>
+<div className="mj-col">{[['stock','STOCK MARKET · 24H'],['fx','CURRENCIES · 24H'],['vol','FEAR GAUGES · 24H'],['crypto','CRYPTO · 24H']].map(([k,t])=>{const as=x.assets.filter(a=>(a.k||'stock')===k);return as.length>0&&<React.Fragment key={k}><div className="dc-kicker" style={k!=='stock'?{marginTop:8}:undefined}>{t}</div>{as.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {a.src&&a.k==='crypto'?a.src:EXCH[a.x].name}{a.open===false?' · closed':''}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}{a.z!=null&&<span className="muted"> {Math.abs(a.z).toFixed(1)}×</span>}</span></div>)}</React.Fragment>})}</div>
 </div>
 <div className="mj-why"><b>{x.flash?'Why it flashes:':'Why no lightning:'}</b> {x.why}{x.boost?` ${x.boost>0?'Backed':'Contradicted'} by ${x.amps.join(', ')||'the fear gauges and crypto'}: ${x.boost>0?'+':'−'}${Math.abs(x.boost)} points.`:''}</div>
 <div className="shop-meta" style={{marginTop:6}}>⏱ {x.lead}</div>
@@ -2295,7 +2297,7 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and US defense stocks). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
 {mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
-{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?withNote(signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(a=>(a.k||'stock')==='stock').sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
+{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?withNote(signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(isReg).sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
 <div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
 <div className="heim-q">{x.q}</div>
 <div className="heim-chs"><span className="heim-ch">🎲 odds {fmtChg(x.d)} pts</span>{top&&<span className="heim-ch">📈 {top.n} {fmtPct(top.chg)}</span>}{x.boost?<span className="heim-ch on">{x.boost>0?'＋':'−'}{Math.abs(x.boost)} {x.boost>0?'backed':'contradicted'} by {x.amps.join(', ')||'amplifiers'}</span>:null}</div>

@@ -16,29 +16,33 @@ const H = 3600e3, DAY = 24 * H;
 
 // Each hotspot and the prices most exposed to it. s = which way the price goes when the risk rises
 // (TSMC falls on Taiwan risk, so s = -1). x = exchange key in the page's EXCH table (bolt target).
+// k 'fx' = the region's own currency against the dollar (rises when the currency weakens): a regional price
+// like shares, with its own panel filter. Iran, Venezuela and North Korea have no free-floating rate to read.
 const THEMES = [
   { id: 'iran', country: 'Iran', in: ['Iran'], re: /strike|attack|war|military|invade|hormuz|regime|nuclear|ceasefire|deal/i,
     assets: [{ sym: 'BZ=F', td: 'BNO', n: 'Brent crude', x: 'ice', s: 1 }, { sym: 'LMT', td: 'LMT', n: 'Lockheed Martin', x: 'nyse', s: 1 }] },
   { id: 'israel', country: 'Israel', in: ['Israel', 'Gaza', 'Lebanon'], re: /ceasefire|strike|hezbollah|hamas|war|attack|invade|hostage/i,
-    assets: [{ sym: 'ILS=X', td: 'USD/ILS', n: 'USD/Shekel', x: 'tase', s: 1 }, { sym: 'ESLT', td: 'ESLT', n: 'Elbit Systems', x: 'nasdaq', s: 1 }] },
+    assets: [{ sym: 'ILS=X', td: 'USD/ILS', n: 'USD/Shekel', x: 'tase', s: 1, k: 'fx' }, { sym: 'ESLT', td: 'ESLT', n: 'Elbit Systems', x: 'nasdaq', s: 1 }] },
   { id: 'taiwan', country: 'Taiwan', in: ['Taiwan', 'China'], out: ['Philippines'], re: /invade|invasion|blockade|taiwan|military|clash/i,
-    assets: [{ sym: '2330.TW', td: 'TSM', n: 'TSMC', x: 'twse', s: -1 }, { sym: 'TWD=X', td: 'USD/TWD', n: 'USD/Taiwan dollar', x: 'twse', s: 1 }] },
+    assets: [{ sym: '2330.TW', td: 'TSM', n: 'TSMC', x: 'twse', s: -1 }, { sym: 'TWD=X', td: 'USD/TWD', n: 'USD/Taiwan dollar', x: 'twse', s: 1, k: 'fx' }] },
   { id: 'ukraine', country: 'Ukraine', in: ['Ukraine', 'Russia'], re: /ceasefire|peace|truce|war|deal|invade|capture|offensive/i,
-    assets: [{ sym: 'RHM.DE', n: 'Rheinmetall', x: 'xetra', s: 1 }, { sym: 'TTF=F', n: 'EU gas (TTF)', x: 'ttf', s: 1 }] },
+    assets: [{ sym: 'RHM.DE', n: 'Rheinmetall', x: 'xetra', s: 1 }, { sym: 'TTF=F', n: 'EU gas (TTF)', x: 'ttf', s: 1 },
+      { sym: 'RUB=X', td: 'USD/RUB', n: 'USD/Ruble', x: 'moex', s: 1, k: 'fx' }, { sym: 'UAH=X', td: 'USD/UAH', n: 'USD/Hryvnia', x: 'kyiv', s: 1, k: 'fx' }] },
   { id: 'venezuela', country: 'Venezuela', in: ['Venezuela'], re: /military|invade|strike|action|maduro|attack|war/i,
     assets: [{ sym: 'CL=F', td: 'USO', n: 'WTI crude', x: 'nymex', s: 1 }] },
   { id: 'nk', country: 'North Korea', in: ['North Korea', 'South Korea'], re: /icbm|missile|nuclear|test|launch|war|attack/i,
-    assets: [{ sym: '^KS11', td: 'EWY', n: 'KOSPI', x: 'krx', s: -1 }, { sym: '7011.T', n: 'Mitsubishi Heavy', x: 'tse', s: 1 }] },
+    assets: [{ sym: '^KS11', td: 'EWY', n: 'KOSPI', x: 'krx', s: -1 }, { sym: '7011.T', n: 'Mitsubishi Heavy', x: 'tse', s: 1 }, { sym: 'KRW=X', td: 'USD/KRW', n: 'USD/Won', x: 'krx', s: 1, k: 'fx' }] },
   { id: 'yemen', country: 'Yemen', in: ['Yemen'], re: /houthi|red sea|ship|attack|strike|war/i,
     assets: [{ sym: 'MAERSK-B.CO', n: 'Maersk', x: 'cph', s: 1 }, { sym: 'BZ=F', td: 'BNO', n: 'Brent crude', x: 'ice', s: 1 }] },
   // Russia against NATO or an EU country (the Ukraine theme keeps the war itself): the zloty weakens,
   // Saab rises, European blue chips fall
   { id: 'nato', country: 'NATO', in: ['NATO', 'EU', 'Poland', 'Romania'], re: /military|clash|attack|invade|invasion|war|strike|drone|article 5/i,
-    assets: [{ sym: 'PLN=X', td: 'USD/PLN', n: 'USD/Zloty', x: 'wse', s: 1 }, { sym: 'SAAB-B.ST', n: 'Saab', x: 'sto', s: 1 }, { sym: '^STOXX50E', n: 'Euro Stoxx 50', x: 'xetra', s: -1 }] },
+    assets: [{ sym: 'PLN=X', td: 'USD/PLN', n: 'USD/Zloty', x: 'wse', s: 1, k: 'fx' }, { sym: 'SAAB-B.ST', n: 'Saab', x: 'sto', s: 1 }, { sym: '^STOXX50E', n: 'Euro Stoxx 50', x: 'xetra', s: -1 },
+      { sym: 'EUR=X', td: 'USD/EUR', n: 'USD/Euro', x: 'xetra', s: 1, k: 'fx' }] },
   // China against the Philippines in the South China Sea (the Manila index has no daily history on
   // Yahoo, so the US-listed Philippines fund stands in)
   { id: 'scs', country: 'Philippines', in: ['Philippines'], re: /military|clash|attack|invade|invasion|blockade|war|strike|scarborough|south china sea/i,
-    assets: [{ sym: 'PHP=X', td: 'USD/PHP', n: 'USD/Peso', x: 'pse', s: 1 }, { sym: 'EPHE', td: 'EPHE', n: 'Philippines fund (EPHE)', x: 'nyse', s: -1 }] },
+    assets: [{ sym: 'PHP=X', td: 'USD/PHP', n: 'USD/Peso', x: 'pse', s: 1, k: 'fx' }, { sym: 'EPHE', td: 'EPHE', n: 'Philippines fund (EPHE)', x: 'nyse', s: -1 }] },
   // US action against Cuba: Cuba has no market of its own, so the companies most exposed to it stand in,
   // Meliá (the largest hotel operator on the island) and Carnival (Caribbean cruises)
   { id: 'cuba', country: 'Cuba', in: ['Cuba'], re: /invade|invasion|military|strike|attack|blockade|regime|war|action/i,
@@ -54,7 +58,10 @@ const CRYPTO = { iran: [BTC, GOLD], israel: [BTC, GOLD], taiwan: [BTC, GOLD], uk
 const OVX = { sym: '^OVX', n: 'Oil volatility (OVX)', x: 'cboe', k: 'vol', s: 1 };
 const GVZ = { sym: '^GVZ', n: 'Gold volatility (GVZ)', x: 'cboe', k: 'vol', s: 1 };
 const VIX = { sym: '^VIX', n: 'Stock volatility (VIX)', x: 'cboe', k: 'vol', s: 1 };
-const VOL = { iran: [OVX], israel: [GVZ], taiwan: [VIX], ukraine: [GVZ], venezuela: [OVX], nk: [VIX], yemen: [OVX], nato: [GVZ], scs: [VIX], cuba: [VIX] };
+// The Swiss franc is the classic safe-haven currency: it gains on fear everywhere, so USD/CHF falls (s = -1).
+// Like the gauges it is the same for every hotspot, so it only amplifies.
+const CHF = { sym: 'CHF=X', td: 'USD/CHF', n: 'Swiss franc (safe haven)', x: 'six', k: 'vol', s: -1 };
+const VOL = { iran: [OVX, CHF], israel: [GVZ, CHF], taiwan: [VIX, CHF], ukraine: [GVZ, CHF], venezuela: [OVX, CHF], nk: [VIX, CHF], yemen: [OVX, CHF], nato: [GVZ, CHF], scs: [VIX, CHF], cuba: [VIX, CHF] };
 // "Yes" on these questions means less risk (a ceasefire holds, a deal is signed)
 const CALM_RE = /ceasefire|peace|truce|deal|agreement|normaliz|recogni|release|withdraw/i;
 const MIN_VOL = 20000; // a thinner market moves on a single trade
@@ -181,24 +188,25 @@ function judge(th, m, os, assets, now) {
   const oz = d * risk / sdOdds;
   const mean = xs => xs.length ? +(xs.reduce((t, a) => t + a.z, 0) / xs.length).toFixed(2) : null, live = k => assets.filter(a => a.open && a.k === k);
   const x = { id: 'mj-' + th.id, country: th.country, q: m.q, url: m.url, marketId: m.id, p: +m.p.toFixed(3), d: +d.toFixed(3), oz: +oz.toFixed(2),
-    sz: mean(live('stock')), vz: mean(live('vol')), cz: mean(live('crypto')),
+    sz: mean(live('stock')), fz: mean(live('fx')), vz: mean(live('vol')), cz: mean(live('crypto')),
     assets: assets.map(({ sd, ...a }) => a), oh: Math.abs(oz) >= 1 ? halfway(os, now - DAY) : null }; // half/oh: when each side did half its move
-  return verdict(x, { stock: true, vol: true, crypto: true });
+  return verdict(x, { stock: true, fx: true, vol: true, crypto: true });
 }
 
 // The verdict. The page runs an identical copy (mjJudge in index.html) with its panel filters: keep both in step.
-// Only a region's own prices (k 'stock': shares, commodities, currencies) can make lightning. Fear gauges and
+// Only a region's own prices (k 'stock': shares and commodities; k 'fx': its currency) can make lightning. Fear gauges and
 // crypto are the same for every hotspot (Bitcoin can't tell Yemen from Ukraine), so they only amplify: up to
 // ±15 points when they back or contradict the story, and never a signal on their own.
 const MJ_FLASH = 40;
+const REGIONAL = a => (a.k || 'stock') === 'stock' || a.k === 'fx'; // shares, commodities and the region's currency
 function verdict(x, f) {
   const on = a => f[a.k || 'stock'], shown = x.assets.filter(on);
-  const live = x.assets.filter(a => (a.k || 'stock') === 'stock' && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
+  const live = x.assets.filter(a => REGIONAL(a) && on(a) && a.open), lead = live.slice().sort((a, b) => Math.abs(b.z) - Math.abs(a.z))[0];
   const az = live.length ? live.reduce((t, a) => t + a.z, 0) / live.length : null;
-  const amp = x.assets.filter(a => a.k && a.k !== 'stock' && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
+  const amp = x.assets.filter(a => !REGIONAL(a) && on(a) && a.open), W = a => a.k === 'crypto' ? 0.5 : 1, ws = amp.reduce((t, a) => t + W(a), 0);
   const mz = ws ? amp.reduce((t, a) => t + W(a) * a.z, 0) / ws : null;
   const out = { ...x, assets: shown, az: az == null ? null : +az.toFixed(2), mz: mz == null ? null : +mz.toFixed(2), boost: 0, amps: [] };
-  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => (a.k || 'stock') === 'stock').map(a => a.n).join(' and ')} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
+  if (az == null) return { ...out, kind: 'closed', score: 0, lead: 'Markets closed', why: `${x.assets.filter(a => REGIONAL(a) && on(a)).map(a => a.n).join(' and ') || 'No regional price'} have not traded for most of the last 24 hours, so there is nothing to compare the odds with. Fear gauges and crypto only strengthen a signal, they never make one.` };
   const oz = x.oz, d = x.d, A = Math.abs(oz), B = Math.abs(az);
   // who moved first: the odds or the biggest-moving price
   const oh = A >= 1 ? x.oh : null, ah = B >= 1 && Math.abs(lead.z) >= 1 ? lead.half : null, gap = oh && ah ? oh - ah : null; // > 0: prices first
@@ -240,7 +248,7 @@ async function main() {
     const assets = th.assets.map(a => { const x = moves.get(key(a)); return x && { ...x, n: a.n, x: a.x, z: +(x.chg * a.s / x.sd).toFixed(2) } }).filter(Boolean);
     if (!assets.length) continue;
     const r = judge(th, m, os, assets, now); out.push(r);
-    console.log(`${th.id.padEnd(9)} ${r.kind.padEnd(7)} ${String(r.score).padStart(2)}  odds ${fmtPts(r.d)} z${r.oz}  stocks z${r.sz}  amp z${r.mz} ${r.boost ? (r.boost > 0 ? '+' : '') + r.boost : ''}  | ${r.q}`);
+    console.log(`${th.id.padEnd(9)} ${r.kind.padEnd(7)} ${String(r.score).padStart(2)}  odds ${fmtPts(r.d)} z${r.oz}  prices z${r.az} (fx ${r.fz})  amp z${r.mz} ${r.boost ? (r.boost > 0 ? '+' : '') + r.boost : ''}  | ${r.q}`);
   }
   out.sort((a, b) => b.score - a.score);
   // Past lightning (base filter: regional prices only, what every visitor sees first), newest first. A hotspot
@@ -249,7 +257,7 @@ async function main() {
   try { prev = /^https?:/.test(PREV) ? await getJSON(PREV, 1) : existsSync(PREV) ? JSON.parse(readFileSync(PREV, 'utf8')) : null } catch { }
   const recent = ((prev && prev.recent) || []).slice();
   for (const x of out) {
-    const b = verdict(x, { stock: true, vol: false, crypto: false }); if (b.score < MJ_FLASH) continue;
+    const b = verdict(x, { stock: true, fx: true, vol: false, crypto: false }); if (b.score < MJ_FLASH) continue;
     const e = { country: x.country, kind: b.kind, score: b.score, q: x.q, url: x.url, at: new Date(now).toISOString() }, k = recent.findIndex(r => r.country === x.country && now - Date.parse(r.at) < 6 * H);
     if (k >= 0) recent[k] = { ...e, at: recent[k].at, score: Math.max(recent[k].score, e.score) }; else recent.unshift(e);
   }
