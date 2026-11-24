@@ -294,7 +294,7 @@
     .agg-teaser{font-size:11px;color:var(--muted);line-height:1.4;margin-top:4px}
     .agg-odds{font-size:11px;margin-top:4px}
     .agg-h{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
-    .agg-ico{width:13px;height:13px;vertical-align:-2px;margin-right:2px}
+    .agg-ico{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
     .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
@@ -1096,8 +1096,9 @@ function FilterBar({items,state,onToggle,color}){return<div className="tool-filt
 const AGG_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/aggregathor.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/aggregathor-data/aggregathor.json';
 async function fetchAgg(){const r=await fetch(AGG_URL,{cache:'no-cache'});if(!r.ok)throw new Error('aggregaTHOR HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.stories))throw new Error('bad aggregaTHOR data');return d}
 const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round(h/24)+'d ago':fmtTime(t)}; // stories can be weeks old: "480h ago" reads badly
-// aggregaTHOR's own favicon (aggregathor.com/favicon.svg), inline so the tab needs no request
-const AggIcon=()=><svg className="agg-ico" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e14"/><path d="M32 10 50 54H41.5l-3.4-9H25.9l-3.4 9H14L32 10Zm0 14.5-4 11.7h8l-4-11.7Z" fill="#7aa2ff"/></svg>;
+// aggregaTHOR's favicon (globe emblem, copied from https://aggregathor.com/favicon.svg on 2026-11-24), inline so the tab
+// needs no request; that small version is drawn for 16–32 px, the detailed /brand/emblem.svg only suits 64 px and up
+const AggIcon=()=><svg className="agg-ico" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e14"/><g fill="none" stroke="#7AA2FF" strokeLinecap="round"><path d="M9.5 24.5 A24 24 0 0 1 54.5 24.5 M9.5 39.5 A24 24 0 0 0 54.5 39.5" strokeWidth="3.2"/><circle cx="32" cy="32" r="15.5" strokeWidth="3.4"/><circle cx="32" cy="32" r="10.5" strokeWidth="1.8"/><ellipse cx="32" cy="32" rx="4.6" ry="10.5" strokeWidth="1.6"/><path d="M22.6 27.5 H41.4 M22.6 36.5 H41.4" strokeWidth="1.5"/></g><g fill="#7AA2FF"><rect x="4" y="27.6" width="14" height="3.2" rx="1"/><rect x="4" y="33.2" width="14" height="3.2" rx="1"/><rect x="46" y="27.6" width="14" height="3.2" rx="1"/><rect x="46" y="33.2" width="14" height="3.2" rx="1"/></g></svg>;
 // one "hidden" note above a tool's greyed-out results (not one per card)
 const withNote=(els,at)=>at>=0&&at<els.length?[...els.slice(0,at),<div key="dim-note" className="dim-note">🔒 Hidden – coming soon</div>,...els.slice(at)]:els;
 const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
