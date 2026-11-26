@@ -394,14 +394,14 @@
     .agg-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
     .agg-place{color:#7aa2ff;font-weight:600}
     .agg-title{display:block;font-size:15px;font-weight:600;line-height:1.35;color:var(--text);text-decoration:none;margin-top:5px}
-    .agg-title:hover{color:#7aa2ff}
+    
     .agg-teaser{font-size:12.5px!important;line-height:1.5!important;margin-top:6px!important}
     .agg-odds{display:flex;align-items:baseline;gap:8px;margin-top:8px!important;font-size:11px!important;color:var(--muted)}
     .agg-odds b{font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:var(--text);line-height:1}
     .agg-acts{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
     .agg-globe{flex:1 1 auto;min-height:36px;padding:8px 12px;border:0;border-radius:4px;background:#3b82f6;color:#fff;font:inherit;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
     .agg-globe:hover{background:#2563eb}
-    .agg-read{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;white-space:nowrap}.agg-read:hover{color:var(--text)}
+    .agg-read{display:inline-flex;align-items:center;min-height:36px;padding:8px 12px;border:1px solid #7aa2ff;border-radius:4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#7aa2ff;text-decoration:none;white-space:nowrap}.agg-read:hover{background:rgba(122,162,255,.12);color:#fff}
     .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
@@ -2337,13 +2337,13 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>
 <div className="scroll">
 {tab==='agg'&&(<div className="tab-fade">
-<div className="agg-intro"><div className="agg-intro-h"><AggIcon/> <span>aggregaTHOR</span><a href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+<div className="agg-intro"><div className="agg-intro-h"><AggIcon/> <span>aggregaTHOR</span></div>
 <p>News written from the markets on this globe. Our sister site turns the biggest geopolitical bets and the findings of ConnecTHOR's tools into short stories: what happened, what the odds say, and how they moved.</p></div>
 {!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
 {AGG_KINDS.map(([k,l,d])=>{const xs=aggData.stories.filter(x=>x.kind===k);return xs.length?<React.Fragment key={k}><div className="agg-h">{l}<small>{d}</small></div>{xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
 <div key={x.id} className={`agg-item agg-${k}`}>
 <div className="agg-meta"><span className="agg-place">{x.place||'aggregaTHOR'}</span><span>{aggAgo(x.time)}</span></div>
-<a className="agg-title" href={x.url} target="_blank" rel="noopener noreferrer">{x.headline}</a>
+<div className="agg-title">{x.headline}</div>
 {k!=='trending'&&x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
 {x.market&&x.market.p!=null&&<div className="agg-odds"><b>{fmtProb(x.market.p)}</b><span>chance on {x.market.source==='kalshi'?'Kalshi':'Polymarket'}</span>{x.market.change24?<span className="mono" style={{color:x.market.change24>0?'var(--green)':'var(--red)'}}>{x.market.change24>0?'▲':'▼'}{Math.abs(Math.round(x.market.change24*100))} pts 24h</span>:null}</div>}
 <div className="agg-acts">{m&&<button className="agg-globe" onClick={()=>setSelected(m)}>◎ Show the market on the globe</button>}<a className="agg-read" href={x.url} target="_blank" rel="noopener noreferrer">Read the story ↗</a></div>
