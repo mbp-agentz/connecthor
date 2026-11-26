@@ -1947,7 +1947,11 @@ const startMjEx=()=>{setMjEx(true);if(mobile)setMjOpen(false);openBolt('mj-iran'
 // amplifiers that moved beyond a normal day, once for the whole panel (they're the same for every country)
 const mjMood=useMemo(()=>{if(!mjData)return[];const m=new Map();for(const x of mjData.signals)for(const a of x.assets||[])if(!isReg(a)&&mjF[a.k]&&a.open&&Math.abs(a.z)>=1&&!m.has(a.n))m.set(a.n,a);return[...m.values()]},[mjData,mjF]);
 // one result per tool: only the opened signal (else the strongest) strikes; other flashes get a grey ring
-const mjTop=(bolt&&flashes.find(x=>x.id===bolt))||flashes[0]||null;
+// "newest" lightning: the later of the moment the odds and the prices did half their 24h move
+const sigTime=x=>Math.max(x.oh||0,...(x.assets||[]).map(a=>a.half||0));
+// the lightning in colour (globe, list, camera): the opened one, else the newest (owner: the camera goes to the first visible bolt)
+const mjNewest=flashes.length?flashes.reduce((b,x)=>sigTime(x)>sigTime(b)?x:b,flashes[0]):null;
+const mjTop=(bolt&&flashes.find(x=>x.id===bolt))||mjNewest;
 const sigKey=flashes.map(x=>x.id+':'+x.lat.toFixed(1)+','+x.lng.toFixed(1)).join('|')+'>'+(mjTop?mjTop.id:'');
 // Bolts re-strike every 1.6 s with fresh jitter; only this layer is rebuilt, markers and arcs stay put
 const[boltTick,setBoltTick]=useState(0);
@@ -2079,12 +2083,11 @@ const hitSig=c=>{if(!mjolnir||!c||c.lat==null)return null;let best=null,bd=Math.
 const flyToSig=x=>{const g=globeEl.current;if(!g||!x||x.lat==null)return;lastTouch.current=Date.now();try{g.controls().autoRotate=false;g.pointOfView({lat:x.lat-(mobile?14:8),lng:x.lng+(mobile?0:8),altitude:2.2},REDUCED_MOTION?0:1500)}catch(e){}};
 const openBolt=id=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(null);setBolt(id);flyToSig(sigById.get(id))};
 // "newest" lightning: the later of the moment the odds and the prices did half their 24h move
-const sigTime=x=>Math.max(x.oh||0,...(x.assets||[]).map(a=>a.half||0));
 const toggleMj=()=>{const on=!mjolnir;setBolt(null);setMjEx(false);setMjolnir(on);setMjOpen(on);if(on)setToolsOpen(false)};
 // switching on turns the globe to where most bolts strike (Middle East to Europe)
 useEffect(()=>{if(!mjolnir||!globeEl.current||selRef.current)return;lastTouch.current=Date.now();globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:mobile?18:32,lng:30,altitude:mobile?2.8:2.5},REDUCED_MOTION?0:1600)},[mjolnir]);
 // Desktop: opening Mjölnir's panel flies to its lightning, the newest one when there are several (owner, 2026-11-26)
-useEffect(()=>{if(mobile||!mjolnir||!mjOpen||selRef.current||!flashes.length)return;const x=flashes.slice().sort((a,b)=>sigTime(b)-sigTime(a))[0];const t=setTimeout(()=>flyToSig(x),80);return()=>clearTimeout(t)},[mjOpen,mjolnir,flashes.length>0]);
+useEffect(()=>{if(mobile||!mjolnir||!mjOpen||selRef.current||!flashes.length)return;const x=mjNewest;const t=setTimeout(()=>flyToSig(x),80);return()=>clearTimeout(t)},[mjOpen,mjolnir,flashes.length>0]);
 const onPolyClick=(d,e,c)=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);mobile?snapTap(c,d):pickCountry(d)};
 const onGlobeTap=c=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);if(mobile)snapTap(c)};
 useEffect(()=>{if(boltSig)flyToSig(boltSig)},[bolt]); // e.g. a tap on the globe or the mobile deck
@@ -2504,11 +2507,11 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}
 {mjEx&&<div className="mj-calm"><b>Example running</b> with demo data (Iran vs. Brent and US defense stocks). <button className="mj-ex-btn" onClick={()=>{setMjEx(false);setBolt(null)}}>■ End example</button></div>}
 {mjMood.length>0&&<div className="heim-global"><div className="heim-g"><span>🌐 Global mood</span><b>{mjMood.map(a=>`${a.n} ${fmtPct(a.chg)} (${Math.abs(a.z).toFixed(1)}×)`).join(' · ')}</b></div></div>}
-{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?withNote(signals.map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(isReg).sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
+{!mjData&&!mjErr?<div className="heim-empty">Loading the latest scan…</div>:signals.length?withNote((mjTop?[mjTop,...signals.filter(y=>y!==mjTop)]:signals).map((x,i)=>{const K=MJ_KIND[x.kind]||MJ_KIND.quiet,top=x.assets.filter(isReg).sort((a,b)=>Math.abs(b.z||0)-Math.abs(a.z||0))[0];return<div key={x.id} className={`heim-card${x!==(mjTop||signals[0])?' dim':''}`} style={{borderColor:x.flash?K.c+'88':undefined}} role="button" tabIndex={0} onClick={()=>{if(mobile)setMjOpen(false);openBolt(x.id)}} onKeyDown={e=>{if(e.key==='Enter')openBolt(x.id)}}>
 <div className="heim-top"><b>{x.flash?'⚡ ':''}{x.country}</b><span className="heim-lvl" style={{color:K.c,borderColor:K.c+'88'}}>{K.t} · {x.score}</span></div>
 <div className="heim-q">{x.q}</div>
 <div className="heim-chs"><span className="heim-ch">🎲 odds {fmtChg(x.d)} pts</span>{top&&<span className="heim-ch">📈 {top.n} {fmtPct(top.chg)}</span>}{x.boost?<span className="heim-ch on">{x.boost>0?'＋':'−'}{Math.abs(x.boost)} {x.boost>0?'backed':'contradicted'} by {x.amps.join(', ')||'amplifiers'}</span>:null}</div>
-</div>}),signals.findIndex(x=>x!==(mjTop||signals[0]))):<div className="heim-empty">No hotspot has a matching market right now.</div>}
+</div>}),1):<div className="heim-empty">No hotspot has a matching market right now.</div>}
 <div className="heim-foot">How it's measured, every hour: per hotspot the Polymarket market with the most trading today against its exposed prices (Yahoo Finance, Twelve Data; fear gauges OVX, GVZ, VIX; Bitcoin and tokenised gold from Coinbase or Kraken). Each 24-hour move is divided by a normal day for that price; crypto counts half. Lightning from a score of {MJ_FLASH}. Fear gauges and crypto add or take up to 15 points when they back or contradict a signal, and never make one on their own.{mjData?` Scanned ${fmtTime(mjData.updated)}.`:''}</div>
 </div></div></Boundary>}
 {soonOpen&&(()=>{const S={pizza:['Doughcon','Pentagon pizza watch','How busy the pizza places around the Pentagon are versus a normal evening, as a crisis early warning. Coming once live foot-traffic data is connected.'],ins:['Insights','Wallet profiles','Profiles of the bettors who really call geopolitics right: track record, edge over the market price, the markets they move. A subscriber feature.']}[soonOpen];return<Boundary name="Coming soon panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label={S[0]+': coming soon'}>
