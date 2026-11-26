@@ -2155,6 +2155,8 @@ const TOOLS=[
  {k:'pizza',soon:true,n:'Doughcon',on:false,open:soonOpen==='pizza',sw:null,op:()=>setSoonOpen(o=>o==='pizza'?null:'pizza'),st:'Coming soon',top:''},
 ];
 const onTools=TOOLS.filter(x=>x.on);
+// mobile live strip: the active tools, and Tyr always (its card is the default view on phones, owner 2026-11-27)
+const stripTools=TOOLS.filter(x=>x.on||x.k==='tyr');
 
 return(
 <div className={`app${anyDrawer?' has-drawer':''}`}>
@@ -2242,7 +2244,7 @@ return(
 </aside></Boundary>
 
 <main className="globe" ref={globeWrap} onPointerDownCapture={onTouchPtr} onPointerUpCapture={onTouchPtr} onPointerCancelCapture={onTouchPtr}>
-{mobile&&onTools.length>0&&<div className="mstrip">{onTools.map(x=><button key={x.k} className="mstrip-c" style={{'--c':TOOL_C[x.k]}} onClick={x.op}><b><ToolBadge k={x.k} size={18}/>{x.n} · {x.st}</b><span className="mstrip-t">{x.top}</span><span className="mstrip-h">Tap to adjust ›</span></button>)}</div>}
+{mobile&&stripTools.length>0&&<div className="mstrip">{stripTools.map(x=><button key={x.k} className="mstrip-c" style={{'--c':TOOL_C[x.k]}} onClick={x.op}><b><ToolBadge k={x.k} size={18}/>{x.n} · {x.st}</b><span className="mstrip-t">{x.top}</span><span className="mstrip-h">Tap to adjust ›</span></button>)}</div>}
 <div className={`badge-api ${dataSource==='live'?'':'sample'}`}><span className="dot" style={{width:6,height:6,background:dataSource==='live'?'var(--green)':'var(--yellow)'}}></span>{dataSource==='live'?'Live · '+Object.keys(venues).filter(k=>venues[k]).map(srcName).join(', '):'Sample markets'} · {fmtTime(lastUpd)}{wsStatus==='live'?' · streaming':''}</div>
 
 <div className={`neh${nehMini?' slim':''}${nehShow?' show':''}`} onClick={nehMini?()=>setNehOpen(true):undefined}>
