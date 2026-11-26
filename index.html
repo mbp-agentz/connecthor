@@ -90,8 +90,16 @@
     .mrow{display:none}
     @media(max-width:1100px){
       .header .mods{display:none!important}
-      .mrow{display:flex;gap:2px;flex-basis:100%;overflow-x:auto;scrollbar-width:none;margin:2px -6px 0;padding:0 2px}
-      .mrow-b{flex:1 0 48px;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:var(--muted);font:inherit;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:4px 0;cursor:pointer}
+      .mrow{display:flex;gap:2px;flex-basis:100%;overflow:visible;margin:2px -6px 0;padding:0 2px}
+      .mrow-b{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:var(--muted);font:inherit;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:4px 0;cursor:pointer}
+      .mrow-b span{white-space:nowrap;font-size:9px;letter-spacing:.02em}
+      .mrow-more{position:relative;flex:1 1 0;display:flex}.mrow-more .mrow-b{width:100%}
+      .mrow-dots{height:30px;display:flex;align-items:center;font-size:14px;letter-spacing:.1em;color:var(--muted)}
+      .mrow-menu{position:absolute;right:0;top:100%;z-index:300;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:4px}
+      .mrow-mi{display:flex;align-items:center;gap:10px;width:100%;padding:8px;background:none;border:0;color:var(--muted);font:inherit;text-align:left;cursor:pointer;border-radius:4px}
+      .mrow-mi:hover{background:rgba(148,163,184,.08)}
+      .mrow-mi b{display:block;font-family:Rajdhani,sans-serif;font-size:16px;text-transform:uppercase;line-height:1}.mrow-mi em{font-style:normal;font-family:"Chakra Petch",sans-serif;font-size:8px;color:#c084fc;vertical-align:2px}
+      .mrow-mi small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
       .mrow-b.on{color:var(--text)}.mrow-b i{width:14px;height:3px;border-radius:2px;background:transparent}.mrow-b.on i{background:var(--c)}
       .mstrip{position:absolute;top:8px;left:0;right:0;z-index:55;display:flex;gap:8px;overflow-x:auto;padding:0 10px;scrollbar-width:none;scroll-snap-type:x mandatory}
       .mstrip-c{flex:none;width:min(78vw,280px);scroll-snap-align:start;text-align:left;background:rgba(13,17,23,.94);border:1px solid var(--c);border-radius:6px;padding:8px 10px;color:var(--text);font:inherit;cursor:pointer}
@@ -116,6 +124,12 @@
     .rail-sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
     .rail-sw.on{background:var(--c)}.rail-sw.on::after{left:16px}
     .rail-chev{font-size:20px;color:var(--muted);padding-right:4px}
+    .rail-b.soon{opacity:.6}.rail-b.soon .rail-n{color:var(--muted)!important}
+    .rail-soon{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:1px solid var(--border);border-radius:2px;padding:2px 5px}
+    .soon-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border:1px solid var(--border);border-radius:2px;padding:2px 5px}
+    .soon-box{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:28px 12px}
+    .soon-box b{font-family:Rajdhani,sans-serif;font-size:30px;text-transform:uppercase;letter-spacing:.04em}
+    .soon-box span{font-size:13px;color:var(--muted);line-height:1.5;max-width:280px}
     .rail-sp{flex:1;min-height:12px}
     .tbadge{display:block;flex:none;transition:filter .2s,opacity .2s}.tbadge.off{filter:grayscale(1);opacity:.5}
     .rail-b:hover .tbadge.off{opacity:.75}
@@ -1772,7 +1786,7 @@ const saveInsAlert=x=>{const n={...insAlert,...x};setInsAlert(n);savePref('ct-in
 const[ins,setIns]=useState(false),[insOpen,setInsOpen]=useState(false),[insData,setInsData]=useState(null),[insErr,setInsErr]=useState(false),[insView,setInsView]=useState('skill');
 const[lokiEx,setLokiEx]=useState(false);
 const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
-const[tyrOpen,setTyrOpen]=useState(()=>!(typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches)),[topOpen,setTopOpen]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
+const[tyrOpen,setTyrOpen]=useState(()=>!(typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches)),[topOpen,setTopOpen]=useState(false),[soonOpen,setSoonOpen]=useState(null),[mMore,setMMore]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
 const toggleTyrF=k=>setTyrF(c=>{const n={...c,[k]:!c[k]};savePref('ct-tyr-f',n);return n});
 const toggleTyr=()=>{const on=!tyr;setTyr(on);setTyrOpen(on);if(on)setToolsOpen(false)};
 const bets=useMemo(()=>tyr?markets.filter(m=>!isWar(m)||tyrF[tyrKind(m)]):markets.filter(m=>!isWar(m)),[markets,tyr,tyrF]);
@@ -1788,7 +1802,7 @@ const mjRef=useRef(false);mjRef.current=mjolnir;
 const selRef=useRef(null);selRef.current=selected;const stepRef=useRef(null);const countryRef=useRef(null);countryRef.current=country;
 useEffect(()=>{const k=e=>{
 if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&selRef.current&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();stepRef.current&&stepRef.current(e.key==='ArrowRight'?1:-1);return}
-if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false);setMjOpen(false);setInsOpen(false);setTyrOpen(false);setTopOpen(false)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
+if(e.key!=='Escape')return;if(selRef.current)setSelected(null);else{setCountry(null);setBolt(null);setPizzaOpen(false);setHeimOpen(false);setLokiOpen(false);setValkOpen(false);setMjOpen(false);setInsOpen(false);setTyrOpen(false);setTopOpen(false);setSoonOpen(null)}};window.addEventListener('keydown',k);return()=>window.removeEventListener('keydown',k)},[]);
 
 // Pulse trades on the globe where their market sits; whales pulse bigger and longer (and get an arc)
 const pulseTrades=list=>{const byCond=new Map(marketsRef.current.map(m=>[m.conditionId,m]));const now=Date.now();
@@ -1875,7 +1889,7 @@ globeEl.current.pointOfView({lat:30,lng:-40,altitude:fitAlt()},2500);return()=>c
 // jump), the camera's view is shifted right by half the panel and pulled back so the whole globe fits beside it;
 // both glide together with the panel. globe.gl's camera has a 50° vertical field of view.
 const DRAWER_W=340;
-const anyDrawer=!mobile&&(tyrOpen||mjOpen||lokiOpen||valkOpen||heimOpen||insOpen||pizzaOpen||topOpen);
+const anyDrawer=!mobile&&(!!soonOpen||tyrOpen||mjOpen||lokiOpen||valkOpen||heimOpen||insOpen||pizzaOpen||topOpen);
 const fitAlt=(dw=anyDrawer?DRAWER_W:0)=>{const w=Math.max(200,gsize.w-dw),asp=gsize.h?w/gsize.h:1;return Math.max(2.3,1.22/(Math.tan(25*Math.PI/180)*Math.min(1,asp))-1)};
 const viewOff=useRef(0),fitRan=useRef(false);useEffect(()=>{if(gsize.w&&!fitRan.current){const t=setTimeout(()=>{fitRan.current=true},2600);return()=>clearTimeout(t)}},[gsize.w>0]); // the opening flight sets its own altitude
 useEffect(()=>{const g=globeEl.current;if(!g||!gsize.w||!HAS_WEBGL)return;let cam;try{cam=g.camera()}catch(e){return}
@@ -1957,8 +1971,10 @@ const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
 const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>k?{lat:h.lat,lng:h.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*150,color:'rgba(148,163,184,0.6)'}:{lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:h.lvl>=3?900:1600,color:HEIM_LVL[h.lvl].color}),[heimKey]);
 const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
 // one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
-const onlyDrawer=keep=>{if(keep!=='top')setTopOpen(false);if(keep!=='tyr')setTyrOpen(false);if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
-useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(tyrOpen)onlyDrawer('tyr')},[tyrOpen]);useEffect(()=>{if(topOpen)onlyDrawer('top')},[topOpen]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(insOpen)onlyDrawer('ins')},[insOpen]);
+const onlyDrawer=keep=>{if(keep!=='soon')setSoonOpen(null);if(keep!=='top')setTopOpen(false);if(keep!=='tyr')setTyrOpen(false);if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
+useEffect(()=>{if(heimOpen)onlyDrawer('heim')},[heimOpen]);useEffect(()=>{if(tyrOpen)onlyDrawer('tyr')},[tyrOpen]);useEffect(()=>{if(topOpen)onlyDrawer('top')},[topOpen]);useEffect(()=>{if(soonOpen)onlyDrawer('soon')},[soonOpen]);
+// DOUGHCON (no live pizza data yet) and Insights (subscriber feature) are "coming soon" (owner, 2026-11-27): keep them off
+useEffect(()=>{if(layers.pizza)toggleLayer('pizza');setIns(false)},[]);useEffect(()=>{if(mjOpen)onlyDrawer('mj')},[mjOpen]);useEffect(()=>{if(insOpen)onlyDrawer('ins')},[insOpen]);
 useEffect(()=>{if(!ins||insData)return;let off=false;fetchIns().then(d=>{if(!off){setInsData(d);setInsErr(false)}}).catch(e=>{console.log('Insights unavailable:',e.message);if(!off)setInsErr(true)});return()=>{off=true}},[ins]);
 const toggleIns=()=>{const on=!ins;setIns(on);setInsOpen(on);if(on)setToolsOpen(false)};
 const insList=useMemo(()=>{if(!insData)return[];const ps=insData.profiles;if(insData.preview)return ps;return insView==='follow'?ps.filter(p=>insFollow.includes(p.wallet)):insView==='skill'?ps.filter(p=>p.skill).sort((a,b)=>b.z-a.z):insView==='winners'?ps.filter(p=>p.pnl>0).sort((a,b)=>b.pnl-a.pnl).slice(0,20):ps.slice().sort((a,b)=>b.z-a.z)},[insData,insView,insFollow]);useEffect(()=>{if(pizzaOpen)onlyDrawer('pizza')},[pizzaOpen]);useEffect(()=>{if(lokiOpen)onlyDrawer('loki')},[lokiOpen]);useEffect(()=>{if(valkOpen)onlyDrawer('valk')},[valkOpen]);
@@ -2014,7 +2030,7 @@ const alerts=useMemo(()=>{const a=[];
   return a},[faaData,heimData]);
 const alertKey=alerts.map(x=>x.key).join('|');
 const tickerItems=useMemo(()=>{
-const head=[...alerts,{text:`🍕 DOUGHCON ${dc} — ${DOUGHCON[dc].name}${pizzaSim?' (simulated)':''}`},{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
+const head=[...alerts,{text:`📉 Nothing Ever Happens Index: ${neh.score} (${nl.t})`},
 ...movers.slice(0,3).map(m=>({text:`${m.change24>0?'📈':'📉'} ${m.question} ${fmtProb(m.probability)} (${fmtChg(m.change24)} 24h)`,onClick:()=>setSelected(m)})),
 ...geoWhales.map(t=>({text:`🐋 ${fmtVol(t.usd)} ${t.side} ${t.outcome} — ${t.title}`,href:t.url}))];
 let r;if(news.length===0){r=[...head,{text:'Loading live news…'}];r.placeholder=true}
@@ -2135,8 +2151,8 @@ const TOOLS=[
  {k:'loki',top:lokiData?(lokiData.flags[0]?`${fmtVol(lokiData.flags[0].usd)} early on ${lokiData.flags[0].question}`:lokiData.near?`Quiet · closest call ${fmtVol(lokiData.near.usd)} on ${lokiData.near.outcome}`:'Quiet: no early bets'):'Loading…',n:'Loki',on:loki,open:lokiOpen,sw:()=>{setLokiEx(false);setLoki(v=>!v)},op:()=>setLokiOpen(o=>!o),st:loki?(lokiData?`${lokiData.flags.length} early bets`:lokiErr?'Unavailable':'Loading…'):'Insider bets'},
  {k:'valk',top:valkData&&valkData.picks[0]?`${valkData.picks[0].wallets} of ${valkData.wallets.length} top wallets hold ${valkData.picks[0].outcome}: ${valkData.picks[0].question}`:'Loading…',n:'Valkyries',on:valk,open:valkOpen,sw:()=>setValk(v=>!v),op:()=>setValkOpen(o=>!o),st:valk?(valkData?`${valkData.picks.length} picks`:valkErr?'Unavailable':'Loading…'):'Smart money'},
  {k:'heim',top:heimList[0]?`${heimList[0].country} · ${HEIM_LVL[heimList[0].lvl].name} · ${heimList[0].n}/${heimList[0].k} channels`:'All quiet',n:'Heimdall',on:heim,open:heimOpen,sw:()=>setHeim(v=>!v),op:()=>setHeimOpen(o=>!o),st:heim?(heimList.length?`${heimList[0].country} · ${HEIM_LVL[heimList[0].lvl].name}`:'Quiet'):'Early warning'},
- {k:'pizza',top:`DOUGHCON ${dc} · ${DOUGHCON[dc].name}${pizza?.source!=='live'?' (simulated)':''}`,n:'Doughcon',on:layers.pizza,open:pizzaOpen,sw:()=>toggleLayer('pizza'),op:()=>setPizzaOpen(o=>!o),st:layers.pizza?`Level ${dc}${pizza?.source!=='live'?' · sim':''}`:'Pizza watch'},
- {k:'ins',top:insData?`${insData.skilled} proven wallets in the preview`:'Preview',n:'Insights',on:ins,open:insOpen,sw:()=>setIns(v=>!v),op:()=>setInsOpen(o=>!o),st:'Bettor profiles',pro:true},
+ {k:'ins',soon:true,n:'Insights',on:false,open:soonOpen==='ins',sw:null,op:()=>setSoonOpen(o=>o==='ins'?null:'ins'),st:'Coming soon',top:'',pro:true},
+ {k:'pizza',soon:true,n:'Doughcon',on:false,open:soonOpen==='pizza',sw:null,op:()=>setSoonOpen(o=>o==='pizza'?null:'pizza'),st:'Coming soon',top:''},
 ];
 const onTools=TOOLS.filter(x=>x.on);
 
@@ -2154,7 +2170,10 @@ return(
 <Clock/>
 <input className="search" type="text" placeholder={mobile?'Search…':'Search markets...'} value={search} onChange={e=>setSearch(e.target.value)}/>
 </div>
-{mobile&&<div className="mrow" role="group" aria-label="Tools">{TOOLS.map(x=><button key={x.k} className={`mrow-b${x.on?' on':''}`} style={{'--c':TOOL_C[x.k]}} role="switch" aria-checked={x.on} onClick={x.sw} aria-label={`${x.n} ${x.on?'on':'off'}`}><ToolBadge k={x.k} size={30} on={x.on}/><span>{x.n.slice(0,6)}</span><i></i></button>)}</div>}
+{mobile&&<div className="mrow" role="group" aria-label="Tools">{TOOLS.filter(x=>!x.soon).map(x=><button key={x.k} className={`mrow-b${x.on?' on':''}`} style={{'--c':TOOL_C[x.k]}} role="switch" aria-checked={x.on} onClick={x.sw} aria-label={`${x.n} ${x.on?'on':'off'}`}><ToolBadge k={x.k} size={30} on={x.on}/><span>{x.n}</span><i></i></button>)}
+<div className="mrow-more"><button className={`mrow-b${mMore?' on':''}`} style={{'--c':'#94a3b8'}} aria-expanded={mMore} aria-haspopup="menu" onClick={()=>setMMore(v=>!v)}><span className="mrow-dots" aria-hidden="true">•••</span><span>More</span><i></i></button>
+{mMore&&<div className="mrow-menu" role="menu">{TOOLS.filter(x=>x.soon).map(x=><button key={x.k} role="menuitem" className="mrow-mi" onClick={()=>{setMMore(false);x.op()}}><ToolBadge k={x.k} size={26} on={false}/><span><b>{x.n}{x.pro&&<em> PRO</em>}</b><small>Coming soon</small></span></button>)}</div>}</div>
+</div>}
 <div className="mods">
 <HoverInfo tone="tyr" label="What is Tyr?" card={<TyrCard on={tyr}/>}>
 <button className={`mj-pill tyr-pill${tyr?' on':''}`} onClick={tyr?()=>setTyrOpen(o=>!o):toggleTyr} aria-pressed={tyr} aria-expanded={tyr&&tyrOpen}><ToolBadge k="tyr" size={18} on={tyr}/> TYR {tyr?<span className="mono">{warN}</span>:<span className="mj-off">OFF</span>}</button>
@@ -2192,10 +2211,10 @@ return(
 </header></Boundary>
 {!mobile&&<nav className="rail" aria-label="Tools">
 <div className="rail-h">Tools</div>
-{TOOLS.map(x=><div key={x.k} className={`rail-b${x.on?' on':''}${x.open?' open':''}`} style={{'--c':TOOL_C[x.k]}} role="button" tabIndex={0} aria-expanded={x.open} onClick={x.op} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();x.op()}}}>
+{TOOLS.map(x=><div key={x.k} className={`rail-b${x.on?' on':''}${x.open?' open':''}${x.soon?' soon':''}`} style={{'--c':TOOL_C[x.k]}} role="button" tabIndex={0} aria-expanded={x.open} onClick={x.op} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();x.op()}}}>
 <ToolBadge k={x.k} size={34} on={x.on}/>
 <span className="rail-t"><span className="rail-n">{x.n}{x.pro&&<span className="rail-pro">PRO</span>}</span><span className="rail-s">{x.st}</span></span>
-<button className={`rail-sw${x.on?' on':''}`} role="switch" aria-checked={x.on} aria-label={`${x.n} ${x.on?'on':'off'}`} onClick={e=>{e.stopPropagation();x.sw()}}></button>
+{x.soon?<span className="rail-soon">Soon</span>:<button className={`rail-sw${x.on?' on':''}`} role="switch" aria-checked={x.on} aria-label={`${x.n} ${x.on?'on':'off'}`} onClick={e=>{e.stopPropagation();x.sw()}}></button>}
 </div>)}
 <div className="rail-sp"></div>
 <div className={`rail-b on${topOpen?' open':''}`} style={{'--c':TOOL_C.top}} role="button" tabIndex={0} aria-expanded={topOpen} onClick={()=>setTopOpen(o=>!o)} onKeyDown={e=>{if(e.key==='Enter'){setTopOpen(o=>!o)}}}>
@@ -2306,7 +2325,7 @@ return(
 </div>)})}
 </div>}
 <div className="layers" role="group" aria-label="Globe layers">
-{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['pizza','Pizza','#3b82f6',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],...(WHEN_UI?[['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]]:[])].map(([k,l,c,n])=>(
+{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],...(WHEN_UI?[['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]]:[])].map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':k==='when'?'When does the market expect it? For questions traded with several deadlines ("by Dec 31", "by Mar 31"…): the likeliest window on the globe, in the country list and as a curve in the market card.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
@@ -2489,6 +2508,10 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 </div>}),signals.findIndex(x=>x!==(mjTop||signals[0]))):<div className="heim-empty">No hotspot has a matching market right now.</div>}
 <div className="heim-foot">How it's measured, every hour: per hotspot the Polymarket market with the most trading today against its exposed prices (Yahoo Finance, Twelve Data; fear gauges OVX, GVZ, VIX; Bitcoin and tokenised gold from Coinbase or Kraken). Each 24-hour move is divided by a normal day for that price; crypto counts half. Lightning from a score of {MJ_FLASH}. Fear gauges and crypto add or take up to 15 points when they back or contradict a signal, and never make one on their own.{mjData?` Scanned ${fmtTime(mjData.updated)}.`:''}</div>
 </div></div></Boundary>}
+{soonOpen&&(()=>{const S={pizza:['Doughcon','Pentagon pizza watch','How busy the pizza places around the Pentagon are versus a normal evening, as a crisis early warning. Coming once live foot-traffic data is connected.'],ins:['Insights','Wallet profiles','Profiles of the bettors who really call geopolitics right: track record, edge over the market price, the markets they move. A subscriber feature.']}[soonOpen];return<Boundary name="Coming soon panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label={S[0]+': coming soon'}>
+<DrawerHead c="var(--muted)" k={soonOpen} name={S[0]} sub={S[1]} tag={<span className="soon-tag">Coming soon</span>} on={false} onClose={()=>setSoonOpen(null)}/>
+<div className="scroll heim-body"><div className="soon-box"><ToolBadge k={soonOpen} size={64} on={false}/><b>Coming soon</b><span>{S[2]}</span></div></div>
+</div></Boundary>})()}
 {tyrOpen&&<Boundary name="Tyr panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Tyr: war bets">
 <DrawerHead c="#f87171" k="tyr" name="Tyr" sub="War bets on the map" on={tyr} onOff={()=>setTyr(false)} onOn={()=>setTyr(true)} onClose={()=>setTyrOpen(false)}/>
 <div className="scroll heim-body">
