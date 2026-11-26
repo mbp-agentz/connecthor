@@ -2057,13 +2057,20 @@ const snapTap=(c,fallback)=>{if(!c||c.lat==null){if(fallback)pickCountry(fallbac
   if(best)openCountry(best);else if(fallback)pickCountry(fallback)};
 // With Mjölnir on, a tap near a bolt's source opens that signal (the bolt line itself is too thin to hit)
 const hitSig=c=>{if(!mjolnir||!c||c.lat==null)return null;let best=null,bd=Math.max(4,5*zoomRef.current);(mjClosest?[...flashes,mjClosest]:flashes).forEach(x=>{const d=gcDeg(c,x);if(d<bd){bd=d;best=x.id}});return best};
-const openBolt=id=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(null);setBolt(id)};
+// Fly the camera to a Mjölnir signal. Called directly (not only from the bolt effect), so a click on the card that
+// is already open still moves the globe, and nothing that runs after setBolt can swallow the flight
+const flyToSig=x=>{const g=globeEl.current;if(!g||!x||x.lat==null)return;lastTouch.current=Date.now();try{g.controls().autoRotate=false;g.pointOfView({lat:x.lat-(mobile?14:8),lng:x.lng+(mobile?0:8),altitude:2.2},REDUCED_MOTION?0:1500)}catch(e){}};
+const openBolt=id=>{lastTouch.current=Date.now();setHighlighted(null);setSelected(null);setCountry(null);setBolt(id);flyToSig(sigById.get(id))};
+// "newest" lightning: the later of the moment the odds and the prices did half their 24h move
+const sigTime=x=>Math.max(x.oh||0,...(x.assets||[]).map(a=>a.half||0));
 const toggleMj=()=>{const on=!mjolnir;setBolt(null);setMjEx(false);setMjolnir(on);setMjOpen(on);if(on)setToolsOpen(false)};
 // switching on turns the globe to where most bolts strike (Middle East to Europe)
 useEffect(()=>{if(!mjolnir||!globeEl.current||selRef.current)return;lastTouch.current=Date.now();globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:mobile?18:32,lng:30,altitude:mobile?2.8:2.5},REDUCED_MOTION?0:1600)},[mjolnir]);
+// Desktop: opening Mjölnir's panel flies to its lightning, the newest one when there are several (owner, 2026-11-26)
+useEffect(()=>{if(mobile||!mjolnir||!mjOpen||selRef.current||!flashes.length)return;const x=flashes.slice().sort((a,b)=>sigTime(b)-sigTime(a))[0];const t=setTimeout(()=>flyToSig(x),80);return()=>clearTimeout(t)},[mjOpen,mjolnir,flashes.length>0]);
 const onPolyClick=(d,e,c)=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);mobile?snapTap(c,d):pickCountry(d)};
 const onGlobeTap=c=>{if(!tapOK())return;const x=hitSig(c);if(x)return openBolt(x);if(mobile)snapTap(c)};
-useEffect(()=>{if(!boltSig||!globeEl.current)return;globeEl.current.controls().autoRotate=false;globeEl.current.pointOfView({lat:boltSig.lat-(mobile?14:8),lng:boltSig.lng+8,altitude:2},REDUCED_MOTION?0:1500)},[bolt]);
+useEffect(()=>{if(boltSig)flyToSig(boltSig)},[bolt]); // e.g. a tap on the globe or the mobile deck
 // Mobile hotspot deck: swiping a card turns the globe to that country; tapping opens its markets
 // Card order stays put across price refreshes (a reshuffle under the thumb moved the globe on its
 // own); only the switch from sample to live data re-sorts it
