@@ -30,7 +30,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/react-globe.gl@2.27.2"></script>
+  <script src="https://unpkg.com/react-globe.gl@2.27.2/dist/react-globe.gl.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
   <style>
     :root{--bg:#07090d;--card:#0d1117;--card2:rgba(255,255,255,0.025);--border:#1f242d;--text:#f1f5f9;--muted:#94a3b8;--faint:#64748b;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--orange:#f97316;--track:rgba(148,163,184,0.28)}
@@ -590,7 +590,8 @@
     msg(miss.length?'Could not load '+miss.join(', ')+' from unpkg.com.<br>Check your connection, or whether an ad/script blocker is blocking unpkg.com.':'Still starting… this is taking longer than usual.')},15000);
 })();
 </script>
-<script type="text/babel">
+<!-- data-presets: JSX only. Babel's default also runs preset-env (ES5 rewrite) for every visitor: 4.6 s vs 0.46 s on a Mac. -->
+<script type="text/babel" data-presets="react">
 const{useState,useEffect,useRef,useMemo}=React;
 const Globe=window.Globe;
 
