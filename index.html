@@ -1379,7 +1379,7 @@ function genArcs(ms,flows){
   const out=[],seen=new Set();
   ms.forEach(m=>(m.links||[]).forEach(l=>{const k=[m.country,l.country].sort().join('|');if(seen.has(k)||out.length>=40)return;seen.add(k);
     out.push({startLat:m.lat,startLng:m.lng,endLat:l.lat,endLng:l.lng,color:ARC_COLORS[m.category]||['rgba(59,130,246,0.7)','rgba(139,92,246,0.15)'],stroke:0.5+Math.min((m.vol24||0)/2e6,1),dashLength:0.4,dashGap:0.25,dashAnimateTime:7000+out.length*373%3000,initGap:hash(k),altitude:null})}));
-  genArcsDC(ms.filter(m=>m.country!=='USA'&&!(m.links||[]).some(l=>l.country==='USA'))).forEach(a=>out.push(a));
+  // the Pentagon arcs (genArcsDC) belonged to DOUGHCON, which has no live data yet: left out until it does
   return out.concat(flows||[]);
 }
 function genArcsDC(ms){return ms.filter(m=>isUSD(m)&&m.volume>1e6&&m.lat).slice(0,6).map((m,i)=>({startLat:PENTAGON.lat,startLng:PENTAGON.lng,endLat:m.lat,endLng:m.lng,color:m.category==='Conflict'?['rgba(249,115,22,0.75)','rgba(249,115,22,0.15)']:m.category==='Trump'?['rgba(239,68,68,0.7)','rgba(239,68,68,0.15)']:['rgba(59,130,246,0.7)','rgba(139,92,246,0.15)'],stroke:0.4,dashLength:0.3,dashGap:0.3,dashAnimateTime:9000+i*700,initGap:hash(m.id+'dc'),altitude:0.1+(i%3)*0.05}))}
