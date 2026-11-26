@@ -1972,9 +1972,11 @@ const[faaData,setFaaData]=useState(null);
 useEffect(()=>{if(!apiUp)return;let off=false;const load=async()=>{if(document.hidden)return;try{const r=await fetch('/api/faa');if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(!off&&Array.isArray(d.stops))setFaaData(d)}catch(e){console.log('FAA status unavailable:',e.message)}};
   load();const i=setInterval(load,600000);return()=>{off=true;clearInterval(i)}},[]);
 const heimList=useMemo(()=>heim?heimdall(markets,news,air,heimData,heimCh,faaData):[],[heim,markets,news,air,heimData,heimCh,faaData]);
-const heimKey=heimList.filter(h=>h.lvl>=2).map(h=>h.country+h.lvl).join('|');
+// The top country is always ringed (even at SIGNAL), else switching Heimdall on changed nothing on quiet days; others: WATCH+ only, grey
+const heimShow=heimList.filter((h,k)=>!k||h.lvl>=2);
+const heimKey=heimShow.map(h=>h.country+h.lvl).join('|');
 // rings only for WATCH/ALERT, keyed on the levels so price ticks never restart them
-const heimRings=useMemo(()=>heimList.filter(h=>h.lvl>=2).map((h,k)=>k?{lat:h.lat,lng:h.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*150,color:'rgba(148,163,184,0.6)'}:{lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:h.lvl>=3?900:1600,color:HEIM_LVL[h.lvl].color}),[heimKey]);
+const heimRings=useMemo(()=>heimShow.map((h,k)=>k?{lat:h.lat,lng:h.lng,maxR:3,propagationSpeed:0.6,repeatPeriod:2800+k*150,color:'rgba(148,163,184,0.6)'}:{lat:h.lat,lng:h.lng,maxR:h.lvl>=3?6:4,propagationSpeed:h.lvl>=3?2:1.2,repeatPeriod:h.lvl>=3?900:1600,color:HEIM_LVL[h.lvl].color}),[heimKey]);
 const heimCov=useMemo(()=>{if(!coverage||coverage.length<6)return null;const v=coverage.map(x=>x.v),last=v[v.length-1],avg=v.reduce((a,b)=>a+b,0)/v.length;return avg>0?{ratio:last/avg,lit:last/avg>=1.3}:null},[coverage]);
 // one drawer at a time (Pizza Watch, Heimdall, Loki share the left slot)
 const onlyDrawer=keep=>{if(keep!=='soon')setSoonOpen(null);if(keep!=='top')setTopOpen(false);if(keep!=='tyr')setTyrOpen(false);if(keep!=='ins')setInsOpen(false);if(keep!=='mj')setMjOpen(false);if(keep!=='pizza')setPizzaOpen(false);if(keep!=='heim')setHeimOpen(false);if(keep!=='loki')setLokiOpen(false);if(keep!=='valk')setValkOpen(false)};
