@@ -383,6 +383,25 @@
     .agg-odds{font-size:11px;margin-top:4px}
     .agg-h{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
     .agg-ico{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
+    .agg-intro{margin:14px 16px 6px;padding:12px 14px;border:1px solid #7aa2ff55;border-radius:4px;background:rgba(122,162,255,.06)}
+    .agg-intro-h{display:flex;align-items:center;gap:8px;font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:#7aa2ff;line-height:1}
+    .agg-intro-h .agg-ico{width:22px;height:22px}.agg-intro-h a{margin-left:auto;font-family:"Chakra Petch",sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7aa2ff;text-decoration:none}
+    .agg-intro p{font-size:13.5px;line-height:1.5;margin-top:8px;color:var(--text)}
+    .agg-h{display:flex;flex-direction:column;gap:2px;font-family:Rajdhani,sans-serif;font-size:18px!important;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text)!important;margin:18px 16px 6px!important}
+    .agg-h small{font-family:"Chakra Petch",sans-serif;font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.08em}
+    .agg-item{padding:14px 16px;border-bottom:1px solid var(--border)}
+    .agg-item.agg-top{box-shadow:inset 2px 0 0 #7aa2ff}.agg-item.agg-signal{box-shadow:inset 2px 0 0 #22d3ee}
+    .agg-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .agg-place{color:#7aa2ff;font-weight:600}
+    .agg-title{display:block;font-size:15px;font-weight:600;line-height:1.35;color:var(--text);text-decoration:none;margin-top:5px}
+    .agg-title:hover{color:#7aa2ff}
+    .agg-teaser{font-size:12.5px!important;line-height:1.5!important;margin-top:6px!important}
+    .agg-odds{display:flex;align-items:baseline;gap:8px;margin-top:8px!important;font-size:11px!important;color:var(--muted)}
+    .agg-odds b{font-family:Rajdhani,sans-serif;font-size:24px;font-weight:700;color:var(--text);line-height:1}
+    .agg-acts{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+    .agg-globe{flex:1 1 auto;min-height:36px;padding:8px 12px;border:0;border-radius:4px;background:#3b82f6;color:#fff;font:inherit;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+    .agg-globe:hover{background:#2563eb}
+    .agg-read{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;white-space:nowrap}.agg-read:hover{color:var(--text)}
     .agg-more{display:block;text-align:center;font-size:11px;padding:8px;color:var(--blue);text-decoration:none}
     .tag{font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;letter-spacing:0.05em}
     .tag.MILITARY{background:rgba(239,68,68,0.15);color:#fca5a5}
@@ -1226,7 +1245,7 @@ const aggAgo=t=>{const h=(Date.now()-Date.parse(t))/36e5;return h>=48?Math.round
 const AggIcon=()=><svg className="agg-ico" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e14"/><g fill="none" stroke="#7AA2FF" strokeLinecap="round"><path d="M9.5 24.5 A24 24 0 0 1 54.5 24.5 M9.5 39.5 A24 24 0 0 0 54.5 39.5" strokeWidth="3.2"/><circle cx="32" cy="32" r="15.5" strokeWidth="3.4"/><circle cx="32" cy="32" r="10.5" strokeWidth="1.8"/><ellipse cx="32" cy="32" rx="4.6" ry="10.5" strokeWidth="1.6"/><path d="M22.6 27.5 H41.4 M22.6 36.5 H41.4" strokeWidth="1.5"/></g><g fill="#7AA2FF"><rect x="4" y="27.6" width="14" height="3.2" rx="1"/><rect x="4" y="33.2" width="14" height="3.2" rx="1"/><rect x="46" y="27.6" width="14" height="3.2" rx="1"/><rect x="46" y="33.2" width="14" height="3.2" rx="1"/></g></svg>;
 // one "hidden" note above a tool's greyed-out results (not one per card)
 const withNote=(els,at)=>at>=0&&at<els.length?[...els.slice(0,at),<div key="dim-note" className="dim-note">🔒 Hidden – coming soon</div>,...els.slice(at)]:els;
-const AGG_KINDS=[['top','🔥 Top stories'],['trending','📈 Trending'],['signal','⚡ Signals']];
+const AGG_KINDS=[['top','Top stories','Researched stories on the biggest bets'],['trending','Trending','Where the most money moved today'],['signal','Signals','Found by Mjölnir, Heimdall, Loki and Valkyries']];
 const HEIM_URL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'/heimdall.json':'https://raw.githubusercontent.com/mbp-agentz/connecthor/heimdall-data/heimdall.json';
 async function fetchHeim(){const r=await fetch(HEIM_URL,{cache:'no-cache'});if(!r.ok)throw new Error('Heimdall HTTP '+r.status);const d=await r.json();if(!d||!Array.isArray(d.countries))throw new Error('bad Heimdall data');return d}
 const fmtK=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
@@ -1652,7 +1671,7 @@ const zf=Math.min(1.2,Math.max(0.1,zoomAlt/2.3));
 const[highlighted,setHighlighted]=useState(null);
 const[search,setSearch]=useState('');
 const[catFilter,setCatFilter]=useState('All');
-const[tab,setTab]=useState('news');
+const[tab,setTab]=useState('agg'); // the Intel tab (raw headlines) was removed 2026-11-26; the feed still drives Heimdall, the ticker and Loki
 const[aggData,setAggData]=useState(null),[aggErr,setAggErr]=useState(false);
 // loaded when the tab is opened, then every 30 min while it stays open
 useEffect(()=>{if(tab!=='agg')return;let off=false;const load=async()=>{try{const d=await fetchAgg();if(!off){setAggData(d);setAggErr(false)}}catch(e){console.log('aggregaTHOR unavailable:',e.message);if(!off)setAggErr(true)}};
@@ -2306,39 +2325,23 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 
 <Boundary name="Right panel" className="right"><aside className="right">
 <div className="act-tabs">
-<button className={`act-tab ${tab==='news'?'active':''}`} onClick={()=>setTab('news')}>📰 Intel</button>
-<button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>setTab('markets')}>📊 Markets</button>
 <button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>setTab('agg')}><AggIcon/> <span className="agg-name">aggregaTHOR</span></button>
+<button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>setTab('markets')}>📊 Markets</button>
 </div>
 <div className="scroll">
-{tab==='news'&&(<>
-<div style={{padding:'0 2px 8px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-<span className={`news-status ${newsSource==='gdelt'||newsSource==='off'?'rss':''}`}>{newsSource==='rss'?'📡 RSS Feeds':newsSource==='gdelt'?'🌐 GDELT':newsSource==='off'?'⚠ News offline · retrying':'⏳ Connecting'}</span>
-{newsLastUpd&&<span style={{fontSize:9,color:'var(--muted)'}}>Updated {fmtTime(newsLastUpd)}</span>}
-</div>
-<CoverageChart data={coverage}/>
-{news.length>0&&<div className="chips">{['ALL',...SIGNALS.map(x=>x[0])].filter(k=>k==='ALL'||news.some(n=>newsTag(n.title)===k)).map(k=><button key={k} className={`chip-btn ${sigFilter===k?'on':''}`} onClick={()=>setSigFilter(k)}>{k}</button>)}</div>}
-{newsLoading?<div className="news-loading">⏳ Fetching live news...</div>:news.length===0?<div className="news-loading">No news available</div>:news.filter(n=>sigFilter==='ALL'||newsTag(n.title)===sigFilter).slice(0,25).map(n=>{const tg=newsTag(n.title);return(
-<a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer" className={`news ${n.isBreaking?'breaking':''}`}>
-<div className="news-src">{n.isBreaking&&<span className="dot red" style={{width:6,height:6}}></span>}{n.source}{tg&&<span className={`tag ${tg}`}>{tg}</span>}</div>
-<div className="news-title">{n.title}</div>
-<div className="news-time">{fmtTime(n.time)}</div>
-{(()=>{const h=relatedFor(n.title);return h&&h.top?<span className="news-rel" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(h.top)}}>↳ {h.country} · {h.n} market{h.n>1?'s':''} · {h.top.question.length>48?h.top.question.slice(0,47)+'…':h.top.question} <b>{fmtProb(h.top.probability)}</b></span>:null})()}
-</a>)})}
-</>)}
 {tab==='agg'&&(<div className="tab-fade">
-<div className="note" style={{paddingTop:0}}>The newest from our sister site <a href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">aggregathor.com</a>: stories on the markets and their signals.</div>
+<div className="agg-intro"><div className="agg-intro-h"><AggIcon/> <span>aggregaTHOR</span><a href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+<p>News written from the markets on this globe. Our sister site turns the biggest geopolitical bets and the findings of ConnecTHOR's tools into short stories: what happened, what the odds say, and how they moved.</p></div>
 {!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
-{AGG_KINDS.map(([k,l])=>{const xs=aggData.stories.filter(x=>x.kind===k);return xs.length?<React.Fragment key={k}><div className="agg-h">{l}</div>{xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
-<a key={x.id} href={x.url} target="_blank" rel="noopener noreferrer" className="news agg">
-<div className="news-src">{x.place||'aggregaTHOR'}</div>
-<div className="news-title">{x.headline}</div>
+{AGG_KINDS.map(([k,l,d])=>{const xs=aggData.stories.filter(x=>x.kind===k);return xs.length?<React.Fragment key={k}><div className="agg-h">{l}<small>{d}</small></div>{xs.map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question);return(
+<div key={x.id} className={`agg-item agg-${k}`}>
+<div className="agg-meta"><span className="agg-place">{x.place||'aggregaTHOR'}</span><span>{aggAgo(x.time)}</span></div>
+<a className="agg-title" href={x.url} target="_blank" rel="noopener noreferrer">{x.headline}</a>
 {k!=='trending'&&x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
-{x.market&&x.market.p!=null&&<div className="agg-odds">{x.market.source==='kalshi'?'Kalshi':'Polymarket'} <b className="mono">{fmtProb(x.market.p)}</b>{x.market.change24?<span className="mono" style={{color:x.market.change24>0?'var(--green)':'var(--red)'}}> {x.market.change24>0?'▲':'▼'}{Math.abs(Math.round(x.market.change24*100))} pts</span>:null}</div>}
-<div className="news-time">{aggAgo(x.time)}</div>
-{m&&<span className="news-rel" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(m)}}>↳ Show the market on the globe</span>}
-</a>)})}</React.Fragment>:null})}
-<a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">More on aggregathor.com →</a>
+{x.market&&x.market.p!=null&&<div className="agg-odds"><b>{fmtProb(x.market.p)}</b><span>chance on {x.market.source==='kalshi'?'Kalshi':'Polymarket'}</span>{x.market.change24?<span className="mono" style={{color:x.market.change24>0?'var(--green)':'var(--red)'}}>{x.market.change24>0?'▲':'▼'}{Math.abs(Math.round(x.market.change24*100))} pts 24h</span>:null}</div>}
+<div className="agg-acts">{m&&<button className="agg-globe" onClick={()=>setSelected(m)}>◎ Show the market on the globe</button>}<a className="agg-read" href={x.url} target="_blank" rel="noopener noreferrer">Read the story ↗</a></div>
+</div>)})}</React.Fragment>:null})}
+<a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">All stories on aggregathor.com →</a>
 </>}
 </div>)}
 {tab==='markets'&&(<>
