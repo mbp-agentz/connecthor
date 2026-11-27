@@ -447,6 +447,12 @@
     .bet-src{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .bet-q{font-size:12px;line-height:1.35;margin:3px 0 5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .bet-row{display:flex;align-items:center;gap:8px;font-size:12px}
+    .bet.exp{border-color:#475569}.bet.exp .bet-q{-webkit-line-clamp:unset;display:block}
+    .bet-x{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;cursor:default}
+    .bet-x-stats{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--muted)}.bet-x-stats b{color:var(--text);font-weight:600}
+    .bet-x-act{display:flex;gap:8px;margin-top:10px}
+    .bet-x-act button,.bet-x-act a{flex:1;text-align:center;padding:8px 6px;border-radius:6px;font:inherit;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer}
+    .bet-x-act button{background:var(--blue);border:0;color:#fff}.bet-x-act a{border:1px solid var(--border);color:var(--text);background:none}
     .bet-bar{flex:1;height:4px;border-radius:2px;background:var(--track);overflow:hidden}
     .bet-bar span{display:block;height:100%;border-radius:2px}
     .pizza-drawer{position:fixed;left:0;top:0;bottom:0;width:380px;max-width:100%;z-index:250;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;box-shadow:10px 0 40px rgba(0,0,0,.55);animation:drawerIn .25s ease-out}
@@ -1670,6 +1676,13 @@ function PizzaPanel({pizza,history}){
   </>);
 }
 
+function BetInfo({m,onGlobe}){
+const stats=[['Yes',fmtProb(m.probability)],m.change24?['24h',fmtChg(m.change24)+' pts']:null,m.vol24?['24h vol',fmtMoney(m.vol24,m.source)]:null,m.volume>0?['Volume',fmtMoney(m.volume,m.source)]:null,m.country?['Place',m.country]:null,m.endDate&&fmtLeft(m.endDate)?['',fmtLeft(m.endDate)]:null].filter(Boolean);
+return<div className="bet-x" onClick={e=>e.stopPropagation()}>
+<div className="bet-x-stats">{stats.map(([l,v])=><span key={l||v}>{l&&l+' '}<b>{v}</b></span>)}</div>
+<div className="bet-x-act"><button onClick={onGlobe}>Show on the globe</button>{m.url&&<a href={m.url} target="_blank" rel="noopener noreferrer">{srcName(m.source)} ↗</a>}</div>
+</div>}
+
 function App(){
 const globeEl=useRef();
 const globeWrap=useRef();
@@ -1702,6 +1715,7 @@ const[pizza,setPizza]=useState(null);
 const[pizzaHist,setPizzaHist]=useState(null);
 const[pizzaOpen,setPizzaOpen]=useState(false); // Pizza Watch drawer, opened from the DOUGHCON button
 const[betsOpen,setBetsOpen]=useState(false); // mobile: the Top Bets panel starts folded (CSS)
+const[betExp,setBetExp]=useState(null); // mobile: a tapped bet unfolds its details in the list (the market card would open hidden under the panel)
 const[betSrc,setBetSrc]=useState('all');
 const[trades,setTrades]=useState([]);
 const[tradesLive,setTradesLive]=useState(null);
@@ -2152,6 +2166,8 @@ const onGlobe=m=>m.lat!=null&&(m.source==='polymarket'||m.source==='kalshi');
 const topBets=useMemo(()=>bets.filter(m=>onGlobe(m)&&(betSrc==='all'||m.source===betSrc)).sort((a,b)=>(b.vol24||0)-(a.vol24||0)||(b.volume||0)-(a.volume||0)).slice(0,12),[bets,betSrc]);
 const tradeSrc=t=>t.who==='Kalshi'?'kalshi':'polymarket';
 const bigBets=useMemo(()=>{const ok=new Set(bets.filter(onGlobe).map(m=>m.conditionId).filter(Boolean));return trades.filter(t=>ok.has(t.conditionId)&&(betSrc==='all'||tradeSrc(t)===betSrc)).sort((a,b)=>b.usd-a.usd).slice(0,8)},[trades,bets,betSrc]);
+// mobile: open the market card and scroll the globe into view, so the jump is visible
+const betToGlobe=m=>{setSelected(m);const g=globeWrap.current;if(g)g.scrollIntoView({behavior:REDUCED_MOTION?'auto':'smooth',block:'start'})};
 const openTrade=t=>{const m=marketsRef.current.find(x=>x.conditionId&&x.conditionId===t.conditionId);if(m)setSelected(m);else if(t.url)window.open(t.url,'_blank','noopener')};
 
 // The tools, shared by the desktop rail and the mobile switch row + live strip
@@ -2239,17 +2255,19 @@ return(
 <div className="scroll">
 <div className="chips">{[['all','All'],['polymarket','Polymarket'],['kalshi','Kalshi']].map(([k,l])=><button key={k} className={`chip-btn ${betSrc===k?'on':''}`} onClick={()=>setBetSrc(k)}>{l}</button>)}</div>
 <div className="dc-kicker bets-h">MOST TRADED · 24H</div>
-{topBets.length===0?<div className="news-loading">No markets from this venue yet</div>:topBets.map((m,i)=><div key={m.id} className="bet" onClick={()=>setSelected(m)}>
+{topBets.length===0?<div className="news-loading">No markets from this venue yet</div>:topBets.map((m,i)=><div key={m.id} className={`bet${mobile&&betExp===m.id?' exp':''}`} onClick={()=>mobile?setBetExp(x=>x===m.id?null:m.id):setSelected(m)}>
 <div className="bet-top"><span className="bet-src">{i+1}. {SOURCES[m.source]?.icon} {srcName(m.source)}</span><span className="mono">{m.vol24?fmtVol(m.vol24)+' 24h':fmtVol(m.volume||0)+' total'}</span></div>
 <div className="bet-q">{m.question}</div>
 <div className="bet-row"><div className="bet-bar"><span style={{width:Math.round(m.probability*100)+'%',background:marketColor(m)}}></span></div><b className="mono">{fmtProb(m.probability)}</b>{m.change24?<span className="mono" style={{color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</div>
+{mobile&&betExp===m.id&&<BetInfo m={m} onGlobe={()=>betToGlobe(m)}/>}
 </div>)}
 <div className="dc-kicker bets-h">BIGGEST BETS · LIVE</div>
-{bigBets.length===0?<div className="news-loading">Waiting for trades…</div>:bigBets.map(t=><div key={t.id} className="bet" onClick={()=>openTrade(t)}>
+{bigBets.length===0?<div className="news-loading">Waiting for trades…</div>:bigBets.map(t=>{const tm=mobile&&betExp==='t'+t.id&&marketsRef.current.find(x=>x.conditionId&&x.conditionId===t.conditionId);return<div key={t.id} className={`bet${tm?' exp':''}`} onClick={()=>mobile&&marketsRef.current.some(x=>x.conditionId&&x.conditionId===t.conditionId)?setBetExp(x=>x==='t'+t.id?null:'t'+t.id):openTrade(t)}>
 <div className="bet-top"><span className="bet-src">{t.usd>=WHALE_USD?'🐋':'💵'} <b>{fmtVol(t.usd)}</b> · {srcName(tradeSrc(t))}</span><span className="muted">{fmtTime(t.time)}</span></div>
 <div className="bet-q">{t.title}</div>
 <div className="bet-row"><span className={`act-amt ${t.side==='SELL'?'sell':'buy'}`}>{t.side} {t.outcome} @ {fmtCents(t.price)}</span></div>
-</div>)}
+{tm&&<BetInfo m={tm} onGlobe={()=>betToGlobe(tm)}/>}
+</div>})}
 </div>
 </aside></Boundary>
 
