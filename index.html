@@ -550,6 +550,12 @@
       .neh.slim .neh-chev{order:4;position:static;padding:0}
       /* Owner, 2026-11-26: no breaking-news ticker on phones */
       .ticker{display:none}
+      /* cards over the globe open as a slim bar (peek), Details ↑ unfolds them */
+      .detail.peek>*:not(.detail-top):not(.detail-hd):not(.peek-bar){display:none}
+      .detail.peek{touch-action:none;padding-bottom:8px}
+      .detail.peek .detail-q{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .detail.peek .detail-hd{margin-bottom:0}
+      .peek-bar{text-align:center;font:600 12px "Chakra Petch",sans-serif;color:var(--blue);padding:6px 0 4px;cursor:pointer;letter-spacing:.04em}
       /* Below the globe (design A, 2026-11-27): one big switch, one filter row, compact rows that unfold */
       .act-tabs{margin:12px 14px 0;background:var(--card);border:1px solid var(--border)!important;border-radius:10px;padding:3px}
       .act-tab{border-radius:7px;border-bottom:0!important;padding:9px 6px!important;font-size:14px!important}
@@ -1830,7 +1836,7 @@ const bets=useMemo(()=>tyr?markets.filter(m=>!isWar(m)||tyrF[tyrKind(m)]):market
 const tyrList=useMemo(()=>markets.filter(m=>isWar(m)&&isUSD(m)).map(m=>({m,k:tyrKind(m)})).sort((a,b)=>volOf(b.m)-volOf(a.m)),[markets]);
 const warN=useMemo(()=>markets.filter(isWar).length,[markets]);
 useEffect(()=>{if(!tyr){setSelected(m=>m&&isWar(m)?null:m)}},[tyr]); // switching Tyr off closes an open war market
-const[bolt,setBolt]=useState(null); // id of the Mjölnir signal whose panel is open
+const[bolt,setBolt]=useState(null),[peek,setPeek]=useState(true),pkY=useRef(0); // id of the Mjölnir signal whose panel is open
 const[mjData,setMjData]=useState(null);const[mjErr,setMjErr]=useState(false); // hourly scan (mjolnir.json)
 const[mjOpen,setMjOpen]=useState(false);const[mjF,setMjF]=useState(()=>loadPref('ct-mj-f',MJ_F_DEFAULT));
 const toggleMjF=k=>setMjF(c=>{const n={...c,[k]:!c[k]};savePref('ct-mj-f',n);return n});
@@ -1927,7 +1933,11 @@ globeEl.current.pointOfView({lat:30,lng:-40,altitude:fitAlt()},2500);return()=>c
 const DRAWER_W=340;
 const anyDrawer=!mobile&&(!!soonOpen||tyrOpen||mjOpen||lokiOpen||valkOpen||heimOpen||insOpen||pizzaOpen||topOpen);
 const fitAlt=(dw=anyDrawer?DRAWER_W:0)=>{const w=Math.max(200,gsize.w-dw),asp=gsize.h?w/gsize.h:1;return Math.max(2.3,1.22/(Math.tan(25*Math.PI/180)*Math.min(1,asp))-1)};
-const viewOff=useRef(0),fitRan=useRef(false);useEffect(()=>{if(gsize.w&&!fitRan.current){const t=setTimeout(()=>{fitRan.current=true},2600);return()=>clearTimeout(t)}},[gsize.w>0]); // the opening flight sets its own altitude
+const viewOff=useRef(0),fitRan=useRef(false);
+// phones: a card over the globe opens as a slim bar (title + Details ↑), so the bolt or market it points at stays visible (owner, 2026-11-27)
+const cardKey=selected?'m':country?'c'+country:bolt?'b'+bolt:'';useEffect(()=>{setPeek(true)},[cardKey]);
+const pk=mobile?{onClickCapture:e=>{if(peek&&!e.target.closest('.detail-close')){e.stopPropagation();e.preventDefault();setPeek(false)}},onTouchStart:e=>{pkY.current=e.touches[0].clientY},onTouchEnd:e=>{const d=e.changedTouches[0].clientY-pkY.current;if(d<-30)setPeek(false);else if(d>30)setPeek(true)}}:{};
+const pkCls=mobile&&peek?' peek':'',pkBar=mobile&&<div className="peek-bar" onClick={e=>{e.stopPropagation();setPeek(p=>!p)}}>{peek?'Details ↑':'Less ↓'}</div>;useEffect(()=>{if(gsize.w&&!fitRan.current){const t=setTimeout(()=>{fitRan.current=true},2600);return()=>clearTimeout(t)}},[gsize.w>0]); // the opening flight sets its own altitude
 useEffect(()=>{const g=globeEl.current;if(!g||!gsize.w||!HAS_WEBGL)return;let cam;try{cam=g.camera()}catch(e){return}
   const D=REDUCED_MOTION?0:320,to=anyDrawer?DRAWER_W/2:0,from=viewOff.current,t0=performance.now();let raf=0;
   const step=now=>{const k=D?Math.min(1,(now-t0)/D):1,e=1-Math.pow(1-k,3),v=from+(to-from)*e;viewOff.current=v;
@@ -2310,14 +2320,14 @@ return(
 </div>)}
 
 {selected&&(
-<div key={selected.id} className={`detail${enter&&enter.id===selected.id?' enter-'+enter.dir:''}`}
+<div key={selected.id} className={`detail${enter&&enter.id===selected.id?' enter-'+enter.dir:''}${pkCls}`} {...pk}
  onPointerDown={onCardDown} onPointerMove={onCardMove} onPointerUp={onCardUp} onPointerCancel={onCardUp}>
 <div className="detail-top">
 <div className="src">{SOURCES[selected.source]?.icon} {srcName(selected.source)}{selected.source==='manifold'?' · play money':''}</div>
 {siblings.length>1&&sibIdx>=0&&<div className="detail-nav" title="Swipe the card or use ← → to move between this place's markets">
 <button onClick={()=>stepMarket(-1)} aria-label="Previous market">‹</button><span className="mono">{sibIdx+1} / {siblings.length}</span><button onClick={()=>stepMarket(1)} aria-label="Next market">›</button></div>}
 </div>
-<div className="detail-hd"><div className="detail-q">{selected.question}</div><button className="detail-close" onClick={()=>setSelected(null)}>✕</button></div>
+<div className="detail-hd"><div className="detail-q">{selected.question}</div><button className="detail-close" onClick={()=>setSelected(null)}>✕</button></div>{pkBar}
 <div className="detail-stats">
 <div className="detail-stat"><div className="detail-val" style={{color:selected.probability>=0.6?'var(--green)':selected.probability<=0.4?'var(--red)':'var(--yellow)'}}>{fmtProb(selected.probability)}</div><div className="detail-lbl">Yes</div></div>
 {selected.volume>0&&<div className="detail-stat"><div className="detail-val">{fmtMoney(selected.volume,selected.source)}</div><div className="detail-lbl">Volume</div></div>}
@@ -2335,17 +2345,17 @@ return(
 </div>)}
 
 {country&&!selected&&(()=>{const h=hotByCountry.get(country),pct=h&&h.tension!=null?Math.round(h.tension*100):null;return(
-<div className="detail">
-<div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>
+<div className={`detail${pkCls}`} {...pk}>
+<div className="detail-hd"><div className="detail-q">{pct!=null?'🔥 ':''}{country} · {countryMarkets.length} market{countryMarkets.length===1?'':'s'}</div><button className="detail-close" onClick={()=>setCountry(null)} aria-label="Close">✕</button></div>{pkBar}
 {pct!=null&&<div className="shop-meta" style={{marginTop:-6,marginBottom:8}}>Escalation odds <b style={{color:nehLabel(pct).c}}>{pct}%</b> · {nehLabel(pct).t}{h.vol24?' · '+fmtVol(h.vol24)+' traded 24h':''}</div>}
 <div className="country-list">{countryRows.map(m=><div key={m.id} className="neh-drv" onClick={()=>setSelected(m)}><span>{SOURCES[m.source]?.icon} {m.question}</span><span className="mono">{WHEN_UI&&layers.when&&ladderTag(m.ladder)&&<span className="ladder-tag">{ladderTag(m.ladder)}</span>}{fmtProb(m.probability)}{m.change24?<span style={{marginLeft:6,color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)}</span>:null}</span></div>)}</div>
 {mobile&&countryMarkets.length>countryN&&<button className="more-btn" onClick={()=>setCountryN(n=>n+5)}>Show {Math.min(5,countryMarkets.length-countryN)} more · {countryN} of {countryMarkets.length}</button>}
 </div>)})()}
 
 {boltSig&&!selected&&!country&&(()=>{const x=boltSig,K=MJ_KIND[x.kind];return(
-<div className="detail mj-detail">
+<div className={`detail mj-detail${pkCls}`} {...pk}>
 <div className="detail-top"><div className="src" style={{color:K.c}}>🔨 MJÖLNIR · {K.t}{mjDemo&&<> <span className="sim-tag">DEMO</span></>}</div><div className="mono shop-meta">signal {x.score}/100</div></div>
-<div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>
+<div className="detail-hd"><div className="detail-q">{x.country}: {K.d}</div><button className="detail-close" onClick={()=>setBolt(null)} aria-label="Close">✕</button></div>{pkBar}
 <div className="mj-cols">
 <div className="mj-col"><div className="dc-kicker">BETTING MARKET</div><div className="mj-q">{x.q}</div><div className="mj-big mono">{fmtProb(x.p)} <span style={{color:x.d>0?'var(--red)':'var(--green)'}}>{fmtChg(x.d)} pts 24h</span></div></div>
 <div className="mj-col">{[['stock','STOCK MARKET · 24H'],['fx','CURRENCIES · 24H'],['vol','FEAR GAUGES · 24H'],['crypto','CRYPTO · 24H']].map(([k,t])=>{const as=x.assets.filter(a=>(a.k||'stock')===k);return as.length>0&&<React.Fragment key={k}><div className="dc-kicker" style={k!=='stock'?{marginTop:8}:undefined}>{t}</div>{as.map(a=><div key={a.n} className="mj-asset"><span>{a.n}<span className="muted"> · {a.src&&a.k==='crypto'?a.src:EXCH[a.x].name}{a.open===false?' · closed':''}</span></span><span className="mono" style={{color:a.chg>0?'var(--green)':a.chg<0?'var(--red)':undefined}}>{fmtPct(a.chg)}{a.z!=null&&<span className="muted"> {Math.abs(a.z).toFixed(1)}×</span>}</span></div>)}</React.Fragment>})}</div>
