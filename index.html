@@ -93,8 +93,8 @@
       .mrow{display:flex;gap:2px;flex-basis:100%;overflow:visible;margin:2px -6px 0;padding:0 2px}
       .mrow-b{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:var(--muted);font:inherit;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:4px 0;cursor:pointer}
       .mrow-b span{white-space:nowrap;font-size:9px;letter-spacing:.02em}
-      .mrow-more{position:relative;flex:1 1 0;display:flex}.mrow-more .mrow-b{width:100%}
-      .mrow-dots{height:30px;display:flex;align-items:center;font-size:14px;letter-spacing:.1em;color:var(--muted)}
+      .mrow-more{position:relative;flex:0 0 40px;display:flex}.mrow-more .mrow-b{width:100%}
+      .mrow-dots{height:38px;display:flex;align-items:center;font-size:14px;letter-spacing:.1em;color:var(--muted)}
       .mrow-menu{position:absolute;right:0;top:100%;z-index:300;min-width:200px;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:4px}
       .mrow-mi{display:flex;align-items:center;gap:10px;width:100%;padding:8px;background:none;border:0;color:var(--muted);font:inherit;text-align:left;cursor:pointer;border-radius:4px}
       .mrow-mi:hover{background:rgba(148,163,184,.08)}
@@ -2179,7 +2179,7 @@ return(
 <Clock/>
 <input className="search" type="text" placeholder={mobile?'Search…':'Search markets...'} value={search} onChange={e=>setSearch(e.target.value)}/>
 </div>
-{mobile&&<div className="mrow" role="group" aria-label="Tools">{TOOLS.filter(x=>!x.soon).map(x=><button key={x.k} className={`mrow-b${x.on?' on':''}`} style={{'--c':TOOL_C[x.k]}} role="switch" aria-checked={x.on} onClick={x.sw} aria-label={`${x.n} ${x.on?'on':'off'}`}><ToolBadge k={x.k} size={30} on={x.on}/><span>{x.n}</span><i></i></button>)}
+{mobile&&<div className="mrow" role="group" aria-label="Tools">{TOOLS.filter(x=>!x.soon).map(x=><button key={x.k} className={`mrow-b${x.on?' on':''}`} style={{'--c':TOOL_C[x.k]}} role="switch" aria-checked={x.on} onClick={x.sw} aria-label={`${x.n} ${x.on?'on':'off'}`}><ToolBadge k={x.k} size={38} on={x.on}/><span>{x.n}</span><i></i></button>)}
 <div className="mrow-more"><button className={`mrow-b${mMore?' on':''}`} style={{'--c':'#94a3b8'}} aria-expanded={mMore} aria-haspopup="menu" onClick={()=>setMMore(v=>!v)}><span className="mrow-dots" aria-hidden="true">•••</span><span>More</span><i></i></button>
 {mMore&&<div className="mrow-menu" role="menu">{TOOLS.filter(x=>x.soon).map(x=><button key={x.k} role="menuitem" className="mrow-mi" onClick={()=>{setMMore(false);x.op()}}><ToolBadge k={x.k} size={26} on={false}/><span><b>{x.n}{x.pro&&<em> PRO</em>}</b><small>Coming soon</small></span></button>)}</div>}</div>
 </div>}
