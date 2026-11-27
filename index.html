@@ -517,7 +517,8 @@
 
     @media(max-width:1100px){
       body{overflow:auto;height:auto}
-      .app{height:auto;grid-template-columns:1fr;grid-template-rows:auto auto 70vh auto auto;grid-template-areas:"h" "l" "g" "r" "t"}
+      /* minmax(0,1fr) + clip: Safari let one wide child stretch the column past the screen (SAMPLE and the search cut off on the right) */
+      .app{height:auto;grid-template-columns:minmax(0,1fr);overflow-x:clip;grid-template-rows:auto auto 70vh auto auto;grid-template-areas:"h" "l" "g" "r" "t"}
       .left,.right{border:none;border-bottom:1px solid var(--border);max-height:none}
       .scroll{overflow:visible}
       /* on phones the pizza panel would push the globe a screen down, so it starts folded */
