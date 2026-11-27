@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ConnecTHOR — Pizza Index & Market Intel</title>
-  <meta name="description" content="Pentagon Pizza Index, DOUGHCON level and live geopolitical prediction markets (Polymarket, Kalshi, Manifold, PredictIt) on a 3D globe.">
+  <title>ConnecTHOR — Geopolitical Prediction Markets, Live on a Globe</title>
+  <meta name="description" content="Live geopolitical prediction markets from Polymarket and Kalshi on a 3D globe, with tools that flag odds gaps, early bets, smart money and crisis signals.">
   <meta name="theme-color" content="#0a0f1a">
-  <meta property="og:title" content="ConnecTHOR — Pizza Index & Market Intel">
-  <meta property="og:description" content="Pentagon Pizza Index, DOUGHCON level and live geopolitical prediction markets on a 3D globe.">
+  <meta property="og:title" content="ConnecTHOR — Geopolitical Prediction Markets, Live on a Globe">
+  <meta property="og:description" content="Live geopolitical prediction markets from Polymarket and Kalshi on a 3D globe, with tools that flag odds gaps, early bets, smart money and crisis signals.">
   <script>
     // The GitHub Pages copy forwards to the real domain: only there does the /api proxy run
     // (Kalshi, news, military aircraft). Keeps a shared #m=<market> link intact.
@@ -1479,6 +1479,7 @@ function Ticker({items}){
 // otherwise the element keeps its own tap action and an ⓘ next to it opens the card
 const CAN_HOVER=typeof matchMedia!=='undefined'&&matchMedia('(hover:hover)').matches;
 const MOBILE_Q=window.matchMedia('(max-width:1100px)');
+const MOBILE_NO_LAYER=['markets','arcs','trades','air']; // owner, 2026-11-27: no Markets/Connections/Trades/Mil. aircraft toggles on phones (the layers keep their saved state)
 function HoverInfo({card,tapChild,noTouch,tone,style,label,children}){
   const[open,setOpen]=useState(null),wrap=useRef(null),hide=useRef(0); // open: null, or {top} for the fixed card on touch
   const enter=()=>{if(!CAN_HOVER)return;clearTimeout(hide.current);const b=wrap.current?.getBoundingClientRect().bottom||0;setOpen(o=>o||(MOBILE_Q.matches?{top:Math.round(b+8)}:{}))}; // narrow screens pin the card (position:fixed), so it needs a top
@@ -2381,7 +2382,7 @@ return(
 </div>)})}
 </div>}
 <div className="layers" role="group" aria-label="Globe layers">
-{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],...(WHEN_UI?[['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]]:[])].map(([k,l,c,n])=>(
+{[['markets','Markets','#eab308',filtered.length],['arcs','Connections','#f97316',null],['trades','Trades','#22c55e',null],['air','Mil. aircraft','#7dd3fc',air?air.length:null],['hot','Hotspots','#ef4444',heatMap.size||null],...(WHEN_UI?[['when','⏳ When','#fbbf24',layers.when?whenByCountry.length||null:null]]:[])].filter(([k])=>!mobile||!MOBILE_NO_LAYER.includes(k)).map(([k,l,c,n])=>(
 <button key={k} className={`layer ${layers[k]?'on':''}`} aria-pressed={!!layers[k]} onClick={()=>toggleLayer(k)} title={k==='air'?'Military aircraft broadcasting ADS-B (adsb.lol). Many military flights don\'t broadcast, so this is a partial picture.':k==='when'?'When does the market expect it? For questions traded with several deadlines ("by Dec 31", "by Mar 31"…): the likeliest window on the globe, in the country list and as a curve in the market card.':undefined}><span className="sw" style={{background:layers[k]?c:'var(--faint)'}}></span>{l}{n!=null&&<span className="mono" style={{opacity:.7}}>{n}</span>}</button>))}
 {HAS_WEBGL&&<button className="layer on" onClick={cycleView} title="Globe view: night lights, daylight, or the live day/night line for right now (click to switch)">{GLOBE_VIEWS[globeView]}</button>}
 </div>
