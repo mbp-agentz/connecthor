@@ -550,6 +550,22 @@
       .neh.slim .neh-chev{order:4;position:static;padding:0}
       /* Owner, 2026-11-26: no breaking-news ticker on phones */
       .ticker{display:none}
+      /* Below the globe (design A, 2026-11-27): one big switch, one filter row, compact rows that unfold */
+      .act-tabs{margin:12px 14px 0;background:var(--card);border:1px solid var(--border)!important;border-radius:10px;padding:3px}
+      .act-tab{border-radius:7px;border-bottom:0!important;padding:9px 6px!important;font-size:14px!important}
+      .act-tab.active{background:#1e293b!important}
+      .mfil{display:flex;gap:6px;padding:10px 14px 4px;overflow-x:auto;scrollbar-width:none}.mfil::-webkit-scrollbar{display:none}
+      .mfil button,.mfil select{flex-shrink:0;font:inherit;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer}
+      .mfil button.on{border-color:#818cf8;color:var(--text);background:rgba(129,140,248,.12)}
+      .mfil select{appearance:none;-webkit-appearance:none;padding-right:24px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 10px center;color:var(--text);font-size:16px;padding:4px 26px 4px 12px} /* 16px: iOS zooms into smaller form fields */
+      .mi{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+      .mi-r{display:flex;gap:12px}.mi-t{flex:1;min-width:0}
+      .mi-m{font-size:10px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}.mi-m em{font-style:normal;color:#818cf8}
+      .mi-h{font-size:14px;font-weight:600;line-height:1.3}
+      .mi-s{width:64px;flex-shrink:0;text-align:right}.mi-s b{display:block;font-family:Rajdhani,sans-serif;font-size:20px;line-height:1}.mi-s small{display:block;font-size:9px;color:var(--faint);line-height:1.25;margin-top:2px}
+      .mi.exp{background:rgba(255,255,255,.02)}
+      .mi .agg-teaser{margin-top:8px!important}
+      .mi-more{display:block;width:calc(100% - 28px);margin:12px 14px;padding:9px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--blue);font:inherit;font-size:12px;cursor:pointer}
       /* Owner, 2026-11-27: no Live/Sample source badge on the globe on phones */
       .badge-api{display:none}
       .detail-stats{flex-wrap:wrap;gap:10px 18px}
@@ -1703,6 +1719,7 @@ const zf=Math.min(1.2,Math.max(0.1,zoomAlt/2.3));
 const[highlighted,setHighlighted]=useState(null);
 const[search,setSearch]=useState('');
 const[catFilter,setCatFilter]=useState('All');
+const[aggF,setAggF]=useState('all'),[mShow,setMShow]=useState(5); // mobile list (owner's design A, 2026-11-27): one filter row, 5 rows then "Show more"
 const[tab,setTab]=useState('agg'); // the Intel tab (raw headlines) was removed 2026-11-26; the feed still drives Heimdall, the ticker and Loki
 const[aggData,setAggData]=useState(null),[aggErr,setAggErr]=useState(false);
 // loaded when the tab is opened, then every 30 min while it stays open
@@ -2381,11 +2398,24 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 
 <Boundary name="Right panel" className="right"><aside className="right">
 <div className="act-tabs">
-<button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>setTab('agg')}><AggIcon/> <span className="agg-name">aggregaTHOR</span></button>
-<button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>setTab('markets')}>📊 Markets</button>
+<button className={`act-tab ${tab==='agg'?'active':''}`} onClick={()=>{setTab('agg');setMShow(5)}}><AggIcon/> <span className="agg-name">aggregaTHOR</span></button>
+<button className={`act-tab ${tab==='markets'?'active':''}`} onClick={()=>{setTab('markets');setMShow(5)}}>📊 Markets</button>
 </div>
 <div className="scroll">
-{tab==='agg'&&(<div className="tab-fade">
+{tab==='agg'&&mobile&&(()=>{const xs=aggData?AGG_KINDS.flatMap(([k])=>aggData.stories.filter(x=>x.kind===k)).filter(x=>aggF==='all'||x.kind===aggF):[];return<div className="tab-fade">
+<div className="mfil">{[['all','All'],...AGG_KINDS.map(([k,l])=>[k,l])].map(([k,l])=><button key={k} className={aggF===k?'on':''} onClick={()=>{setAggF(k);setMShow(5)}}>{l}</button>)}</div>
+{!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
+{xs.slice(0,mShow).map(x=>{const m=x.market&&markets.find(y=>y.question===x.market.question),open=betExp==='a'+x.id,c=x.market&&Math.round((x.market.change24||0)*100);return(
+<div key={x.id} className={`mi${open?' exp':''}`} onClick={()=>setBetExp(v=>v==='a'+x.id?null:'a'+x.id)}>
+<div className="mi-r"><div className="mi-t"><div className="mi-m"><em>{{top:'Top story',trending:'Trending',signal:'Signal'}[x.kind]||'Story'}</em> · {x.place||'aggregaTHOR'} · {aggAgo(x.time)}</div><div className="mi-h">{x.headline}</div></div>
+{x.market&&x.market.p!=null&&<div className="mi-s"><b>{fmtProb(x.market.p)}</b>{c?<small style={{color:c>0?'var(--green)':'var(--red)'}}>{c>0?'▲':'▼'}{Math.abs(c)} pts</small>:<small>{x.market.source==='kalshi'?'Kalshi':'Polymarket'}</small>}</div>}</div>
+{open&&<div onClick={e=>e.stopPropagation()} style={{cursor:'default'}}>{x.teaser&&<div className="agg-teaser">{x.teaser}</div>}
+<div className="bet-x-act">{m&&<button onClick={()=>betToGlobe(m)}>Show on the globe</button>}<a href={x.url} target="_blank" rel="noopener noreferrer">Read the story ↗</a></div></div>}
+</div>)})}
+{xs.length>mShow?<button className="mi-more" onClick={()=>setMShow(n=>n+5)}>Show {Math.min(5,xs.length-mShow)} more ↓</button>:<a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">All stories on aggregathor.com →</a>}
+</>}
+</div>})()}
+{tab==='agg'&&!mobile&&(<div className="tab-fade">
 <div className="agg-intro"><div className="agg-intro-h"><AggIcon/> <span>aggregaTHOR</span></div>
 <p>News written from the markets on this globe. Our sister site turns the biggest geopolitical bets and the findings of ConnecTHOR's tools into short stories: what happened, what the odds say, and how they moved.</p></div>
 {!aggData?<div className="news-loading">{aggErr?"aggregaTHOR isn't available right now. Try again later.":'⏳ Loading…'}</div>:<>
@@ -2400,7 +2430,17 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <a className="agg-more" href="https://aggregathor.com" target="_blank" rel="noopener noreferrer">All stories on aggregathor.com →</a>
 </>}
 </div>)}
-{tab==='markets'&&(<>
+{tab==='markets'&&mobile&&(<>
+<div className="mfil"><select aria-label="Venue" value={srcFilter} onChange={e=>{setSrcFilter(e.target.value);setMShow(5)}}><option value="all">All venues · {bets.length}</option>{Object.keys(SOURCES).filter(k=>srcCounts[k]).map(k=><option key={k} value={k}>{srcName(k)} · {srcCounts[k]}</option>)}</select><select aria-label="Topic" value={catFilter} onChange={e=>{setCatFilter(e.target.value);setMShow(5)}}>{cats.map(c=><option key={c} value={c}>{c==='All'?'All topics':c}</option>)}</select></div>
+{filtered.slice(0,Math.min(40,mShow)).map(m=>{const open=betExp==='m'+m.id;return(
+<div key={m.id} className={`mi${open?' exp':''}`} onClick={()=>setBetExp(v=>v==='m'+m.id?null:'m'+m.id)}>
+<div className="mi-r"><div className="mi-t"><div className="mi-m">{srcName(m.source)} · {m.category}{m.vol24?' · '+fmtMoney(m.vol24,m.source)+' 24h':''}</div><div className="mi-h">{m.question}</div></div>
+<div className="mi-s"><b style={{color:marketColor(m)}}>{fmtProb(m.probability)}</b>{m.change24?<small style={{color:m.change24>0?'var(--green)':'var(--red)'}}>{fmtChg(m.change24)} pts</small>:null}</div></div>
+{open&&<BetInfo m={m} onGlobe={()=>betToGlobe(m)}/>}
+</div>)})}
+{filtered.length>Math.min(40,mShow)&&mShow<40&&<button className="mi-more" onClick={()=>setMShow(n=>n+5)}>Show {Math.min(5,Math.min(40,filtered.length)-mShow)} more ↓</button>}
+</>)}
+{tab==='markets'&&!mobile&&(<>
 <div className="tabs"><button className={`tab ${srcFilter==='all'?'active':''}`} onClick={()=>setSrcFilter('all')}>All {bets.length}</button>{Object.keys(SOURCES).filter(k=>srcCounts[k]).map(k=><button key={k} className={`tab ${srcFilter===k?'active':''}`} onClick={()=>setSrcFilter(k)}>{srcName(k)} {srcCounts[k]}</button>)}</div>
 <div className="tabs">{cats.map(c=><button key={c} className={`tab ${catFilter===c?'active':''}`} onClick={()=>setCatFilter(c)}>{c}</button>)}</div>
 {filtered.slice(0,40).map(m=>(
