@@ -1822,7 +1822,7 @@ const saveInsAlert=x=>{const n={...insAlert,...x};setInsAlert(n);savePref('ct-in
 const[ins,setIns]=useState(false),[insOpen,setInsOpen]=useState(false),[insData,setInsData]=useState(null),[insErr,setInsErr]=useState(false),[insView,setInsView]=useState('skill');
 const[lokiEx,setLokiEx]=useState(false);
 const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
-const[tyrOpen,setTyrOpen]=useState(()=>!(typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches)),[topOpen,setTopOpen]=useState(false),[soonOpen,setSoonOpen]=useState(null),[mMore,setMMore]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
+const[tyrOpen,setTyrOpen]=useState(false),[topOpen,setTopOpen]=useState(false),[soonOpen,setSoonOpen]=useState(null),[mMore,setMMore]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
 const toggleTyrF=k=>setTyrF(c=>{const n={...c,[k]:!c[k]};savePref('ct-tyr-f',n);return n});
 const toggleTyr=()=>{const on=!tyr;setTyr(on);setTyrOpen(on);if(on)setToolsOpen(false)};
 const bets=useMemo(()=>tyr?markets.filter(m=>!isWar(m)||tyrF[tyrKind(m)]):markets.filter(m=>!isWar(m)),[markets,tyr,tyrF]);
@@ -2582,7 +2582,8 @@ atmosphereColor={mjolnir?'#22d3ee':'#3b82f6'} atmosphereAltitude={mjolnir?0.2:0.
 <DrawerHead c="var(--muted)" k={soonOpen} name={S[0]} sub={S[1]} tag={<span className="soon-tag">Coming soon</span>} on={false} onClose={()=>setSoonOpen(null)}/>
 <div className="scroll heim-body"><div className="soon-box"><ToolBadge k={soonOpen} size={64} on={false}/><b>Coming soon</b><span>{S[2]}</span></div></div>
 </div></Boundary>})()}
-{tyrOpen&&<Boundary name="Tyr panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Tyr: war bets">
+{!mobile&&tyrOpen&&!tyr&&<OffDrawer k="tyr" name="Tyr" sub="War bets" pitch="Hides or shows war and conflict bets." more="War and conflict bets are hidden until Tyr is on, because they drown out everything else. Switched on, you pick which kinds show on the globe, in the country lists and in Top Bets: ceasefires and deals, nuclear and missiles, fighting and strikes." onOn={toggleTyr} onClose={()=>setTyrOpen(false)}/>}
+{tyrOpen&&(tyr||mobile)&&<Boundary name="Tyr panel" className="pizza-drawer"><div className="pizza-drawer heim-drawer" role="dialog" aria-label="Tyr: war bets">
 <DrawerHead c="#f87171" k="tyr" name="Tyr" sub="War bets" on={tyr} onOff={()=>setTyr(false)} onOn={()=>setTyr(true)} onClose={()=>setTyrOpen(false)}/>
 <div className="scroll heim-body">
 <FilterBar items={TYR_KINDS} state={tyrF} onToggle={toggleTyrF} color="#f87171"/>
