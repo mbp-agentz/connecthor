@@ -1788,7 +1788,7 @@ const saveInsAlert=x=>{const n={...insAlert,...x};setInsAlert(n);savePref('ct-in
 const[ins,setIns]=useState(false),[insOpen,setInsOpen]=useState(false),[insData,setInsData]=useState(null),[insErr,setInsErr]=useState(false),[insView,setInsView]=useState('skill');
 const[lokiEx,setLokiEx]=useState(false);
 const[tyr,setTyr]=useState(false);const[loki,setLoki]=useState(false),[valk,setValk]=useState(false),[heim,setHeim]=useState(false),[heimOpen,setHeimOpen]=useState(false),[lokiOpen,setLokiOpen]=useState(false),[lokiData,setLokiData]=useState(null),[lokiErr,setLokiErr]=useState(false),[valkOpen,setValkOpen]=useState(false),[valkData,setValkData]=useState(null),[valkErr,setValkErr]=useState(false),[valkVenue,setValkVenue]=useState('all'),[valkTopic,setValkTopic]=useState('all'); // concept tools, off on every visit, no data yet; war bets are hidden until Tyr is switched on (off on every visit)
-const[tyrOpen,setTyrOpen]=useState(()=>!(typeof matchMedia!=='undefined'&&matchMedia('(max-width:1100px)').matches)),[topOpen,setTopOpen]=useState(false),[soonOpen,setSoonOpen]=useState(null),[mMore,setMMore]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
+const[tyrOpen,setTyrOpen]=useState(false),[topOpen,setTopOpen]=useState(false),[soonOpen,setSoonOpen]=useState(null),[mMore,setMMore]=useState(false),[tyrF,setTyrF]=useState(()=>loadPref('ct-tyr-f',TYR_F_DEFAULT));
 const toggleTyrF=k=>setTyrF(c=>{const n={...c,[k]:!c[k]};savePref('ct-tyr-f',n);return n});
 const toggleTyr=()=>{const on=!tyr;setTyr(on);setTyrOpen(on);if(on)setToolsOpen(false)};
 const bets=useMemo(()=>tyr?markets.filter(m=>!isWar(m)||tyrF[tyrKind(m)]):markets.filter(m=>!isWar(m)),[markets,tyr,tyrF]);
@@ -2163,7 +2163,7 @@ const TOOLS=[
 ];
 const onTools=TOOLS.filter(x=>x.on);
 // mobile live strip: the active tools, and Tyr always (its card is the default view on phones, owner 2026-11-27)
-const stripTools=TOOLS.filter(x=>x.on||x.k==='tyr');
+const stripTools=TOOLS.filter(x=>x.on); // owner 2026-11-27: every tool off on load, a card only while its tool is on
 
 return(
 <div className={`app${anyDrawer?' has-drawer':''}`}>
